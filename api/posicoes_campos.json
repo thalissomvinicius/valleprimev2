@@ -1,0 +1,482 @@
+{
+  "nome_proponente": {
+    "x": 15.61,
+    "y": 20.94
+  },
+  "cpf_cnpj_proponente": {
+    "x": 19.05,
+    "y": 26.76
+  },
+  "rg_proponente": {
+    "x": 103.19,
+    "y": 26.50
+  },
+  "sexo_fem_proponente": {
+    "x": 161.14,
+    "y": 21.73
+  },
+  "sexo_masc_proponente": {
+    "x": 179.13,
+    "y": 22.00
+  },
+  "naturalidade_proponente": {
+    "x": 19.84,
+    "y": 32.05
+  },
+  "uf_naturalidade_proponente": {
+    "x": 66.15,
+    "y": 31.79
+  },
+  "orgao_emissor_proponente": {
+    "x": 161.40,
+    "y": 26.23
+  },
+  "nacionalidade_proponente": {
+    "x": 99.48,
+    "y": 32.05
+  },
+  "data_nascimento_proponente": {
+    "x": 168.54,
+    "y": 32.05
+  },
+  "estado_civil_proponente": {
+    "x": 24.34,
+    "y": 37.61
+  },
+  "regime_casamento_proponente": {
+    "x": 89.17,
+    "y": 37.61
+  },
+  "profissao_proponente": {
+    "x": 159.81,
+    "y": 37.61
+  },
+  "endereco_residencial_proponente": {
+    "x": 29.90,
+    "y": 42.90
+  },
+  "numero_endereco_proponente": {
+    "x": 193.41,
+    "y": 43.20
+  },
+  "bairro_proponente": {
+    "x": 17.46,
+    "y": 48.49
+  },
+  "cidade_proponente": {
+    "x": 89.17,
+    "y": 48.76
+  },
+  "uf_endereco_proponente": {
+    "x": 141.02,
+    "y": 48.49
+  },
+  "cep_proponente": {
+    "x": 177.54,
+    "y": 48.49
+  },
+  "fone1_ddd_proponente": {
+    "x": 18.52,
+    "y": 54.05
+  },
+  "fone1_numero_proponente": {
+    "x": 29.10,
+    "y": 54.32
+  },
+  "fone2_ddd_proponente": {
+    "x": 90.22,
+    "y": 54.05
+  },
+  "fone2_numero_proponente": {
+    "x": 100.54,
+    "y": 54.05
+  },
+  "fone_comercial_ddd_proponente": {
+    "x": 159.81,
+    "y": 54.05
+  },
+  "fone_comercial_numero_proponente": {
+    "x": 169.07,
+    "y": 54.05
+  },
+  "local_trabalho_proponente": {
+    "x": 33.60,
+    "y": 59.61
+  },
+  "email_proponente": {
+    "x": 144.46,
+    "y": 59.61
+  },
+  "nome_referencia_proponente": {
+    "x": 42.60,
+    "y": 65.16
+  },
+  "fone_referencia_ddd_proponente": {
+    "x": 107.42,
+    "y": 65.13
+  },
+  "fone_referencia_numero_proponente": {
+    "x": 116.95,
+    "y": 65.16
+  },
+  "parentesco_referencia_proponente": {
+    "x": 175.68,
+    "y": 65.16
+  },
+  "tipo_conjuge": {
+    "x": 45.5,
+    "y": 71.48
+  },
+  "tipo_segundo_proponente": {
+    "x": 81.7,
+    "y": 71.21
+  },
+  "tipo_procurador": {
+    "x": 147.0,
+    "y": 71.48
+  },
+  "nome_segundo": {
+    "x": 15.35,
+    "y": 76.05
+  },
+  "sexo_fem_segundo": {
+    "x": 161.14,
+    "y": 76.84
+  },
+  "sexo_masc_segundo": {
+    "x": 178.87,
+    "y": 77.11
+  },
+  "cpf_cnpj_segundo": {
+    "x": 19.84,
+    "y": 81.61
+  },
+  "rg_segundo": {
+    "x": 103.72,
+    "y": 81.34
+  },
+  "orgao_emissor_segundo": {
+    "x": 162.19,
+    "y": 81.34
+  },
+  "naturalidade_segundo": {
+    "x": 19.84,
+    "y": 87.16
+  },
+  "uf_naturalidade_segundo": {
+    "x": 66.15,
+    "y": 86.90
+  },
+  "nacionalidade_segundo": {
+    "x": 99.48,
+    "y": 86.90
+  },
+  "data_nascimento_segundo": {
+    "x": 168.81,
+    "y": 86.90
+  },
+  "estado_civil_segundo": {
+    "x": 24.34,
+    "y": 92.45
+  },
+  "regime_casamento_segundo": {
+    "x": 89.17,
+    "y": 92.45
+  },
+  "profissao_segundo": {
+    "x": 159.54,
+    "y": 92.72
+  },
+  "endereco_residencial_segundo": {
+    "x": 29.90,
+    "y": 98.01
+  },
+  "numero_endereco_segundo": {
+    "x": 193.15,
+    "y": 98.27
+  },
+  "bairro_segundo": {
+    "x": 17.46,
+    "y": 103.57
+  },
+  "cidade_segundo": {
+    "x": 89.17,
+    "y": 103.30
+  },
+  "uf_endereco_segundo": {
+    "x": 140.76,
+    "y": 103.57
+  },
+  "cep_segundo": {
+    "x": 178.59,
+    "y": 103.57
+  },
+  "fone1_ddd_segundo": {
+    "x": 18.26,
+    "y": 108.86
+  },
+  "fone1_numero_segundo": {
+    "x": 28.05,
+    "y": 109.12
+  },
+  "fone2_ddd_segundo": {
+    "x": 90.49,
+    "y": 108.86
+  },
+  "fone2_numero_segundo": {
+    "x": 100.28,
+    "y": 108.86
+  },
+  "fone_comercial_ddd_segundo": {
+    "x": 159.81,
+    "y": 108.86
+  },
+  "fone_comercial_numero_segundo": {
+    "x": 169.33,
+    "y": 109.12
+  },
+  "local_trabalho_segundo": {
+    "x": 33.60,
+    "y": 114.49
+  },
+  "email_segundo": {
+    "x": 145.26,
+    "y": 114.22
+  },
+  "nome_referencia_segundo": {
+    "x": 43.13,
+    "y": 120.05
+  },
+  "fone_referencia_ddd_segundo": {
+    "x": 107.16,
+    "y": 120.05
+  },
+  "fone_referencia_numero_segundo": {
+    "x": 117.48,
+    "y": 119.78
+  },
+  "parentesco_referencia_segundo": {
+    "x": 175.16,
+    "y": 119.82
+  },
+  "empreendimento": {
+    "x": 31.49,
+    "y": 131.46
+  },
+  "cidade_empreendimento": {
+    "x": 108.74,
+    "y": 131.20
+  },
+  "estado_empreendimento": {
+    "x": 184.15,
+    "y": 131.46
+  },
+  "lote": {
+    "x": 25.93,
+    "y": 136.75
+  },
+  "quadra": {
+    "x": 64.03,
+    "y": 136.75
+  },
+  "area": {
+    "x": 110.33,
+    "y": 136.49
+  },
+  "logradouro": {
+    "x": 153.72,
+    "y": 136.79
+  },
+  "valor_inicial": {
+    "x": 141.02,
+    "y": 150.28
+  },
+  "valor_sinal": {
+    "x": 84.93,
+    "y": 157.43
+  },
+  "sinal_l1_qtd_parcelas": {
+    "x": 18.26,
+    "y": 170.39
+  },
+  "sinal_l1_valor_parcela": {
+    "x": 45.51,
+    "y": 170.66
+  },
+  "sinal_l1_dia": {
+    "x": 78.85,
+    "y": 170.92
+  },
+  "sinal_l1_mes": {
+    "x": 89.69,
+    "y": 170.92
+  },
+  "sinal_l1_ano": {
+    "x": 101.60,
+    "y": 170.92
+  },
+  "sinal_l1_periodicidade": {
+    "x": 125.06,
+    "y": 170.66
+  },
+  "sinal_l2_qtd_parcelas": {
+    "x": 17.99,
+    "y": 177.01
+  },
+  "sinal_l2_valor_parcela": {
+    "x": 44.98,
+    "y": 177.01
+  },
+  "sinal_l2_dia": {
+    "x": 78.58,
+    "y": 177.27
+  },
+  "sinal_l2_mes": {
+    "x": 89.17,
+    "y": 177.27
+  },
+  "sinal_l2_ano": {
+    "x": 100.81,
+    "y": 177.27
+  },
+  "sinal_l2_periodicidade": {
+    "x": 124.53,
+    "y": 177.27
+  },
+  "sinal_bloco2_valor": {
+    "x": 84.14,
+    "y": 182.03
+  },
+  "sinal_bloco2_qtd_parcelas": {
+    "x": 15.88,
+    "y": 195.00
+  },
+  "sinal_bloco2_valor_parcela": {
+    "x": 43.92,
+    "y": 195.00
+  },
+  "sinal_bloco2_dia": {
+    "x": 78.85,
+    "y": 195.26
+  },
+  "sinal_bloco2_mes": {
+    "x": 88.37,
+    "y": 195.26
+  },
+  "sinal_bloco2_ano": {
+    "x": 100.81,
+    "y": 195.26
+  },
+  "sinal_bloco2_periodicidade": {
+    "x": 124.27,
+    "y": 195.26
+  },
+  "valor_total_entrada": {
+    "x": 84.14,
+    "y": 200.63
+  },
+  "entrada_qtd_parcelas": {
+    "x": 14.02,
+    "y": 213.59
+  },
+  "entrada_valor_parcela": {
+    "x": 43.13,
+    "y": 213.37
+  },
+  "entrada_dia": {
+    "x": 78.85,
+    "y": 213.10
+  },
+  "entrada_mes": {
+    "x": 88.90,
+    "y": 213.10
+  },
+  "entrada_ano": {
+    "x": 101.07,
+    "y": 213.37
+  },
+  "entrada_periodicidade": {
+    "x": 124.80,
+    "y": 213.63
+  },
+  "entrada_tipo_parcela": {
+    "x": 154.25,
+    "y": 213.5
+  },
+  "valor_saldo_parcelar": {
+    "x": 84.67,
+    "y": 218.39
+  },
+  "saldo_qtd_parcelas": {
+    "x": 13.76,
+    "y": 232.62
+  },
+  "saldo_valor_parcela": {
+    "x": 42.86,
+    "y": 232.62
+  },
+  "saldo_dia": {
+    "x": 78.58,
+    "y": 232.62
+  },
+  "saldo_mes": {
+    "x": 88.90,
+    "y": 232.62
+  },
+  "saldo_ano": {
+    "x": 101.87,
+    "y": 232.62
+  },
+  "saldo_periodicidade": {
+    "x": 124.53,
+    "y": 232.10
+  },
+  "saldo_tipo_parcela": {
+    "x": 154.25,
+    "y": 232.36
+  },
+  "saldo_l2_qtd_parcelas": {
+    "x": 13.76,
+    "y": 238.45
+  },
+  "saldo_l2_valor_parcela": {
+    "x": 42.33,
+    "y": 238.71
+  },
+  "saldo_l2_dia": {
+    "x": 78.58,
+    "y": 238.45
+  },
+  "saldo_l2_mes": {
+    "x": 89.17,
+    "y": 238.45
+  },
+  "saldo_l2_ano": {
+    "x": 101.60,
+    "y": 238.71
+  },
+  "saldo_l2_periodicidade": {
+    "x": 124.53,
+    "y": 238.18
+  },
+  "saldo_l2_tipo_parcela": {
+    "x": 154.25,
+    "y": 238.45
+  },
+  "cidade_proposta_final": {
+    "x": 55.83,
+    "y": 279.72
+  },
+  "dia_proposta_final": {
+    "x": 84.93,
+    "y": 279.46
+  },
+  "mes_proposta_final": {
+    "x": 102.13,
+    "y": 279.19
+  },
+  "ano_proposta_final": {
+    "x": 134.94,
+    "y": 279.19
+  }
+}
