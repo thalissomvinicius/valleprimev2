@@ -43,12 +43,6 @@ O **Valle Prime DispoSystem** foi desenvolvido para solucionar um problema crít
 
 ---
 
-### 📸 Prévias
-
-*(Você pode adicionar prints das telas aqui depois)*
-
----
-
 ### 🔧 Instalação e Uso Local
 
 ```bash
