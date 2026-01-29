@@ -1,0 +1,177 @@
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.search-bar-container {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    padding: 1.25rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--glass-border);
+    margin-top: 1rem;
+    margin-bottom: 2rem;
+    animation: fadeInDown 0.6s ease-out;
+}
+
+.search-filters {
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+
+.input-group {
+    display: flex;
+    gap: 1rem;
+    flex: 2;
+    min-width: 300px;
+}
+
+.input-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+}
+
+.status-filter-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+    min-width: 200px;
+}
+
+.input-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-left: 0.25rem;
+}
+
+.input-with-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-icon {
+    position: absolute;
+    left: 0.85rem;
+    color: var(--text-muted);
+    pointer-events: none;
+    transition: color 0.2s ease;
+    z-index: 2;
+}
+
+.search-input,
+.status-select {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 3.25rem !important;
+    /* Force the padding */
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    font-size: 0.95rem;
+    font-weight: 500;
+    outline: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    text-align: left !important;
+    /* Ensure text starts from the left */
+}
+
+.search-input:focus,
+.status-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 15px rgba(26, 54, 93, 0.1);
+    transform: translateY(-1px);
+    background-color: #fff;
+}
+
+.input-with-icon:focus-within .input-icon {
+    color: var(--primary-color);
+}
+
+.status-select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%234a5568' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    padding-right: 2.5rem;
+}
+
+/* ==========================================
+   MOBILE RESPONSIVE STYLES
+   ========================================== */
+
+@media (max-width: 768px) {
+    .search-bar-container {
+        padding: 0.75rem;
+        margin-bottom: 1rem;
+        margin-top: 0.5rem;
+    }
+
+    .search-filters {
+        gap: 0.75rem;
+    }
+
+    /* Keep Quadra and Lote side-by-side on mobile */
+    .input-group {
+        flex-direction: row;
+        width: 100%;
+        min-width: unset;
+        gap: 0.5rem;
+    }
+
+    .input-wrapper {
+        min-width: 0;
+        /* Allow shrinking */
+    }
+
+    .status-filter-wrapper {
+        min-width: 100%;
+    }
+
+    .input-label {
+        font-size: 0.7rem;
+        margin-bottom: 0.15rem;
+    }
+
+    /* Adjust icon position for smaller padding */
+    .input-icon {
+        width: 14px;
+        height: 14px;
+        left: 0.6rem;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    /* Compact inputs */
+    .search-input,
+    .status-select {
+        padding: 0.5rem 0.5rem 0.5rem 2rem !important;
+        font-size: 0.85rem;
+        height: 38px;
+        /* Explicit height control */
+        border-radius: 8px;
+    }
+
+    .status-select {
+        background-position: right 0.5rem center;
+        background-size: 12px;
+    }
+}
