@@ -427,7 +427,7 @@ function MainApp() {
         color: 'var(--text-muted)',
         fontSize: '0.85rem'
       }}>
-        <p style={{ marginBottom: '0.5rem' }}>Desenvolvido por <strong>Vinicius Dev</strong></p>
+        <p style={{ marginBottom: '0.5rem' }}>Desenvolvido por <strong>Vinicius Dev</strong> (v1.1)</p>
         {data.length > 0 && data[0].Data_Atualizacao && (
           <p style={{ fontSize: '0.75rem', opacity: 0.8 }}>Última atualização: {data[0].Data_Atualizacao}</p>
         )}
