@@ -76,6 +76,14 @@ def health():
     except Exception as e:
         rl_info = f"ReportLab ERROR: {str(e)}"
         
+    # External API check
+    ext_api_check = "Not tested"
+    try:
+        test_resp = requests.get("http://177.221.240.85:8000/api/consulta/624/", timeout=3)
+        ext_api_check = f"Status {test_resp.status_code}, Data length: {len(test_resp.json().get('data', []))}"
+    except Exception as e:
+        ext_api_check = f"Error: {str(e)}"
+        
     return {
         "status": "ok",
         "vercel": os.environ.get('VERCEL') == '1',
@@ -84,6 +92,7 @@ def health():
         "db_path": DB_PATH,
         "files_in_api": os.listdir(BASE_DIR) if os.path.exists(BASE_DIR) else [],
         "reportlab": rl_info,
+        "external_api_624": ext_api_check,
         "timestamp": datetime.datetime.now().isoformat()
     }, 200
 
@@ -297,25 +306,27 @@ def consulta(numprod_psc):
     Proxy to external availability server.
     Ensures an array is ALWAYS returned to prevent frontend .filter() crashes.
     """
-    external_url = f"http://177.221.240.85:8000/api/consulta/{numprod_psc}"
+    external_url = f"http://177.221.240.85:8000/api/consulta/{numprod_psc}/"
     try:
         # Timeout 5s to avoid hanging Vercel functions
         resp = requests.get(external_url, timeout=5)
         if resp.status_code == 200:
             data_json = resp.json()
-            # The frontend expects an ARRAY in response.data
-            # If the external API already follows this, great.
-            # If not, we ensure it's an array.
             actual_data = data_json.get('data', [])
             if not isinstance(actual_data, list):
-                actual_data = []
+                # Maybe the response IS the list?
+                if isinstance(data_json, list):
+                    actual_data = data_json
+                else:
+                    actual_data = []
             return {"success": True, "data": actual_data}, 200
         else:
+            print(f"PROXY STATUS ERROR: {resp.status_code} for {external_url}")
             return {"success": True, "data": []}, 200
     except Exception as e:
-        print(f"PROXY ERROR: {e}")
+        print(f"PROXY EXCEPTION: {e}")
         # Always return success=True with empty data to prevent frontend crash
-        return {"success": True, "data": []}, 200
+        return {"success": True, "data": [], "proxy_error": str(e)}, 200
 
 # Vercel requires the app variable
 app = app
