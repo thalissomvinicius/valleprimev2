@@ -95,8 +95,8 @@ def health():
         "files_in_api": os.listdir(BASE_DIR) if os.path.exists(BASE_DIR) else [],
         "reportlab": rl_info,
         "external_api_624": ext_api_check,
-        "fallback_file_present": fallback_exists,
-        "fallback_path_debug": os.path.join(BASE_DIR, "fallback_availability.json"),
+        "fallback_file_present": os.path.exists(os.path.join(BASE_DIR, "fallback_624.json")),
+        "fallback_path_debug": os.path.join(BASE_DIR, f"fallback_624.json"),
         "cwd": os.getcwd(),
         "timestamp": datetime.datetime.now().isoformat()
     }, 200
@@ -312,7 +312,8 @@ def consulta(numprod_psc):
     Ensures an array is ALWAYS returned to prevent frontend .filter() crashes.
     """
     external_url = f"http://177.221.240.85:8000/api/consulta/{numprod_psc}/"
-    fallback_path = os.path.join(BASE_DIR, "fallback_availability.json")
+    fallback_filename = f"fallback_{numprod_psc}.json"
+    fallback_path = os.path.join(BASE_DIR, fallback_filename)
     
     try:
         # Increased timeout to 10s for slow connections
