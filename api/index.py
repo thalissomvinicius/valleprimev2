@@ -8,9 +8,14 @@ import json
 import sys
 
 # Add parent directory to path for imports
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-from generate_proposal_reportlab import generate_pdf_reportlab
+try:
+    from generate_proposal_reportlab import generate_pdf_reportlab
+except ImportError:
+    # Try relative import if direct fail
+    from .generate_proposal_reportlab import generate_pdf_reportlab
+except Exception as e:
+    print(f"CRITICAL: Failed to import generate_proposal_reportlab: {e}")
+    generate_pdf_reportlab = None
 
 import logging
 
@@ -27,7 +32,18 @@ CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 @app.route('/api/health')
 def health():
-    return {"status": "ok", "vercel": os.environ.get('VERCEL') == '1'}, 200
+    return {
+        "status": "ok", 
+        "vercel": os.environ.get('VERCEL') == '1',
+        "python": sys.version,
+        "base_dir": BASE_DIR,
+        "db_path": DB_PATH
+    }, 200
+
+@app.route('/api/', defaults={'path': ''})
+@app.route('/api/<path:path>')
+def api_catch_all(path):
+    return {"error": "Not Found", "path": path}, 404
 
 # BASE DIRECTORY: API folder
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -39,26 +55,35 @@ else:
 
 def init_db():
     """Initialize SQLite database with clients table"""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS clients (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nome TEXT NOT NULL,
-            cpf_cnpj TEXT UNIQUE NOT NULL,
-            data TEXT NOT NULL,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    conn.commit()
-    conn.close()
+    try:
+        # Ensure the directory for DB_PATH exists (especially for /tmp)
+        db_dir = os.path.dirname(DB_PATH)
+        if not os.path.exists(db_dir):
+             os.makedirs(db_dir, exist_ok=True)
+             
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS clients (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nome TEXT NOT NULL,
+                cpf_cnpj TEXT UNIQUE NOT NULL,
+                data TEXT NOT NULL,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        conn.commit()
+        conn.close()
+        logger.info(f"Database initialized/verified successfully at {DB_PATH}")
+    except Exception as e:
+        logger.error(f"CRITICAL: Database initialization error: {e}\n{traceback.format_exc()}")
 
-# Initialize database on startup
-try:
-    init_db()
-    logger.info(f"Database initialized at {DB_PATH}")
-except Exception as e:
-    logger.error(f"Database initialization error: {e}")
+# Lazy initialization: call it on the first request
+@app.before_request
+def first_request():
+    if not hasattr(app, '_db_initialized'):
+        init_db()
+        app._db_initialized = True
 
 def format_currency(val):
     """Format value as Brazilian currency (R$ format)"""
