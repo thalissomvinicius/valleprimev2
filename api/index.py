@@ -36,9 +36,19 @@ def get_db_connection():
     """Get database connection (Postgres or SQLite)"""
     db_url = os.environ.get('DATABASE_URL')
     if db_url:
-        try:
-            import psycopg2
-            conn = psycopg2.connect(db_url)
+            import pg8000.dbapi
+            # Parse URL (minimal)
+            import urllib.parse
+            u = urllib.parse.urlparse(db_url)
+            # Create connection with DBAPI
+            conn = pg8000.dbapi.connect(
+                user=u.username,
+                password=u.password,
+                host=u.hostname,
+                port=u.port,
+                database=u.path[1:],
+                ssl_context=True
+            )
             return conn, 'postgres'
         except Exception as e:
             print(f"POSTGRES CONNECTION ERROR: {e}")
