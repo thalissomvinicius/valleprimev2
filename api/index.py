@@ -32,24 +32,49 @@ app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 def get_db():
-    """Helper to get database connection and ensure schema exists"""
-    try:
-        db_dir = os.path.dirname(DB_PATH)
-        if not os.path.exists(db_dir):
-            os.makedirs(db_dir, exist_ok=True)
+def get_db_connection():
+    """Get database connection (Postgres or SQLite)"""
+    db_url = os.environ.get('DATABASE_URL')
+    if db_url:
+        try:
+            import psycopg2
+            conn = psycopg2.connect(db_url)
+            return conn, 'postgres'
+        except Exception as e:
+            print(f"POSTGRES CONNECTION ERROR: {e}")
+            pass
             
-        conn = sqlite3.connect(DB_PATH)
-        conn.row_factory = sqlite3.Row
-        conn.execute('''
+    # Fallback/Local SQLite
+    # Ensure directory exists for SQLite
+    db_dir = os.path.dirname(DB_PATH)
+    if not os.path.exists(db_dir):
+        os.makedirs(db_dir, exist_ok=True)
+            
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn, 'sqlite'
+
+def init_db():
+    """Initialize database tables if they don't exist"""
+    conn, db_type = get_db_connection()
+    try:
+        # Client table schema
+        create_table_sql = """
+        CREATE TABLE IF NOT EXISTS clients (
+            id SERIAL PRIMARY KEY,
+            nome TEXT NOT NULL,
+            cpf_cnpj TEXT UNIQUE NOT NULL,
+            data TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        """
+        if db_type == 'sqlite':
+            create_table_sql = """
             CREATE TABLE IF NOT EXISTS clients (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 nome TEXT NOT NULL,
                 cpf_cnpj TEXT UNIQUE NOT NULL,
-                data TEXT NOT NULL,
-                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-        return conn
     except Exception as e:
         print(f"DATABASE ERROR: {e}")
         raise e
@@ -282,49 +307,23 @@ def generate():
             name = req.get('nome_proponente', '').strip()
             cpf = req.get('cpf_cnpj_proponente', '').strip()
             if name and cpf:
-                conn = get_db()
-                existing = conn.execute("SELECT id FROM clients WHERE cpf_cnpj = ?", (cpf,)).fetchone()
+                existing = query_db("SELECT id FROM clients WHERE cpf_cnpj = ?", (cpf,), one=True)
                 client_json = json.dumps(req)
                 now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 if existing:
-                    conn.execute("UPDATE clients SET nome = ?, data = ?, updated_at = ? WHERE id = ?", (name, client_json, now, existing['id']))
+                    query_db("UPDATE clients SET nome = ?, data = ?, updated_at = ? WHERE id = ?", (name, client_json, now, existing['id']), commit=True)
                 else:
-                    conn.execute("INSERT INTO clients (nome, cpf_cnpj, data, updated_at) VALUES (?, ?, ?, ?)", (name, cpf, client_json, now))
-                conn.commit()
-                conn.close()
-        except:
-            pass # Non-critical failure
+                    query_db("INSERT INTO clients (nome, cpf_cnpj, data, updated_at) VALUES (?, ?, ?, ?)", (name, cpf, client_json, now), commit=True)
+        except Exception as e:
+            print(f"AUTO-SAVE ERROR: {e}")
+
 
         return send_file(output_file, as_attachment=True, download_name=f"Proposta_Q{str(lot.get('QD', ''))}_L{str(lot.get('LT', ''))}.pdf")
 
     except Exception as e:
         return {"error": str(e), "traceback": traceback.format_exc()}, 500
 
-@app.route('/api/clients', methods=['GET'])
-def get_clients():
-    try:
-        search = request.args.get('q', '').strip()
-        page = int(request.args.get('page', 1))
-        limit = int(request.args.get('limit', 50))
-        offset = (page - 1) * limit
-
-        conn = get_db()
-        where = ""
-        params = []
-        if search:
-            where = "WHERE (nome LIKE ? OR cpf_cnpj LIKE ?)"
-            params = [f"%{search}%", f"%{search}%"]
-            
-        total = conn.execute(f"SELECT COUNT(*) as total FROM clients {where}", params).fetchone()['total']
-        rows = conn.execute(f"SELECT * FROM clients {where} ORDER BY nome ASC LIMIT ? OFFSET ?", params + [limit, offset]).fetchall()
-        
-        clients = []
-        for row in rows:
-            clients.append({"id": row["id"], "nome": row["nome"], "cpf_cnpj": row["cpf_cnpj"], "data": json.loads(row["data"]), "updated_at": row["updated_at"]})
-        conn.close()
-        return {"success": True, "clients": clients, "total_count": total, "page": page, "limit": limit}
-    except Exception as e:
-        return {"success": False, "error": str(e)}, 500
+# Old get_clients replaced by centralized clients() route
 
 @app.route('/api/clients/check-duplicate', methods=['GET'])
 def check_duplicate():
@@ -333,12 +332,10 @@ def check_duplicate():
         cid = request.args.get('client_id')
         if not cpf: return {'exists': False}
         
-        conn = get_db()
         if cid:
-            row = conn.execute("SELECT id, nome FROM clients WHERE cpf_cnpj = ? AND id != ?", (cpf, cid)).fetchone()
+            row = query_db("SELECT id, nome FROM clients WHERE cpf_cnpj = ? AND id != ?", (cpf, cid), one=True)
         else:
-            row = conn.execute("SELECT id, nome FROM clients WHERE cpf_cnpj = ?", (cpf,)).fetchone()
-        conn.close()
+            row = query_db("SELECT id, nome FROM clients WHERE cpf_cnpj = ?", (cpf,), one=True)
         
         if row:
             return {'exists': True, 'client': {'id': row['id'], 'nome_proponente': row['nome']}}
@@ -391,12 +388,12 @@ def consulta(numprod_psc):
 @app.route('/api/clients', methods=['GET', 'POST'])
 def clients():
     try:
-        conn = get_db()
         if request.method == 'GET':
-            cursor = conn.execute("SELECT * FROM clients ORDER BY updated_at DESC")
-            clients = [dict(row) for row in cursor.fetchall()]
-            conn.close()
-            return {"clients": clients}, 200
+            rows = query_db("SELECT * FROM clients ORDER BY updated_at DESC")
+            # Handle list output from query_db which returns dicts directly
+            clients_list = rows if rows else []
+            # We don't need to convert row objects since query_db returns dicts
+            return {"clients": clients_list}, 200
             
         if request.method == 'POST':
             req = request.json
@@ -408,15 +405,13 @@ def clients():
             if not name or not cpf:
                 return {"error": "Name and CPF required"}, 400
                 
-            existing = conn.execute("SELECT id FROM clients WHERE cpf_cnpj = ?", (cpf,)).fetchone()
+            existing = query_db("SELECT id FROM clients WHERE cpf_cnpj = ?", (cpf,), one=True)
             
             if existing:
-                conn.execute("UPDATE clients SET nome = ?, data = ?, updated_at = ? WHERE id = ?", (name, data_json, now, existing['id']))
+                query_db("UPDATE clients SET nome = ?, data = ?, updated_at = ? WHERE id = ?", (name, data_json, now, existing['id']), commit=True)
             else:
-                conn.execute("INSERT INTO clients (nome, cpf_cnpj, data, updated_at) VALUES (?, ?, ?, ?)", (name, cpf, data_json, now))
+                query_db("INSERT INTO clients (nome, cpf_cnpj, data, updated_at) VALUES (?, ?, ?, ?)", (name, cpf, data_json, now), commit=True)
                 
-            conn.commit()
-            conn.close()
             return {"success": True}, 200
             
     except Exception as e:
