@@ -87,10 +87,63 @@ def init_db():
             CREATE TABLE IF NOT EXISTS clients (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 nome TEXT NOT NULL,
-                cpf_cnpj TEXT UNIQUE NOT NULL,
+                data TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            """
+        
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute(create_table_sql)
+                if db_type == 'sqlite': conn.commit()
+                else: conn.commit()
     except Exception as e:
-        print(f"DATABASE ERROR: {e}")
-        raise e
+        print(f"DB INIT ERROR: {e}")
+    finally:
+        try: conn.close()
+        except: pass
+
+# Helper to execute queries compatible with both
+def query_db(sql, params=(), one=False, commit=False):
+    conn, db_type = None, None
+    try:
+        conn, db_type = get_db_connection()
+        cur = conn.cursor()
+        
+        # Adapt placeholders: SQLite uses ?, Postgres uses %s
+        if db_type == 'postgres':
+            sql = sql.replace('?', '%s')
+        
+        cur.execute(sql, params)
+        if commit:
+            conn.commit()
+            return True
+        
+        if one:
+            rv = cur.fetchone()
+            if rv:
+                col_names = [desc[0] for desc in cur.description]
+                return dict(zip(col_names, rv))
+            return None
+        else:
+            rv = cur.fetchall()
+            col_names = [desc[0] for desc in cur.description]
+            return [dict(zip(col_names, row)) for row in rv]
+            
+    except Exception as e:
+        print(f"QUERY ERROR: {e}")
+        return None
+    finally:
+        try:
+            if conn: conn.close()
+        except: pass
+
+# Initialize DB on start (safe wrapper)
+try:
+    init_db()
+except Exception as e:
+    print(f"CRITICAL INIT FAILURE: {e}")
 
 def format_currency(val):
     """Format value as Brazilian currency (R$ format)"""
