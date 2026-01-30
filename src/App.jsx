@@ -20,7 +20,7 @@ function MainApp() {
   const { currentUser, logout, isAdmin } = useAuth();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerms, setSearchTerms] = useState({ quadra: '', lote: '', status: '0 - Disponível' });
+  const [searchTerms, setSearchTerms] = useState({ quadra: '', lote: '', status: 'TODOS' });
   const [error, setError] = useState(null);
   const [selectedObra, setSelectedObra] = useState(() => {
     const saved = localStorage.getItem('selectedObra');
