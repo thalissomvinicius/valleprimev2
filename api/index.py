@@ -6,6 +6,7 @@ import traceback
 import sqlite3
 import json
 import sys
+import requests
 
 # 1. Setup paths to find local modules
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -292,7 +293,29 @@ def check_duplicate():
 
 @app.route('/api/consulta/<int:numprod_psc>', methods=['GET'])
 def consulta(numprod_psc):
-    return {"success": True, "data": {"message": "Availability service"}}, 200
+    """
+    Proxy to external availability server.
+    Ensures an array is ALWAYS returned to prevent frontend .filter() crashes.
+    """
+    external_url = f"http://177.221.240.85:8000/api/consulta/{numprod_psc}"
+    try:
+        # Timeout 5s to avoid hanging Vercel functions
+        resp = requests.get(external_url, timeout=5)
+        if resp.status_code == 200:
+            data_json = resp.json()
+            # The frontend expects an ARRAY in response.data
+            # If the external API already follows this, great.
+            # If not, we ensure it's an array.
+            actual_data = data_json.get('data', [])
+            if not isinstance(actual_data, list):
+                actual_data = []
+            return {"success": True, "data": actual_data}, 200
+        else:
+            return {"success": True, "data": []}, 200
+    except Exception as e:
+        print(f"PROXY ERROR: {e}")
+        # Always return success=True with empty data to prevent frontend crash
+        return {"success": True, "data": []}, 200
 
 # Vercel requires the app variable
 app = app
