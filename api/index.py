@@ -96,6 +96,8 @@ def health():
         "reportlab": rl_info,
         "external_api_624": ext_api_check,
         "fallback_file_present": fallback_exists,
+        "fallback_path_debug": os.path.join(BASE_DIR, "fallback_availability.json"),
+        "cwd": os.getcwd(),
         "timestamp": datetime.datetime.now().isoformat()
     }, 200
 
