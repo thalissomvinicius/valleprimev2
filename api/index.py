@@ -42,7 +42,12 @@ def get_db_connection():
             import urllib.parse
             import ssl
             u = urllib.parse.urlparse(db_url)
+            
+            # Create permissive SSL context to prevent hangs
             ssl_context = ssl.create_default_context()
+            ssl_context.check_hostname = False
+            ssl_context.verify_mode = ssl.CERT_NONE
+            
             # Create connection with DBAPI
             conn = pg8000.dbapi.connect(
                 user=u.username,
