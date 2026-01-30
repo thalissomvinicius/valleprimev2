@@ -494,7 +494,9 @@ def clients():
             now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             
             if not name or not cpf:
-                return {"error": "Name and CPF required (nome/nome_proponente, cpf_cnpj/cpf_cnpj_proponente)"}, 400
+                debug_info = f"Keys: {list(req.keys())}, Name: '{name}', CPF: '{cpf}'"
+                print(f"BAD REQUEST DEBUG: {debug_info}")
+                return {"error": f"Name and CPF required. Debug: {debug_info}"}, 400
                 
             existing = query_db("SELECT id FROM clients WHERE cpf_cnpj = ?", (cpf,), one=True)
             
