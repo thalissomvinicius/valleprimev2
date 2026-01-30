@@ -277,8 +277,10 @@ ${sinalSection}
         setGenStatus(null);
         setShowClientForm(false);
 
-        // Save client data first to ensure persistence (e.g. removing spouse)
+        // Save client data first to ensure persistence
         try {
+            // DEBUG: Alert to verify payload from BudgetModal
+            alert(`PRE-SEND DEBUG (MODAL):\n${JSON.stringify(clientData, null, 2)}`);
             const saveResult = await saveClient(clientData);
             if (!saveResult.success) {
                 alert('Aviso: Não foi possível salvar as alterações no cadastro do cliente, mas a proposta será gerada com os dados atuais.');
