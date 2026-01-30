@@ -297,6 +297,8 @@ ${sinalSection}
         setShowClientForm(false);
 
         try {
+            // DEBUG: Alert payload to verify keys
+            alert(`PRE-SEND DEBUG:\n${JSON.stringify(clientData, null, 2)}`);
             await saveClient(clientData);
         } catch (err) {
             console.error('Error saving client:', err);

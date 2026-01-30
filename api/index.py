@@ -481,7 +481,13 @@ def clients():
             return {"clients": clients_list}, 200
             
         if request.method == 'POST':
-            req = request.json
+            # Use force=True to ignore Content-Type, silent=True to return None instead of 400
+            req = request.get_json(force=True, silent=True)
+            
+            if not req:
+                print(f"BAD REQUEST DEBUG: No JSON received. Data: {request.data}")
+                return {"error": "Invalid JSON or Empty Body", "debug_data": str(request.data)}, 400
+
             # Accept both 'nome' and 'nome_proponente'
             name = req.get('nome') or req.get('nome_proponente', '')
             cpf = req.get('cpf_cnpj') or req.get('cpf_cnpj_proponente', '')
