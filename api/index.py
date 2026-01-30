@@ -101,6 +101,47 @@ def health():
         "timestamp": datetime.datetime.now().isoformat()
     }, 200
 
+@app.route('/api/debug_fallback/<int:numprod_psc>')
+def debug_fallback(numprod_psc):
+    """Deep dive debugging for fallback file loading"""
+    import json
+    
+    filename = f"fallback_{numprod_psc}.json"
+    filepath = os.path.join(BASE_DIR, filename)
+    
+    result = {
+        "requested_id": numprod_psc,
+        "filename": filename,
+        "filepath": filepath,
+        "exists": os.path.exists(filepath),
+        "cwd": os.getcwd(),
+        "base_dir": BASE_DIR,
+    }
+    
+    if result["exists"]:
+        try:
+            result["size"] = os.path.getsize(filepath)
+            with open(filepath, 'r', encoding='utf-8') as f:
+                content = f.read(200) # Read first 200 chars
+                result["preview"] = content
+                f.seek(0) # Reset
+                try:
+                    data = json.load(f)
+                    result["json_valid"] = True
+                    result["is_dict"] = isinstance(data, dict)
+                    if isinstance(data, dict):
+                        result["has_data_key"] = 'data' in data
+                        if 'data' in data:
+                            result["data_len"] = len(data['data'])
+                            result["data_type"] = str(type(data['data']))
+                except Exception as json_err:
+                     result["json_valid"] = False
+                     result["json_error"] = str(json_err)
+        except Exception as e:
+            result["read_error"] = str(e)
+            
+    return result
+
 @app.route('/api/ping')
 def ping():
     return "pong", 200
