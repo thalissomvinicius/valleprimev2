@@ -398,25 +398,6 @@ function MainApp() {
       )}
 
       <main className="container">
-        <div style={{
-          background: '#FFEB3B',
-          color: '#000',
-          padding: '10px',
-          margin: '10px',
-          borderRadius: '4px',
-          fontSize: '12px',
-          fontFamily: 'monospace',
-          border: '1px solid #FBC02D'
-        }}>
-          <strong>DEBUG INFO:</strong><br />
-          OBRA: {selectedObra} (Type: {typeof selectedObra})<br />
-          DATA LEN: {data ? data.length : 'null'}<br />
-          Raw Data[0]: {data && data.length > 0 ? JSON.stringify(data[0]).substring(0, 50) + '...' : 'N/A'}<br />
-          FILTER: {JSON.stringify(searchTerms)}<br />
-          LOADING: {loading.toString()}<br />
-          ERROR: {error || 'None'}
-        </div>
-
         <SearchBar
           onSearch={setSearchTerms}
           allowedStatus={allowedStatus}
