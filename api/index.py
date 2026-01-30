@@ -290,6 +290,49 @@ def debug_fallback(numprod_psc):
 def ping():
     return "pong", 200
 
+@app.route('/api/debug-insert')
+def debug_insert():
+    """Direct DB write test"""
+    log = []
+    try:
+        conn, db_type = get_db_connection()
+        cur = conn.cursor()
+        
+        # 1. DELETE PREVIOUS TEST
+        try:
+            cur.execute("DELETE FROM clients WHERE cpf_cnpj = 'TEST_DEBUG_123'")
+            log.append("Cleaned old test data")
+        except: pass
+        
+        # 2. INSERT
+        ts = datetime.datetime.now().isoformat()
+        if db_type == 'postgres':
+            cur.execute("INSERT INTO clients (nome, cpf_cnpj, data, updated_at) VALUES (%s, %s, %s, %s)", ('TESTE_DEBUG', 'TEST_DEBUG_123', '{}', ts))
+        else:
+            cur.execute("INSERT INTO clients (nome, cpf_cnpj, data, updated_at) VALUES (?, ?, ?, ?)", ('TESTE_DEBUG', 'TEST_DEBUG_123', '{}', ts))
+            
+        conn.commit()
+        log.append("INSERT + COMMIT executed")
+        
+        # 3. VERIFY
+        if db_type == 'postgres':
+            cur.execute("SELECT id, nome FROM clients WHERE cpf_cnpj = %s", ('TEST_DEBUG_123',))
+        else:
+            cur.execute("SELECT id, nome FROM clients WHERE cpf_cnpj = ?", ('TEST_DEBUG_123',))
+            
+        row = cur.fetchone()
+        
+        conn.close()
+        
+        return {
+            "status": "success" if row else "failed",
+            "found_inserted_row": bool(row),
+            "log": log,
+            "db_type": db_type
+        }
+    except Exception as e:
+        return {"error": str(e), "log": log}, 500
+
 @app.route('/api/generate_proposal', methods=['POST'])
 def generate():
     """Generate PDF proposal document"""
