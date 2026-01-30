@@ -31,15 +31,18 @@ app = Flask(__name__)
 # More permissive CORS for debugging
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
-def get_db():
+# Helper to get connection
 def get_db_connection():
     """Get database connection (Postgres or SQLite)"""
     db_url = os.environ.get('DATABASE_URL')
     if db_url:
+        try:
             import pg8000.dbapi
             # Parse URL (minimal)
             import urllib.parse
+            import ssl
             u = urllib.parse.urlparse(db_url)
+            ssl_context = ssl.create_default_context()
             # Create connection with DBAPI
             conn = pg8000.dbapi.connect(
                 user=u.username,
@@ -47,7 +50,7 @@ def get_db_connection():
                 host=u.hostname,
                 port=u.port,
                 database=u.path[1:],
-                ssl_context=True
+                ssl_context=ssl_context
             )
             return conn, 'postgres'
         except Exception as e:
