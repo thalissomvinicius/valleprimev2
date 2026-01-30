@@ -5,3 +5,4 @@ Pillow==11.0.0
 requests==2.31.0
 pg8000
 scramp
+psycopg2-binary
