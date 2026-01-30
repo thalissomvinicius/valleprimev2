@@ -430,7 +430,7 @@ def generate():
 
 # Old get_clients replaced by centralized clients() route
 
-@app.route('/api/clients/check-duplicate', methods=['GET'])
+@app.route('/api/manage-clients/check-duplicate', methods=['GET'])
 def check_duplicate():
     try:
         cpf = request.args.get('cpf_cnpj', '').strip()
