@@ -44,6 +44,11 @@ export const saveClient = async (clientData) => {
     if (error.response) {
       console.error('Server Response Data:', error.response.data);
       console.error('Server Status:', error.response.status);
+
+      const debugMsg = typeof error.response.data === 'object'
+        ? JSON.stringify(error.response.data, null, 2)
+        : error.response.data;
+      alert(`ERRO NO SERVIDOR:\n${debugMsg}`);
     }
     throw error;
   }
