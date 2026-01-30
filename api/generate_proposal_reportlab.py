@@ -396,7 +396,15 @@ if __name__ == "__main__":
         "ano_proposta_final": "25"
     }
     
-    if os.path.exists("PROPOSTA LIMPA.jpg") and os.path.exists("posicoes_campos.json"):
-        generate_pdf_reportlab(test_data, "PROPOSTA LIMPA.jpg", "posicoes_campos.json")
+    # Use absolute path relative to this script
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    img_file_name = "PROPOSTA LIMPA.jpg"
+    json_file_name = "posicoes_campos.json"
+
+    abs_img_path = os.path.join(current_dir, img_file_name)
+    abs_json_path = os.path.join(current_dir, json_file_name)
+
+    if os.path.exists(abs_img_path) and os.path.exists(abs_json_path):
+        generate_pdf_reportlab(test_data, abs_img_path, abs_json_path)
     else:
-        print("Missing files.")
+        print(f"Missing files. Image: {abs_img_path}, JSON: {abs_json_path}")

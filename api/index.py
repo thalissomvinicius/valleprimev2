@@ -357,8 +357,8 @@ def consulta(numprod_psc):
     fallback_path = os.path.join(BASE_DIR, fallback_filename)
     
     try:
-        # Increased timeout to 10s for slow connections
-        resp = requests.get(external_url, timeout=10)
+        # Reduced timeout to 1.5s for fast fallback
+        resp = requests.get(external_url, timeout=1.5)
         if resp.status_code == 200:
             data_json = resp.json()
             actual_data = data_json.get('data', [])
