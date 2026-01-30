@@ -43,7 +43,8 @@ function ClientListPage() {
                 setError(result.error);
             }
         } catch (err) {
-            setError('Erro ao carregar clientes.');
+            console.error(err);
+            setError(err.message || 'Erro ao carregar clientes.');
         } finally {
             setLoading(false);
             setLoadingMore(false);
