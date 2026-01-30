@@ -463,13 +463,19 @@ def clients():
             
         if request.method == 'POST':
             req = request.json
-            name = req.get('nome', '')
-            cpf = req.get('cpf_cnpj', '')
-            data_json = json.dumps(req.get('data', {}))
+            # Accept both 'nome' and 'nome_proponente'
+            name = req.get('nome') or req.get('nome_proponente', '')
+            cpf = req.get('cpf_cnpj') or req.get('cpf_cnpj_proponente', '')
+            
+            # Additional cleanup
+            if name: name = name.strip()
+            if cpf: cpf = cpf.strip()
+
+            data_json = json.dumps(req.get('data', req)) # If 'data' missing, store whole req
             now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             
             if not name or not cpf:
-                return {"error": "Name and CPF required"}, 400
+                return {"error": "Name and CPF required (nome/nome_proponente, cpf_cnpj/cpf_cnpj_proponente)"}, 400
                 
             existing = query_db("SELECT id FROM clients WHERE cpf_cnpj = ?", (cpf,), one=True)
             
