@@ -500,7 +500,7 @@ def consulta(numprod_psc):
     return {"success": True, "data": [], "error": "API Timeout & No Fallback"}, 200
 
 
-@app.route('/api/clients', methods=['GET', 'POST'])
+@app.route('/api/manage-clients', methods=['GET', 'POST', 'OPTIONS'])
 def clients():
     try:
         if request.method == 'GET':

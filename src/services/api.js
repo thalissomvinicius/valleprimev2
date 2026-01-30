@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const CLIENT_BASE = '/api/clients';
+const CLIENT_BASE = '/api/manage-clients';
 const API_BASE = '/api/consulta';
 
 // Set global default timeout to 15 seconds
