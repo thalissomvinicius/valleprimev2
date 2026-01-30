@@ -36,7 +36,17 @@ def get_db_connection():
     """Get database connection (Postgres or SQLite)"""
     db_url = os.environ.get('DATABASE_URL')
     if db_url:
-        try:
+            # TRY PSYCOPG2 FIRST (Trusted/Stable)
+            try:
+                import psycopg2
+                conn = psycopg2.connect(db_url, sslmode='require')
+                return conn, 'postgres'
+            except ImportError:
+                print("Psycopg2 not found, falling back to pg8000")
+            except Exception as e:
+                print(f"PSYCOPG2 ERROR: {e}")
+
+            # FALLBACK to PG8000
             import pg8000.dbapi
             # Parse URL (minimal)
             import urllib.parse
@@ -162,6 +172,40 @@ def format_currency(val):
         return str(val)
 
 # Routes
+
+@app.route('/api/db-test')
+def db_test():
+    """Diagnostic route for DB"""
+    start = datetime.datetime.now()
+    log = []
+    try:
+        conn, db_type = get_db_connection()
+        log.append(f"Connection established: {db_type}")
+        
+        cur = conn.cursor()
+        cur.execute("SELECT 1")
+        log.append("SELECT 1 successful")
+        
+        try:
+            cur.execute("SELECT count(*) FROM clients")
+            count = cur.fetchone()[0]
+            log.append(f"Client count: {count}")
+        except Exception as e:
+            log.append(f"Count failed: {e}")
+            
+        conn.close()
+        duration = (datetime.datetime.now() - start).total_seconds()
+        return {
+            "status": "ok",
+            "duration": duration,
+            "log": log
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e),
+            "log": log
+        }, 500
 
 @app.route('/api/health')
 def health():
