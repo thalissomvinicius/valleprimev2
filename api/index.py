@@ -36,17 +36,7 @@ def get_db_connection():
     """Get database connection (Postgres or SQLite)"""
     db_url = os.environ.get('DATABASE_URL')
     if db_url:
-            # TRY PSYCOPG2 FIRST (Trusted/Stable)
-            try:
-                import psycopg2
-                conn = psycopg2.connect(db_url, sslmode='require')
-                return conn, 'postgres'
-            except ImportError:
-                print("Psycopg2 not found, falling back to pg8000")
-            except Exception as e:
-                print(f"PSYCOPG2 ERROR: {e}")
-
-            # FALLBACK to PG8000
+        try:
             import pg8000.dbapi
             # Parse URL (minimal)
             import urllib.parse
