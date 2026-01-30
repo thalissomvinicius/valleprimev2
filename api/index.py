@@ -72,13 +72,12 @@ def get_db_connection():
             return conn, 'postgres'
         except Exception as e:
             print(f"DB CRITICAL: All drivers failed. Last error: {e}")
-            pass
-        except Exception as e:
-            print(f"POSTGRES CONNECTION ERROR: {e}")
-            pass
+            # DO NOT FALLBACK TO SQLITE IF DATABASE_URL IS PRESENT
+            # This causes data loss on Vercel (ephemeral filesystem).
+            raise e
             
-    # Fallback/Local SQLite
-    # Ensure directory exists for SQLite
+    # Local Dev (No DATABASE_URL) -> Use SQLite
+    print("DB INFO: No DATABASE_URL found, using local SQLite.")
     db_dir = os.path.dirname(DB_PATH)
     if not os.path.exists(db_dir):
         os.makedirs(db_dir, exist_ok=True)
