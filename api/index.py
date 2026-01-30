@@ -14,18 +14,28 @@ from generate_proposal_reportlab import generate_pdf_reportlab
 
 import logging
 
-# Configure logging - Use /tmp for Vercel serverless
-LOG_FILE = '/tmp/server_log.txt' if os.path.exists('/tmp') else 'server_log.txt'
-logging.basicConfig(filename=LOG_FILE, level=logging.DEBUG, 
-                    format='%(asctime)s %(levelname)s: %(message)s')
+# Configure logging - Use stdout for Vercel
+logging.basicConfig(
+    stream=sys.stdout,
+    level=logging.DEBUG, 
+    format='%(asctime)s %(levelname)s: %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
+@app.route('/api/health')
+def health():
+    return {"status": "ok", "vercel": os.environ.get('VERCEL') == '1'}, 200
+
 # BASE DIRECTORY: API folder
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-# Database stored in /tmp for Vercel serverless or current dir locally
-DB_PATH = '/tmp/clients.db' if os.path.exists('/tmp') else os.path.join(BASE_DIR, 'clients.db')
+# Database stored in /tmp for Vercel serverless (read-only filesystem elsewhere)
+if os.environ.get('VERCEL') == '1':
+    DB_PATH = '/tmp/clients.db'
+else:
+    DB_PATH = os.path.join(BASE_DIR, 'clients.db')
 
 def init_db():
     """Initialize SQLite database with clients table"""
@@ -46,8 +56,9 @@ def init_db():
 # Initialize database on startup
 try:
     init_db()
+    logger.info(f"Database initialized at {DB_PATH}")
 except Exception as e:
-    logging.error(f"Database initialization error: {e}")
+    logger.error(f"Database initialization error: {e}")
 
 def format_currency(val):
     """Format value as Brazilian currency (R$ format)"""
@@ -58,7 +69,7 @@ def format_currency(val):
              val = float(clean)
         return f"{float(val):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
     except Exception as e:
-        logging.error(f"Error formatting currency: {e}")
+        logger.error(f"Error formatting currency: {e}")
         return str(val)
 
 @app.route('/api/generate_proposal', methods=['POST'])
@@ -66,7 +77,7 @@ def generate():
     """Generate PDF proposal document"""
     try:
         req = request.json
-        logging.info(f"Received proposal request")
+        logger.info(f"Received proposal request")
         
         lot = req.get('lot', {})
         
@@ -236,23 +247,23 @@ def generate():
         
         output_file = os.path.join('/tmp' if os.path.exists('/tmp') else BASE_DIR, "temp_proposal.pdf")
         
-        logging.info(f"Generating PDF at: {output_file}")
-        logging.info(f"Using Assets: {bg_path}, {json_path}")
+        logger.info(f"Generating PDF at: {output_file}")
+        logger.info(f"Using Assets: {bg_path}, {json_path}")
 
         if not os.path.exists(bg_path):
-             logging.error(f"IMAGE NOT FOUND: {bg_path}")
+             logger.error(f"IMAGE NOT FOUND: {bg_path}")
              raise Exception(f"IMAGE NOT FOUND: {bg_path}")
         if not os.path.exists(json_path):
-             logging.error(f"JSON NOT FOUND: {json_path}")
+             logger.error(f"JSON NOT FOUND: {json_path}")
              raise Exception(f"JSON NOT FOUND: {json_path}")
         
         generate_pdf_reportlab(data, bg_path, json_path, output_file)
         
         if not os.path.exists(output_file):
-             logging.error("PDF generation failed (file not created).")
+             logger.error("PDF generation failed (file not created).")
              raise Exception("PDF generation failed (file not created).")
 
-        logging.info("PDF generated successfully. Sending file.")
+        logger.info("PDF generated successfully. Sending file.")
         
         # Upsert client into database
         try:
@@ -277,12 +288,12 @@ def generate():
                 conn.commit()
                 conn.close()
         except Exception as e:
-            logging.error(f"Database error during auto-save: {e}")
+            logger.error(f"Database error during auto-save: {e}")
 
         return send_file(output_file, as_attachment=True, download_name=f"Proposta_Q{str(lot.get('QD', ''))}_L{str(lot.get('LT', ''))}.pdf")
 
     except Exception as e:
-        logging.error(f"Error: {e}\n{traceback.format_exc()}")
+        logger.error(f"Error: {e}\n{traceback.format_exc()}")
         return {"error": str(e)}, 500
 
 @app.route('/api/clients', methods=['GET'])
@@ -341,7 +352,7 @@ def get_clients():
             "limit": limit
         }
     except Exception as e:
-        logging.error(f"Error fetching clients: {e}")
+        logger.error(f"Error fetching clients: {e}")
         return {"success": False, "error": str(e)}, 500
 
 def upsert_contact(cursor, data):
@@ -409,7 +420,7 @@ def check_duplicate():
             return {'exists': False, 'client': None}
             
     except Exception as e:
-        logging.error(f"Error checking duplicate: {e}")
+        logger.error(f"Error checking duplicate: {e}")
         return {'exists': False, 'client': None, 'error': str(e)}, 500
 
 @app.route('/api/clients', methods=['POST'])
@@ -487,7 +498,7 @@ def save_client():
         conn.close()
         return {"success": True}
     except Exception as e:
-        logging.error(f"Error saving client: {e}")
+        logger.error(f"Error saving client: {e}")
         return {"success": False, "error": str(e)}, 500
 
 @app.route('/api/clients/<int:client_id>', methods=['DELETE'])
@@ -501,7 +512,7 @@ def delete_client(client_id):
         conn.close()
         return {"success": True}
     except Exception as e:
-        logging.error(f"Error deleting client: {e}")
+        logger.error(f"Error deleting client: {e}")
         return {"success": False, "error": str(e)}, 500
 
 @app.route('/api/consulta/<int:numprod_psc>', methods=['GET'])
