@@ -500,15 +500,7 @@ def clients():
             now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             
             if not name or not cpf:
-                # Debug: Put values FIRST so they are visible in alert
-                debug_info = f"NameVal: '{name}', CPFVal: '{cpf}', Keys: {list(req.keys())}"
-                print(f"BAD REQUEST DEBUG: {debug_info}")
-                
-                # If keys exist but values empty
-                if 'nome_proponente' in req and not name:
-                   debug_info += " (nome_proponente exists but is empty)"
-                   
-                return {"error": f"Required fields missing. {debug_info}"}, 400
+                return {"error": "Name and CPF/CNPJ are required fields"}, 400
                 
             existing = query_db("SELECT id FROM clients WHERE cpf_cnpj = ?", (cpf,), one=True)
             

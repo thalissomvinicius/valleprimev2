@@ -406,6 +406,13 @@ const ClientFormModal = ({ onClose, onConfirm, onDelete, initialData = null, cli
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        // Validation: CPF/CNPJ is mandatory
+        if (!formData.cpf_cnpj_proponente) {
+            showToast('Por favor, preencha o CPF ou CNPJ.', 'error');
+            return;
+        }
+
         setIsSaving(true);
 
         try {

@@ -36,20 +36,10 @@ export const getClients = async ({ search = '', page = 1, limit = 50, type = '' 
 
 export const saveClient = async (clientData) => {
   try {
-    console.log('Sending client data:', clientData);
     const response = await axios.post(CLIENT_BASE, clientData);
     return response.data;
   } catch (error) {
     console.error('Error saving client:', error);
-    if (error.response) {
-      console.error('Server Response Data:', error.response.data);
-      console.error('Server Status:', error.response.status);
-
-      const debugMsg = typeof error.response.data === 'object'
-        ? JSON.stringify(error.response.data, null, 2)
-        : error.response.data;
-      alert(`ERRO NO SERVIDOR:\n${debugMsg}`);
-    }
     throw error;
   }
 };
