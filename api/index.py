@@ -121,7 +121,7 @@ def debug_fallback(numprod_psc):
     if result["exists"]:
         try:
             result["size"] = os.path.getsize(filepath)
-            with open(filepath, 'r', encoding='utf-8') as f:
+            with open(filepath, 'r', encoding='utf-8-sig') as f:
                 content = f.read(200) # Read first 200 chars
                 result["preview"] = content
                 f.seek(0) # Reset
@@ -374,7 +374,7 @@ def consulta(numprod_psc):
     # FALLBACK LOGIC: If API fails/timeouts, try to load from local JSON
     if os.path.exists(fallback_path):
         try:
-            with open(fallback_path, 'r', encoding='utf-8') as f:
+            with open(fallback_path, 'r', encoding='utf-8-sig') as f:
                 fallback_data = json.load(f)
                 # If it's the whole response object
                 if isinstance(fallback_data, dict) and 'data' in fallback_data:
