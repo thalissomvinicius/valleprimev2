@@ -456,9 +456,23 @@ def clients():
     try:
         if request.method == 'GET':
             rows = query_db("SELECT * FROM clients ORDER BY updated_at DESC")
-            # Handle list output from query_db which returns dicts directly
-            clients_list = rows if rows else []
-            # We don't need to convert row objects since query_db returns dicts
+            clients_list = []
+            if rows:
+                for row in rows:
+                    client = row.copy()
+                    # Convert datetimes to string
+                    if isinstance(client.get('created_at'), datetime.datetime):
+                        client['created_at'] = client['created_at'].isoformat()
+                    if isinstance(client.get('updated_at'), datetime.datetime):
+                        client['updated_at'] = client['updated_at'].isoformat()
+                    
+                    # Parse JSON data if it's a string
+                    if isinstance(client.get('data'), str):
+                        try:
+                            client['data'] = json.loads(client['data'])
+                        except:
+                            client['data'] = {}
+                    clients_list.append(client)
             return {"clients": clients_list}, 200
             
         if request.method == 'POST':
