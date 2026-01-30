@@ -368,7 +368,7 @@ ${sinalSection}
         };
 
         try {
-            const response = await fetch('/generate_proposal', {
+            const response = await fetch('/api/generate_proposal', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
