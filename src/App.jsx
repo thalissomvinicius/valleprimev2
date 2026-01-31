@@ -375,6 +375,10 @@ function MainApp() {
               <span className="hide-mobile">Admin</span>
             </Link>
           )}
+          <button className="btn-logout" onClick={logout} title="Sair">
+            <LogOut size={18} />
+            <span className="hide-mobile">Sair</span>
+          </button>
         </div>
       </Header>
 
