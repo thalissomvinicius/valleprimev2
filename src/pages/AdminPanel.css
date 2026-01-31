@@ -75,6 +75,11 @@
     background: rgba(255, 255, 255, 0.3);
 }
 
+.admin-actions a.btn-logout {
+    text-decoration: none;
+    color: white;
+}
+
 .admin-content {
     max-width: 1400px;
     margin: 0 auto;
@@ -166,6 +171,85 @@
     font-weight: 600;
     margin: 0;
     color: var(--text-color);
+}
+
+.section-header-with-action {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.btn-add-user {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.2rem;
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-add-user:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(26, 54, 93, 0.35);
+}
+
+.add-user-form {
+    padding: 1.25rem 2rem;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.add-user-fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+    align-items: end;
+}
+
+.add-user-form .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.add-user-form .form-group label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.add-user-form .form-group input {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
+
+.add-user-form .form-group input:focus {
+    outline: none;
+    border-color: var(--primary-light);
+}
+
+.add-user-submit {
+    display: flex;
+    align-items: center;
+}
+
+.add-user-form .message.error-message {
+    background: var(--danger-light);
+    color: var(--danger-dark);
+    border: 1px solid var(--danger-color);
+    padding: 0.6rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
 }
 
 .empty-state {

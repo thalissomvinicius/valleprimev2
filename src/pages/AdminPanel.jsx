@@ -1,17 +1,24 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth, OBRAS, STATUS_LOTES } from '../context/AuthContext';
 import {
-    Users, Settings, LogOut, Check, X, Edit2, Trash2, Shield,
-    Building2, Eye, ChevronDown, ChevronUp, Save, XCircle, Home
+    Users, Settings, LogOut, Check, Edit2, Trash2, Shield,
+    Building2, Eye, ChevronDown, ChevronUp, Save, XCircle, UserPlus, Home
 } from 'lucide-react';
 import './AdminPanel.css';
 
 function AdminPanel() {
-    const { users, currentUser, logout, updateUserPermissions, deleteUser, approveUser } = useAuth();
+    const { users, currentUser, logout, addUser, updateUserPermissions, deleteUser, approveUser } = useAuth();
     const [editingUser, setEditingUser] = useState(null);
     const [editData, setEditData] = useState({});
     const [expandedUser, setExpandedUser] = useState(null);
     const [deleteConfirm, setDeleteConfirm] = useState(null);
+    const [showAddForm, setShowAddForm] = useState(false);
+    const [newUsername, setNewUsername] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [newNome, setNewNome] = useState('');
+    const [addError, setAddError] = useState('');
+    const [addSubmitting, setAddSubmitting] = useState(false);
 
     // Filtrar usuários (não mostrar admin na lista)
     const regularUsers = users.filter(u => u.role !== 'admin');
@@ -82,6 +89,27 @@ function AdminPanel() {
         setExpandedUser(expandedUser === userId ? null : userId);
     };
 
+    const handleAddUser = async (e) => {
+        e.preventDefault();
+        setAddError('');
+        setAddSubmitting(true);
+        try {
+            const result = await addUser(newUsername, newPassword, newNome);
+            if (result.success) {
+                setNewUsername('');
+                setNewPassword('');
+                setNewNome('');
+                setShowAddForm(false);
+            } else {
+                setAddError(result.error || 'Erro ao cadastrar.');
+            }
+        } catch (err) {
+            setAddError('Erro ao cadastrar usuário.');
+        } finally {
+            setAddSubmitting(false);
+        }
+    };
+
     return (
         <div className="admin-panel">
             <header className="admin-header">
@@ -94,6 +122,10 @@ function AdminPanel() {
                         </div>
                     </div>
                     <div className="admin-actions">
+                        <Link to="/" className="btn-logout btn-admin-home" title="Voltar ao sistema">
+                            <Home size={18} />
+                            Início
+                        </Link>
                         <span className="admin-user">
                             <Settings size={18} />
                             {currentUser?.nome}
@@ -138,12 +170,73 @@ function AdminPanel() {
                 </div>
 
                 <div className="users-section">
-                    <div className="section-header">
+                    <div className="section-header section-header-with-action">
                         <h2>
                             <Users size={22} />
                             Lista de Usuários
                         </h2>
+                        <button
+                            type="button"
+                            className="btn-add-user"
+                            onClick={() => { setShowAddForm(!showAddForm); setAddError(''); }}
+                        >
+                            <UserPlus size={20} />
+                            {showAddForm ? 'Cancelar' : 'Adicionar usuário'}
+                        </button>
                     </div>
+
+                    {showAddForm && (
+                        <form className="add-user-form" onSubmit={handleAddUser}>
+                            <div className="add-user-fields">
+                                <div className="form-group">
+                                    <label>Usuário (login)</label>
+                                    <input
+                                        type="text"
+                                        value={newUsername}
+                                        onChange={(e) => setNewUsername(e.target.value)}
+                                        placeholder="Ex: joao.silva"
+                                        required
+                                        disabled={addSubmitting}
+                                        autoComplete="off"
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Senha</label>
+                                    <input
+                                        type="password"
+                                        value={newPassword}
+                                        onChange={(e) => setNewPassword(e.target.value)}
+                                        placeholder="Senha de acesso"
+                                        required
+                                        minLength={4}
+                                        disabled={addSubmitting}
+                                        autoComplete="new-password"
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Nome (opcional)</label>
+                                    <input
+                                        type="text"
+                                        value={newNome}
+                                        onChange={(e) => setNewNome(e.target.value)}
+                                        placeholder="Ex: João Silva"
+                                        disabled={addSubmitting}
+                                        autoComplete="off"
+                                    />
+                                </div>
+                                <div className="add-user-submit">
+                                    <button type="submit" className="btn-save" disabled={addSubmitting}>
+                                        {addSubmitting ? 'Salvando...' : 'Cadastrar'}
+                                    </button>
+                                </div>
+                            </div>
+                            {addError && (
+                                <div className="message error-message" style={{ marginTop: '0.75rem' }}>
+                                    {addError}
+                                </div>
+                            )}
+                        </form>
+                    )}
 
                     {regularUsers.length === 0 ? (
                         <div className="empty-state">
@@ -161,7 +254,7 @@ function AdminPanel() {
                                             </div>
                                             <div className="user-details">
                                                 <h3>{user.nome}</h3>
-                                                <p>{user.email}</p>
+                                                <p>Login: {user.username}</p>
                                                 <div className="user-badges">
                                                     {!user.aprovado && (
                                                         <span className="badge pending">Pendente</span>

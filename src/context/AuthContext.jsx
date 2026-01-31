@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { hashPassword } from '../utils/authHash';
 
 // Lista de obras disponíveis
 export const OBRAS = [
@@ -30,49 +31,182 @@ export const STATUS_LOTES = [
 
 const AuthContext = createContext(null);
 
-// Admin padrão
-const DEFAULT_ADMIN = {
-    id: 'admin-1',
-    nome: 'Administrador',
-    email: 'admin@valle.com',
-    senha: 'admin123',
-    role: 'admin',
-    obrasPermitidas: OBRAS.map(o => o.codigo),
-    statusPermitidos: STATUS_LOTES.map(s => s.value),
-    createdAt: new Date().toISOString(),
-};
-
 const STORAGE_KEYS = {
     USERS: 'valle_users',
-    CURRENT_USER: 'valle_current_user',
+    SESSION: 'valle_session',
 };
 
-export function AuthProvider({ children }) {
-    const [currentUser, setCurrentUser] = useState(DEFAULT_ADMIN);
-    const [users, setUsers] = useState([DEFAULT_ADMIN]);
-    const [loading, setLoading] = useState(false);
+/** Remove senha do objeto usuário antes de expor no estado */
+function sanitizeUser(user) {
+    if (!user) return null;
+    const { passwordHash, ...safe } = user;
+    return safe;
+}
 
-    // No logic needed for login/register as we are bypassing it
-    // But keeping functions to avoid breaking other components
-    const login = () => ({ success: true, user: DEFAULT_ADMIN });
-    const register = () => ({ success: true, message: 'Cadastro desativado' });
-    const logout = () => { };
-    const updateUserPermissions = () => ({ success: true });
-    const deleteUser = () => ({ success: true });
-    const approveUser = () => ({ success: true });
+export function AuthProvider({ children }) {
+    const [users, setUsers] = useState([]);
+    const [currentUser, setCurrentUser] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    const persistUsers = useCallback((newUsers) => {
+        setUsers(newUsers);
+        try {
+            localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(newUsers));
+        } catch (e) {
+            console.warn('Auth: falha ao salvar usuários', e);
+        }
+    }, []);
+
+    // Inicialização: carregar usuários e restaurar sessão
+    useEffect(() => {
+        let cancelled = false;
+
+        async function init() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEYS.USERS);
+                let list = raw ? JSON.parse(raw) : null;
+
+                if (!list || !Array.isArray(list) || list.length === 0) {
+                    const passwordHash = await hashPassword('admin123');
+                    list = [{
+                        id: 'admin-1',
+                        username: 'admin',
+                        nome: 'Administrador',
+                        passwordHash,
+                        role: 'admin',
+                        obrasPermitidas: OBRAS.map(o => o.codigo),
+                        statusPermitidos: STATUS_LOTES.map(s => s.value),
+                        aprovado: true,
+                        createdAt: new Date().toISOString(),
+                    }];
+                    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(list));
+                }
+
+                if (cancelled) return;
+                setUsers(list);
+
+                const session = sessionStorage.getItem(STORAGE_KEYS.SESSION);
+                if (session) {
+                    try {
+                        const { userId } = JSON.parse(session);
+                        const user = list.find(u => u.id === userId);
+                        if (user) setCurrentUser(sanitizeUser(user));
+                    } catch (_) {
+                        sessionStorage.removeItem(STORAGE_KEYS.SESSION);
+                    }
+                }
+            } catch (e) {
+                console.warn('Auth init error', e);
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        }
+
+        init();
+        return () => { cancelled = true; };
+    }, []);
+
+    const login = useCallback(async (username, password) => {
+        const trimmed = (username || '').trim().toLowerCase();
+        if (!trimmed || !password) return { success: false, error: 'Usuário e senha são obrigatórios.' };
+
+        try {
+            const passwordHash = await hashPassword(password);
+            const user = users.find(u => (u.username || '').toLowerCase() === trimmed);
+            if (!user || user.passwordHash !== passwordHash) {
+                return { success: false, error: 'Usuário ou senha incorretos.' };
+            }
+            if (user.aprovado === false) {
+                return { success: false, error: 'Aguardando aprovação do administrador.' };
+            }
+
+            const safe = sanitizeUser(user);
+            setCurrentUser(safe);
+            sessionStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify({ userId: user.id }));
+            return { success: true, user: safe };
+        } catch (e) {
+            console.warn('Login error', e);
+            return { success: false, error: 'Erro ao validar login. Tente novamente.' };
+        }
+    }, [users]);
+
+    const logout = useCallback(() => {
+        setCurrentUser(null);
+        sessionStorage.removeItem(STORAGE_KEYS.SESSION);
+    }, []);
+
+    const addUser = useCallback(async (username, password, nome) => {
+        const trimmedUser = (username || '').trim();
+        const trimmedNome = (nome || trimmedUser || '').trim();
+        if (!trimmedUser || !password) return { success: false, error: 'Usuário e senha são obrigatórios.' };
+        if (users.some(u => (u.username || '').toLowerCase() === trimmedUser.toLowerCase())) {
+            return { success: false, error: 'Este usuário já existe.' };
+        }
+
+        try {
+            const passwordHash = await hashPassword(password);
+            const newUser = {
+                id: 'user-' + Date.now(),
+                username: trimmedUser,
+                nome: trimmedNome || trimmedUser,
+                passwordHash,
+                role: 'user',
+                obrasPermitidas: OBRAS.map(o => o.codigo),
+                statusPermitidos: STATUS_LOTES.map(s => s.value),
+                aprovado: true,
+                createdAt: new Date().toISOString(),
+            };
+            const next = [...users, newUser];
+            persistUsers(next);
+            return { success: true, user: sanitizeUser(newUser) };
+        } catch (e) {
+            console.warn('Add user error', e);
+            return { success: false, error: 'Erro ao criar usuário.' };
+        }
+    }, [users, persistUsers]);
+
+    const updateUserPermissions = useCallback((userId, { obrasPermitidas, statusPermitidos }) => {
+        const next = users.map(u => {
+            if (u.id !== userId) return u;
+            return {
+                ...u,
+                obrasPermitidas: Array.isArray(obrasPermitidas) ? obrasPermitidas : u.obrasPermitidas,
+                statusPermitidos: Array.isArray(statusPermitidos) ? statusPermitidos : u.statusPermitidos,
+            };
+        });
+        persistUsers(next);
+        if (currentUser?.id === userId) {
+            setCurrentUser(sanitizeUser(next.find(u => u.id === userId)));
+        }
+    }, [users, currentUser, persistUsers]);
+
+    const deleteUser = useCallback((userId) => {
+        const next = users.filter(u => u.id !== userId);
+        persistUsers(next);
+        if (currentUser?.id === userId) {
+            setCurrentUser(null);
+            sessionStorage.removeItem(STORAGE_KEYS.SESSION);
+        }
+    }, [users, currentUser, persistUsers]);
+
+    const approveUser = useCallback((userId) => {
+        const next = users.map(u => u.id === userId ? { ...u, aprovado: true } : u);
+        persistUsers(next);
+    }, [users, persistUsers]);
 
     const value = {
         currentUser,
         users,
         loading,
         login,
-        register,
+        register: () => ({ success: false, message: 'Cadastro desativado. Peça acesso ao administrador.' }),
         logout,
+        addUser,
         updateUserPermissions,
         deleteUser,
         approveUser,
-        isAdmin: true,
-        isAuthenticated: true,
+        isAdmin: currentUser?.role === 'admin',
+        isAuthenticated: !!currentUser,
     };
 
     return (

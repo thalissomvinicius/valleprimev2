@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth, OBRAS } from './context/AuthContext';
+import LoginPage from './pages/LoginPage';
 import Header from './components/Header';
 import SearchBar from './components/SearchBar';
 import AvailabilityTable from './components/AvailabilityTable';
 import AdminPanel from './pages/AdminPanel';
 import { fetchAvailability } from './services/api';
-import { Building2, LogOut, ChevronDown, FileDown, CheckCircle } from 'lucide-react';
+import { Building2, LogOut, ChevronDown, FileDown, CheckCircle, Shield } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import logo from './assets/Valle-logo-azul.png';
@@ -20,7 +21,7 @@ function MainApp() {
   const { currentUser, logout, isAdmin } = useAuth();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerms, setSearchTerms] = useState({ quadra: '', lote: '', status: 'TODOS' });
+  const [searchTerms, setSearchTerms] = useState({ quadra: '', lote: '', status: '0 - Disponível' });
   const [error, setError] = useState(null);
   const [selectedObra, setSelectedObra] = useState(() => {
     const saved = localStorage.getItem('selectedObra');
@@ -367,6 +368,13 @@ function MainApp() {
             <UsersIcon size={18} />
             <span className="hide-mobile">Clientes</span>
           </Link>
+
+          {isAdmin && (
+            <Link to="/admin" className="btn-clients-header" title="Painel Administrativo">
+              <Shield size={18} />
+              <span className="hide-mobile">Admin</span>
+            </Link>
+          )}
         </div>
       </Header>
 
@@ -457,6 +465,7 @@ function MainApp() {
 
 function App() {
   const { isAuthenticated, isAdmin, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -467,6 +476,15 @@ function App() {
         </div>
         <p className="loading-text">Sincronizando Disponibilidades...</p>
       </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="*" element={<Navigate to="/login" state={{ from: location }} replace />} />
+      </Routes>
     );
   }
 
