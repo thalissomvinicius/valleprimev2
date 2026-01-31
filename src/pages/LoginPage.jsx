@@ -23,7 +23,9 @@ function LoginPage() {
         try {
             const result = await login(username, password);
             if (result.success) {
-                navigate(from, { replace: true });
+                const isAdmin = result.user?.role === 'admin';
+                const targetPath = (isAdmin || from !== '/admin') ? from : '/';
+                navigate(targetPath, { replace: true });
             } else {
                 setError(result.error || 'Falha no login.');
             }
@@ -45,9 +47,11 @@ function LoginPage() {
             <div className="login-container">
                 <div className="login-card">
                     <div className="login-header">
-                        <img src={logo} alt="Valle" className="login-logo" style={{ objectFit: 'contain', padding: 8 }} />
+                        <div className="login-logo-wrap">
+                            <img src={logo} alt="Valle Empreendimentos" className="login-logo-img" />
+                        </div>
                         <h1>Sistema de Disponibilidades</h1>
-                        <p>Entre com seu usuário e senha</p>
+                        <p className="login-subtitle">Entre com seu usuário e senha para acessar</p>
                     </div>
 
                     <form className="login-form" onSubmit={handleSubmit}>
@@ -98,13 +102,15 @@ function LoginPage() {
                 </div>
 
                 <div className="login-info">
-                    <h2>Valle do Ipitinga</h2>
-                    <p>Consulte disponibilidades de lotes, gere propostas e gerencie clientes.</p>
-                    <ul>
-                        <li><Building2 size={18} style={{ verticalAlign: 'middle', marginRight: 6 }} /> Múltiplas obras</li>
-                        <li><Building2 size={18} style={{ verticalAlign: 'middle', marginRight: 6 }} /> Filtros e exportação PDF</li>
-                        <li><Building2 size={18} style={{ verticalAlign: 'middle', marginRight: 6 }} /> Cadastro de clientes</li>
+                    <p className="login-info-tagline">Bem-vindo ao</p>
+                    <h2>Valle Empreendimentos</h2>
+                    <p className="login-info-desc">Consulte disponibilidades de lotes, gere propostas e gerencie clientes em um só lugar.</p>
+                    <ul className="login-features">
+                        <li><Building2 size={20} /> Múltiplas obras</li>
+                        <li><Building2 size={20} /> Filtros e exportação PDF</li>
+                        <li><Building2 size={20} /> Cadastro de clientes</li>
                     </ul>
+                    <p className="login-info-slogan">Viva bem, viva Valle.</p>
                 </div>
             </div>
         </div>

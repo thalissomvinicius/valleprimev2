@@ -490,7 +490,7 @@ function App() {
 
   return (
     <Routes>
-      <Route path="/admin" element={<AdminPanel />} />
+      <Route path="/admin" element={isAdmin ? <AdminPanel /> : <Navigate to="/" replace />} />
       <Route path="/clientes" element={<ClientListPage />} />
       <Route path="/" element={<MainApp />} />
       <Route path="*" element={<Navigate to="/" replace />} />
