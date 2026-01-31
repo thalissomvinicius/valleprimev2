@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { debounce } from 'lodash';
 import ClientSelectionModal from './ClientSelectionModal';
 import { X, FileText, CheckCircle, Building2, User, Users, MapPin, Contact, Briefcase, ChevronRight, ChevronLeft, Trash2, Search, AlertCircle } from 'lucide-react';
@@ -242,9 +242,9 @@ const ClientFormModal = ({ onClose, onConfirm, onDelete, initialData = null, cli
 
     // Verificação de duplicatas (debounced)
     const checkDuplicateCPF = useCallback(
-        debounce(async (cpfCnpj, fieldName) => {
+        debounce(async (cpfCnpj, fieldName, personType) => {
             try {
-                const result = await checkDuplicate(cpfCnpj, clientId);
+                const result = await checkDuplicate(cpfCnpj, clientId, personType);
                 if (result.exists) {
                     setDuplicateWarning({
                         show: true,
@@ -292,7 +292,7 @@ const ClientFormModal = ({ onClose, onConfirm, onDelete, initialData = null, cli
                     delete newErrors[fieldName];
                     return newErrors;
                 });
-                checkDuplicateCPF(cleaned, fieldName);
+                checkDuplicateCPF(cleaned, fieldName, tipo);
             } else {
                 setFieldErrors(prev => ({
                     ...prev,

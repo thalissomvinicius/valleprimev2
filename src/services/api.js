@@ -62,10 +62,11 @@ export const deleteClient = async (clientId) => {
   }
 };
 
-export const checkDuplicate = async (cpfCnpj, clientId = null) => {
+export const checkDuplicate = async (cpfCnpj, clientId = null, tipo_pessoa = 'PF') => {
   try {
     const params = new URLSearchParams();
     params.append('cpf_cnpj', cpfCnpj);
+    params.append('tipo_pessoa', tipo_pessoa);
     if (clientId) params.append('client_id', clientId);
 
     const response = await axios.get(`${CLIENT_BASE}/check-duplicate?${params.toString()}`);

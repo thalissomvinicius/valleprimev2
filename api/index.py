@@ -95,7 +95,8 @@ def init_db():
         CREATE TABLE IF NOT EXISTS clients (
             id SERIAL PRIMARY KEY,
             nome TEXT NOT NULL,
-            cpf_cnpj TEXT UNIQUE NOT NULL,
+            cpf_cnpj TEXT NOT NULL,
+            tipo_pessoa TEXT NOT NULL DEFAULT 'PF',
             data TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -106,6 +107,8 @@ def init_db():
             CREATE TABLE IF NOT EXISTS clients (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 nome TEXT NOT NULL,
+                cpf_cnpj TEXT NOT NULL,
+                tipo_pessoa TEXT NOT NULL DEFAULT 'PF',
                 data TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -491,13 +494,14 @@ def generate():
 def check_duplicate():
     try:
         cpf = request.args.get('cpf_cnpj', '').strip()
+        tipo_pessoa = request.args.get('tipo_pessoa', 'PF')
         cid = request.args.get('client_id')
         if not cpf: return {'exists': False}
         
         if cid:
-            row = query_db("SELECT id, nome FROM clients WHERE cpf_cnpj = ? AND id != ?", (cpf, cid), one=True)
+            row = query_db("SELECT id, nome FROM clients WHERE cpf_cnpj = ? AND tipo_pessoa = ? AND id != ?", (cpf, tipo_pessoa, cid), one=True)
         else:
-            row = query_db("SELECT id, nome FROM clients WHERE cpf_cnpj = ?", (cpf,), one=True)
+            row = query_db("SELECT id, nome FROM clients WHERE cpf_cnpj = ? AND tipo_pessoa = ?", (cpf, tipo_pessoa), one=True)
         
         if row:
             return {'exists': True, 'client': {'id': row['id'], 'nome_proponente': row['nome']}}
@@ -604,6 +608,7 @@ def clients():
             # Accept both 'nome' and 'nome_proponente'
             name = req.get('nome') or req.get('nome_proponente', '')
             cpf = req.get('cpf_cnpj') or req.get('cpf_cnpj_proponente', '')
+            tipo_pessoa = req.get('tipo_pessoa', 'PF')
             
             # Additional cleanup
             if name: name = name.strip()
@@ -615,12 +620,12 @@ def clients():
             if not name or not cpf:
                 return {"error": "Name and CPF/CNPJ are required fields"}, 400
                 
-            existing = query_db("SELECT id FROM clients WHERE cpf_cnpj = ?", (cpf,), one=True)
+            existing = query_db("SELECT id FROM clients WHERE cpf_cnpj = ? AND tipo_pessoa = ?", (cpf, tipo_pessoa), one=True)
             
             if existing:
-                query_db("UPDATE clients SET nome = ?, data = ?, updated_at = ? WHERE id = ?", (name, data_json, now, existing['id']), commit=True)
+                query_db("UPDATE clients SET nome = ?, tipo_pessoa = ?, data = ?, updated_at = ? WHERE id = ?", (name, tipo_pessoa, data_json, now, existing['id']), commit=True)
             else:
-                query_db("INSERT INTO clients (nome, cpf_cnpj, data, updated_at) VALUES (?, ?, ?, ?)", (name, cpf, data_json, now), commit=True)
+                query_db("INSERT INTO clients (nome, cpf_cnpj, tipo_pessoa, data, updated_at) VALUES (?, ?, ?, ?, ?)", (name, cpf, tipo_pessoa, data_json, now), commit=True)
                 
             return {"success": True}, 200
             
