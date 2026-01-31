@@ -505,6 +505,27 @@ def check_duplicate():
     except Exception as e:
         return {'error': str(e)}, 500
 
+
+@app.route('/api/manage-clients/<int:client_id>', methods=['DELETE'])
+def delete_client_route(client_id):
+    """Delete a client by ID. Must be after check-duplicate route."""
+    try:
+        conn, db_type = get_db_connection()
+        cur = conn.cursor()
+        if db_type == 'postgres':
+            cur.execute("DELETE FROM clients WHERE id = %s", (client_id,))
+        else:
+            cur.execute("DELETE FROM clients WHERE id = ?", (client_id,))
+        conn.commit()
+        deleted = cur.rowcount
+        conn.close()
+        if deleted:
+            return {"success": True}, 200
+        return {"success": False, "error": "Cliente não encontrado"}, 404
+    except Exception as e:
+        return {"success": False, "error": str(e)}, 500
+
+
 @app.route('/api/consulta/<int:numprod_psc>', methods=['GET'])
 def consulta(numprod_psc):
     """
@@ -569,7 +590,8 @@ def clients():
                         except:
                             client['data'] = {}
                     clients_list.append(client)
-            return {"clients": clients_list}, 200
+            # Frontend expects success and total_count
+            return {"success": True, "clients": clients_list, "total_count": len(clients_list)}, 200
             
         if request.method == 'POST':
             # Use force=True to ignore Content-Type, silent=True to return None instead of 400

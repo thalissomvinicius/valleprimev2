@@ -30,7 +30,12 @@ export const getClients = async ({ search = '', page = 1, limit = 50, type = '' 
     params.append('limit', limit);
 
     const response = await axios.get(`${CLIENT_BASE}?${params.toString()}`);
-    return response.data;
+    const data = response.data;
+    // Normalize: backend may return { clients } or { success, clients, total_count }
+    if (data && Array.isArray(data.clients) && data.success === undefined) {
+      return { success: true, clients: data.clients, total_count: data.clients.length };
+    }
+    return data;
   } catch (error) {
     console.error('Error fetching clients:', error);
     throw error;
