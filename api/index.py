@@ -312,6 +312,36 @@ def migrate_db():
         else:
             result["steps"].append("Column created_by already exists")
             
+        # --- MIGRATION 3: USERS TABLE (Fallback) ---
+        if db_type == 'postgres':
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS users (
+                    id SERIAL PRIMARY KEY,
+                    username TEXT UNIQUE NOT NULL,
+                    password_hash TEXT NOT NULL,
+                    nome TEXT,
+                    role TEXT DEFAULT 'user',
+                    permissions TEXT,
+                    active BOOLEAN DEFAULT TRUE,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+        else:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username TEXT UNIQUE NOT NULL,
+                    password_hash TEXT NOT NULL,
+                    nome TEXT,
+                    role TEXT DEFAULT 'user',
+                    permissions TEXT,
+                    active BOOLEAN DEFAULT 1,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+        conn.commit()
+        result["steps"].append("Ensured users table exists")
+            
         conn.commit()
         conn.close()
         
@@ -490,54 +520,62 @@ def debug_insert():
 
 @app.route('/api/auth/login', methods=['POST'])
 def auth_login():
-    data = request.get_json(silent=True) or {}
-    username = data.get('username', '').strip()
-    password = data.get('password', '')
-    
-    if not username or not password:
-        return {'message': 'Username and password are required'}, 400
+    try:
+        data = request.get_json(silent=True) or {}
+        username = data.get('username', '').strip()
+        password = data.get('password', '')
         
-    user = query_db("SELECT * FROM users WHERE username = ? AND active = 1", (username,), one=True)
-    
-    # Init admin if no users exist
-    if not user:
-        all_users = query_db("SELECT count(*) as cnt FROM users", one=True)
-        if all_users and all_users['cnt'] == 0 and username == 'admin' and password == 'admin123':
-            # Create default admin
-            try:
+        if not username or not password:
+            return {'message': 'Username and password are required'}, 400
+            
+        user = query_db("SELECT * FROM users WHERE username = ? AND active = 1", (username,), one=True)
+        
+        # Init admin if no users exist
+        if not user:
+            # Check if table exists implicitly by catching error? No, query_db catches it.
+            # If query_db returned None due to error, we might be here.
+            # But let's try to count.
+            all_users = query_db("SELECT count(*) as cnt FROM users", one=True)
+            
+            # If all_users is None, it means table likely doesn't exist or query failed.
+            if all_users is not None and all_users['cnt'] == 0 and username == 'admin' and password == 'admin123':
+                # Create default admin
                 pw_hash = hash_password('admin123')
-                # Admin permissions: can view all
+                # Admin permissions: canViewAllClients
                 query_db("INSERT INTO users (username, password_hash, nome, role, active, permissions) VALUES (?, ?, ?, ?, ?, ?)", 
                         ('admin', pw_hash, 'Administrador', 'admin', True, json.dumps({"canViewAllClients": True})), commit=True)
                 user = query_db("SELECT * FROM users WHERE username = 'admin'", one=True)
-            except Exception as e:
-                return {'message': f'Error creating default admin: {str(e)}'}, 500
-    
-    if not user or not verify_password(user['password_hash'], password):
-        return {'message': 'Invalid credentials'}, 401
-    
-    token = jwt.encode({
-        'user_id': user['id'],
-        'role': user['role'],
-        'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=12)
-    }, SECRET_KEY, algorithm="HS256")
-    
-    # Parse permissions if JSON
-    permissions = {}
-    if user['permissions']:
-         try: permissions = json.loads(user['permissions'])
-         except: pass
-         
-    return {
-        'token': token,
-        'user': {
-            'id': user['id'],
-            'username': user['username'],
-            'nome': user['nome'],
+        
+        if not user:
+            return {'message': 'Invalid credentials (User not found)'}, 401
+            
+        if not verify_password(user['password_hash'], password):
+            return {'message': 'Invalid credentials (Password mismatch)'}, 401
+        
+        token = jwt.encode({
+            'user_id': user['id'],
             'role': user['role'],
-            'permissions': permissions
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=12)
+        }, SECRET_KEY, algorithm="HS256")
+        
+        # Parse permissions if JSON
+        permissions = {}
+        if user['permissions']:
+             try: permissions = json.loads(user['permissions'])
+             except: pass
+             
+        return {
+            'token': token,
+            'user': {
+                'id': user['id'],
+                'username': user['username'],
+                'nome': user['nome'],
+                'role': user['role'],
+                'permissions': permissions
+            }
         }
-    }
+    except Exception as e:
+        return {'message': 'Internal Login Error', 'error': str(e), 'trace': traceback.format_exc()}, 500
 
 @app.route('/api/auth/me', methods=['GET'])
 @token_required
@@ -560,6 +598,52 @@ def auth_me():
             'permissions': permissions
         }
     }
+
+@app.route('/api/debug-auth-diag')
+def debug_auth_diag():
+    """Diagnostic for Auth 500 Errors"""
+    log = []
+    try:
+        # 1. Imports Check
+        log.append("Imports OK")
+        
+        # 2. Key Check
+        log.append(f"Secret Key type: {type(SECRET_KEY)}")
+        
+        # 3. DB Check
+        conn, db_type = get_db_connection()
+        log.append(f"DB Connected: {db_type}")
+        cur = conn.cursor()
+        
+        # 4. Table Check
+        try:
+            cur.execute("SELECT count(*) FROM users")
+            cnt = cur.fetchone()[0]
+            log.append(f"Users table exists. Count: {cnt}")
+        except Exception as e:
+            log.append(f"Users table query failed: {str(e)}")
+            
+        # 5. Crypto Check
+        try:
+            h = hash_password('test')
+            log.append(f"Hash check OK: {h[:10]}...")
+            v = verify_password(h, 'test')
+            log.append(f"Verify check: {v}")
+        except Exception as e:
+            log.append(f"Crypto failed: {str(e)}")
+            
+        # 6. JWT Check
+        try:
+            t = jwt.encode({'test': 1}, SECRET_KEY, algorithm="HS256")
+            log.append(f"JWT Encode: {str(t)[:10]}...")
+        except Exception as e:
+             log.append(f"JWT failed: {str(e)}")
+             
+        conn.close()
+        return {"log": log, "success": True}
+        
+    except Exception as e:
+        return {"error": str(e), "trace": traceback.format_exc(), "log": log}, 500
 
 @app.route('/api/users', methods=['GET', 'POST'])
 @token_required
