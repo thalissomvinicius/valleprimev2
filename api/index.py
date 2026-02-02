@@ -49,17 +49,10 @@ def get_db_connection():
     """Get database connection (Postgres or SQLite)"""
     db_url = os.environ.get('DATABASE_URL')
     if db_url:
-        # PRIMARY DRIVER: PSYCOPG2 (Standard for AWS/Vercel)
-        # We try this first because it's compiled C and handles SSL correctly by default.
-        try:
-            import psycopg2
-            # sslmode='require' is standard for cloud DBs
-            conn = psycopg2.connect(db_url, sslmode='require')
-            return conn, 'postgres'
-        except ImportError:
-            print("DB INFO: Psycopg2 not installed, checking for pg8000...")
-        except Exception as e:
-            print(f"DB WARNING: Psycopg2 failed ({str(e)}). Falling back to pg8000.")
+        # PRIMARY DRIVER: PSYCOPG2
+        # REMOVED FOR DEBUGGING STARTUP CRASH (BINARY ISSUES)
+        # We enforce pg8000 (Pure Python)
+        pass
 
         # FALLBACK DRIVER: PG8000 (Pure Python)
         # Use this if psycopg2 crashes (e.g. ABI mismatch on Lambda)
