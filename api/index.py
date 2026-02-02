@@ -130,19 +130,32 @@ def db_diag():
         cur = conn.cursor()
         cur.execute("SELECT 1")
         res = cur.fetchone()
+        
+        # Check users count
+        user_count = -1
+        try:
+            cur.execute("SELECT count(*) FROM users")
+            user_count = cur.fetchone()[0]
+        except:
+            pass
+            
         conn.close()
-        return jsonify({"status": "ok", "db_type": db_type, "result": res[0]})
+        return jsonify({
+            "status": "ok", 
+            "db_type": db_type, 
+            "result": res[0],
+            "user_count": user_count,
+            "table_users_exists": user_count >= 0
+        })
     except Exception as e:
         return jsonify({"status": "error", "message": str(e), "trace": traceback.format_exc()}), 500
 
-@app.route('/api/migrate-db')
-def migrate_db():
-    result = {"success": True, "steps": []}
+def migrate_db_internal():
+    """Internal migration logic to ensure tables exist"""
     try:
         conn, db_type = get_db_connection()
         cur = conn.cursor()
         
-        # Clients table
         if db_type == 'postgres':
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS clients (
@@ -195,9 +208,17 @@ def migrate_db():
             """)
         conn.commit()
         conn.close()
-        return jsonify(result)
+        return True
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+        print(f"MIGRATION ERROR: {e}")
+        return False
+
+@app.route('/api/migrate-db')
+def migrate_db():
+    if migrate_db_internal():
+        return jsonify({"success": True, "message": "Database initialized/migrated"})
+    else:
+        return jsonify({"success": False, "message": "Migration failed (check logs)"}), 500
 
 @app.route('/api/auth/login', methods=['POST'])
 def login():
@@ -208,18 +229,30 @@ def login():
         if not username or not password:
             return jsonify({'message': 'Credentials required'}), 400
         
+        # Try to find user
         user = query_db("SELECT * FROM users WHERE username = ? AND active = 1", (username,), one=True)
-        # Default admin init
+        
+        # If user not found and table might be missing or empty, handle admin logic
         if not user and username == 'admin' and password == 'admin123':
+             # Check if table exists/has users by attempting a count
              res = query_db("SELECT count(*) as cnt FROM users", one=True)
+             
+             if res is None:
+                 # Table likely doesn't exist, run migration for users table at least
+                 migrate_db_internal() # Helper for code reuse
+                 res = query_db("SELECT count(*) as cnt FROM users", one=True)
+             
              if res and res['cnt'] == 0:
                  pw_hash = hash_password('admin123')
                  query_db("INSERT INTO users (username, password_hash, nome, role, active, permissions) VALUES (?, ?, ?, ?, ?, ?)",
                           ('admin', pw_hash, 'Admin', 'admin', True, json.dumps({"canViewAllClients": True})), commit=True)
                  user = query_db("SELECT * FROM users WHERE username = 'admin'", one=True)
 
-        if not user or not verify_password(user['password_hash'], password):
-            return jsonify({'message': 'Invalid credentials'}), 401
+        if not user:
+            return jsonify({'message': 'Invalid credentials (User not found)'}), 401
+            
+        if not verify_password(user['password_hash'], password):
+            return jsonify({'message': 'Invalid credentials (Password mismatch)'}), 401
         
         token = jwt.encode({
             'user_id': user['id'],
