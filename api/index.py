@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import os
 import datetime
@@ -18,14 +18,25 @@ CORS(app, resources={r"/api/*": {"origins": "*"}})
 SECRET_KEY = os.environ.get('SECRET_KEY', 'dev_secret_key_valle_prime_v2')
 
 # Database path for SQLite
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 if os.environ.get('VERCEL') == '1' or os.path.exists('/tmp'):
     DB_PATH = '/tmp/clients.db'
 else:
-    DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'clients.db')
+    DB_PATH = os.path.join(BASE_DIR, 'clients.db')
+
+# PDF Engine placeholder
+generate_pdf_reportlab = None
 
 def get_db_connection():
     db_url = os.environ.get('DATABASE_URL')
     if db_url:
+        try:
+            import psycopg2
+            conn = psycopg2.connect(db_url, sslmode='require', connect_timeout=5)
+            return conn, 'postgres'
+        except Exception as e:
+            print(f"DB WARNING: psycopg2 failed ({str(e)}). Falling back to pg8000.")
+            
         import pg8000.dbapi
         import urllib.parse
         import ssl
@@ -40,11 +51,11 @@ def get_db_connection():
             host=u.hostname,
             port=u.port,
             database=u.path[1:],
-            ssl_context=ssl_context
+            ssl_context=ssl_context,
+            timeout=10
         )
         return conn, 'postgres'
     
-    # Fallback to Local SQLite
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn, 'sqlite'
@@ -67,8 +78,10 @@ def query_db(sql, params=(), one=False, commit=False):
                 return dict(zip(col_names, rv))
             return None
         rv = cur.fetchall()
-        col_names = [desc[0] for desc in cur.description]
-        return [dict(zip(col_names, row)) for row in rv]
+        if cur.description:
+            col_names = [desc[0] for desc in cur.description]
+            return [dict(zip(col_names, row)) for row in rv]
+        return []
     except Exception as e:
         print(f"QUERY ERROR: {e}")
         return None
@@ -108,12 +121,10 @@ def token_required(f):
 
 @app.route('/api/hello')
 def hello():
-    print("DEBUG: /api/hello called")
-    return jsonify({"status": "ok", "message": "Auth logic restored (v2)", "routes": ["hello", "db-diag", "login", "migrate-db"]})
+    return jsonify({"status": "ok", "message": "Full system restored (base)", "time": datetime.datetime.now().isoformat()})
 
 @app.route('/api/db-diag')
 def db_diag():
-    print("DEBUG: /api/db-diag called")
     try:
         conn, db_type = get_db_connection()
         cur = conn.cursor()
@@ -124,6 +135,70 @@ def db_diag():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e), "trace": traceback.format_exc()}), 500
 
+@app.route('/api/migrate-db')
+def migrate_db():
+    result = {"success": True, "steps": []}
+    try:
+        conn, db_type = get_db_connection()
+        cur = conn.cursor()
+        
+        # Clients table
+        if db_type == 'postgres':
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS clients (
+                    id SERIAL PRIMARY KEY,
+                    nome TEXT NOT NULL,
+                    cpf_cnpj TEXT NOT NULL,
+                    tipo_pessoa TEXT NOT NULL DEFAULT 'PF',
+                    created_by TEXT,
+                    data TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS users (
+                    id SERIAL PRIMARY KEY,
+                    username TEXT UNIQUE NOT NULL,
+                    password_hash TEXT NOT NULL,
+                    nome TEXT,
+                    role TEXT DEFAULT 'user',
+                    permissions TEXT,
+                    active BOOLEAN DEFAULT TRUE,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+        else:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS clients (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    nome TEXT NOT NULL,
+                    cpf_cnpj TEXT NOT NULL,
+                    tipo_pessoa TEXT NOT NULL DEFAULT 'PF',
+                    created_by TEXT,
+                    data TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username TEXT UNIQUE NOT NULL,
+                    password_hash TEXT NOT NULL,
+                    nome TEXT,
+                    role TEXT DEFAULT 'user',
+                    permissions TEXT,
+                    active BOOLEAN DEFAULT 1,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+        conn.commit()
+        conn.close()
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
 @app.route('/api/auth/login', methods=['POST'])
 def login():
     try:
@@ -131,12 +206,11 @@ def login():
         username = data.get('username', '').strip()
         password = data.get('password', '')
         if not username or not password:
-            return jsonify({'message': 'Missing credentials'}), 400
+            return jsonify({'message': 'Credentials required'}), 400
         
         user = query_db("SELECT * FROM users WHERE username = ? AND active = 1", (username,), one=True)
-        # Handle default admin if not exists (lazy init)
+        # Default admin init
         if not user and username == 'admin' and password == 'admin123':
-             # Try to count users
              res = query_db("SELECT count(*) as cnt FROM users", one=True)
              if res and res['cnt'] == 0:
                  pw_hash = hash_password('admin123')
@@ -163,55 +237,113 @@ def login():
             }
         })
     except Exception as e:
-        return jsonify({'message': 'Internal Error', 'error': str(e), 'trace': traceback.format_exc()}), 500
+        return jsonify({'message': 'Internal Login Error', 'error': str(e)}), 500
 
-@app.route('/api/migrate-db')
-def migrate_db():
+@app.route('/api/availability')
+def get_availability():
+    numprod_psc = request.args.get('numprod_psc', '624')
+    # Try fetching from external API with timeout
     try:
-        conn, db_type = get_db_connection()
-        cur = conn.cursor()
-        
-        # Ensure 'users' table exists
-        if db_type == 'postgres':
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS users (
-                    id SERIAL PRIMARY KEY,
-                    username TEXT UNIQUE NOT NULL,
-                    password_hash TEXT NOT NULL,
-                    nome TEXT,
-                    role TEXT DEFAULT 'user',
-                    permissions TEXT,
-                    active BOOLEAN DEFAULT TRUE,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS clients (
-                    id SERIAL PRIMARY KEY,
-                    nome TEXT NOT NULL,
-                    cpf_cnpj TEXT NOT NULL,
-                    tipo_pessoa TEXT NOT NULL DEFAULT 'PF',
-                    created_by TEXT,
-                    data TEXT,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
+        resp = requests.get(f"http://177.221.240.85:8000/api/consulta/{numprod_psc}/", timeout=8)
+        if resp.status_code == 200:
+            return jsonify(resp.json())
+    except:
+        pass
+    
+    # Fallback to local files
+    filename = f"fallback_{numprod_psc}.json"
+    filepath = os.path.join(BASE_DIR, filename)
+    if os.path.exists(filepath):
+        with open(filepath, 'r', encoding='utf-8-sig') as f:
+            return jsonify(json.load(f))
+            
+    return jsonify({"data": []})
+
+@app.route('/api/clients', methods=['GET', 'POST'])
+@token_required
+def manage_clients():
+    if request.method == 'GET':
+        can_see_all = request.user_role == 'admin'
+        if not can_see_all:
+             # Check specific permissions
+             user = query_db("SELECT permissions FROM users WHERE id = ?", (request.user_id,), one=True)
+             perms = json.loads(user['permissions']) if user['permissions'] else {}
+             can_see_all = perms.get('canViewAllClients', False)
+             
+        if can_see_all:
+            clients = query_db("SELECT * FROM clients ORDER BY created_at DESC")
         else:
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS users (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    username TEXT UNIQUE NOT NULL,
-                    password_hash TEXT NOT NULL,
-                    nome TEXT,
-                    role TEXT DEFAULT 'user',
-                    permissions TEXT,
-                    active BOOLEAN DEFAULT 1,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-        conn.commit()
-        conn.close()
-        return jsonify({"success": True, "message": "Database initialized/migrated"})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+            clients = query_db("SELECT * FROM clients WHERE created_by = ? ORDER BY created_at DESC", (str(request.user_id),))
+        return jsonify(clients or [])
+
+    if request.method == 'POST':
+        data = request.get_json()
+        nome = data.get('nome')
+        cpf_cnpj = data.get('cpf_cnpj')
+        tipo_pessoa = data.get('tipo_pessoa', 'PF')
+        
+        if not nome or not cpf_cnpj:
+            return jsonify({'message': 'Missing fields'}), 400
+            
+        success = query_db("INSERT INTO clients (nome, cpf_cnpj, tipo_pessoa, created_by, data) VALUES (?, ?, ?, ?, ?)",
+                         (nome, cpf_cnpj, tipo_pessoa, str(request.user_id), json.dumps(data)), commit=True)
+        return jsonify({'success': bool(success)})
+
+@app.route('/api/users', methods=['GET', 'POST'])
+@token_required
+def manage_users():
+    if request.user_role != 'admin':
+        return jsonify({'message': 'Forbidden'}), 403
+    
+    if request.method == 'GET':
+        users = query_db("SELECT id, username, nome, role, permissions, active FROM users ORDER BY id")
+        for u in users:
+             u['permissions'] = json.loads(u['permissions']) if u['permissions'] else {}
+        return jsonify({'users': users})
+    
+    if request.method == 'POST':
+        data = request.get_json()
+        username = data.get('username')
+        password = data.get('password')
+        if not username or not password:
+            return jsonify({'message': 'Missing fields'}), 400
+        
+        pw_hash = hash_password(password)
+        query_db("INSERT INTO users (username, password_hash, nome, role, active, permissions) VALUES (?, ?, ?, ?, ?, ?)",
+                (username, pw_hash, data.get('nome'), 'user', True, json.dumps(data.get('permissions', {}))), commit=True)
+        return jsonify({'success': True})
+
+@app.route('/api/users/<int:user_id>', methods=['PUT', 'DELETE'])
+@token_required
+def user_ops(user_id):
+    if request.user_role != 'admin':
+        return jsonify({'message': 'Forbidden'}), 403
+        
+    if request.method == 'DELETE':
+        query_db("DELETE FROM users WHERE id = ?", (user_id,), commit=True)
+        return jsonify({'success': True})
+    
+    if request.method == 'PUT':
+        data = request.get_json()
+        # Simple update logic
+        updates = []
+        params = []
+        if 'nome' in data:
+            updates.append("nome = ?")
+            params.append(data['nome'])
+        if 'active' in data:
+            updates.append("active = ?")
+            params.append(bool(data['active']))
+        if 'permissions' in data:
+            updates.append("permissions = ?")
+            params.append(json.dumps(data['permissions']))
+            
+        if not updates: return jsonify({'message': 'No data'}), 400
+        
+        params.append(user_id)
+        query_db(f"UPDATE users SET {', '.join(updates)} WHERE id = ?", tuple(params), commit=True)
+        return jsonify({'success': True})
+
+@app.route('/api/health')
+def health_check():
+    return jsonify({"status": "healthy", "python": sys.version})
