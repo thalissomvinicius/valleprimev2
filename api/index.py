@@ -214,6 +214,63 @@ def db_test():
             "log": log
         }, 500
 
+@app.route('/api/migrate-tipo-pessoa')
+def migrate_tipo_pessoa():
+    """Migration route to fill tipo_pessoa for old clients based on CPF/CNPJ length"""
+    try:
+        conn, db_type = get_db_connection()
+        cur = conn.cursor()
+        
+        # For PostgreSQL: use LENGTH and REPLACE
+        if db_type == 'postgres':
+            update_pf = """
+                UPDATE clients 
+                SET tipo_pessoa = 'PF' 
+                WHERE (tipo_pessoa IS NULL OR tipo_pessoa = '')
+                AND LENGTH(REPLACE(REPLACE(REPLACE(cpf_cnpj, '.', ''), '-', ''), '/', '')) = 11
+            """
+            update_pj = """
+                UPDATE clients 
+                SET tipo_pessoa = 'PJ' 
+                WHERE (tipo_pessoa IS NULL OR tipo_pessoa = '')
+                AND LENGTH(REPLACE(REPLACE(REPLACE(cpf_cnpj, '.', ''), '-', ''), '/', '')) = 14
+            """
+        else:
+            # SQLite version
+            update_pf = """
+                UPDATE clients 
+                SET tipo_pessoa = 'PF' 
+                WHERE (tipo_pessoa IS NULL OR tipo_pessoa = '')
+                AND LENGTH(REPLACE(REPLACE(REPLACE(cpf_cnpj, '.', ''), '-', ''), '/', '')) = 11
+            """
+            update_pj = """
+                UPDATE clients 
+                SET tipo_pessoa = 'PJ' 
+                WHERE (tipo_pessoa IS NULL OR tipo_pessoa = '')
+                AND LENGTH(REPLACE(REPLACE(REPLACE(cpf_cnpj, '.', ''), '-', ''), '/', '')) = 14
+            """
+        
+        cur.execute(update_pf)
+        pf_count = cur.rowcount
+        
+        cur.execute(update_pj)
+        pj_count = cur.rowcount
+        
+        conn.commit()
+        conn.close()
+        
+        return {
+            "success": True,
+            "updated_pf": pf_count,
+            "updated_pj": pj_count,
+            "message": f"Migration complete: {pf_count} PF, {pj_count} PJ updated"
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }, 500
+
 @app.route('/api/health')
 def health():
     """Diagnostic route"""
