@@ -121,7 +121,7 @@ def token_required(f):
 
 @app.route('/api/hello')
 def hello():
-    return jsonify({"status": "ok", "message": "Full system restored (v3.4-debug)", "time": datetime.datetime.now().isoformat()})
+    return jsonify({"status": "ok", "message": "Full system restored (v3.5-final-debug)", "time": datetime.datetime.now().isoformat()})
 
 @app.route('/api/db-diag')
 def db_diag():
@@ -222,58 +222,66 @@ def migrate_db():
     else:
         return jsonify({"success": False, "message": "Migration failed (check logs)"}), 500
 
+@app.route('/api/echo-json', methods=['POST'])
+def echo_json():
+    try:
+        data = request.get_json(silent=True)
+        return jsonify({"success": True, "received": data})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
 @app.route('/api/debug-login-test')
 def debug_login_test():
     log = []
     try:
         username = 'admin'
         password = 'admin123'
-        log.append(f"Testing login for {username}")
+        log.append(f"[{datetime.datetime.now().isoformat()}] Testing login for {username}")
         
         conn, db_type = get_db_connection()
         cur = conn.cursor()
         
         # 1. Check raw user
-        log.append("Checking users in DB...")
-        cur.execute("SELECT id, username, active, password_hash FROM users")
+        log.append(f"[{datetime.datetime.now().isoformat()}] Checking users in DB...")
+        cur.execute("SELECT id, username, active, password_hash, permissions FROM users")
         all_users = cur.fetchall()
-        log.append(f"Total users found: {len(all_users)}")
+        log.append(f"[{datetime.datetime.now().isoformat()}] Total users found: {len(all_users)}")
         found = False
         for u in all_users:
             log.append(f"User: {u[1]}, Active: {u[2]}")
             if u[1] == 'admin':
                 found = True
                 stored_hash = u[3]
+                perms_raw = u[4]
                 
         if not found:
             log.append("FAIL: Admin user not found even by raw query")
             return jsonify({"success": False, "log": log})
 
         # 2. Check query_db with boolean
-        log.append("Testing query_db with boolean parameter")
+        log.append(f"[{datetime.datetime.now().isoformat()}] Testing query_db with boolean parameter")
         user = query_db("SELECT * FROM users WHERE username = ? AND active = ?", (username, True), one=True)
         if not user:
             log.append("FAIL: query_db returned None for admin+True")
             return jsonify({"success": False, "log": log})
             
-        log.append(f"User found via query_db: ID {user['id']}")
+        log.append(f"[{datetime.datetime.now().isoformat()}] User found via query_db: ID {user['id']}")
         
         # 3. Check password
-        log.append("Verifying password...")
+        log.append(f"[{datetime.datetime.now().isoformat()}] Verifying password...")
         is_valid = verify_password(user['password_hash'], password)
-        log.append(f"Password verify result: {is_valid}")
+        log.append(f"[{datetime.datetime.now().isoformat()}] Password verify result: {is_valid}")
         
         if not is_valid:
-            log.append(f"FAIL: Password mismatch. Stored: {user['password_hash'][:10]}...")
+            log.append(f"FAIL: Password mismatch.")
             return jsonify({"success": False, "log": log})
             
         # 4. Check JWT
-        log.append("Testing JWT encoding...")
+        log.append(f"[{datetime.datetime.now().isoformat()}] Testing JWT encoding...")
         try:
-            token = jwt.encode({'u': 1}, SECRET_KEY, algorithm="HS256")
-            if isinstance(token, bytes):
-                token = token.decode('utf-8')
-            log.append(f"JWT OK: {token[:20]}...")
+            token = jwt.encode({'u': 1, 'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)}, SECRET_KEY, algorithm="HS256")
+            if isinstance(token, bytes): token = token.decode('utf-8')
+            log.append(f"[{datetime.datetime.now().isoformat()}] JWT OK")
         except Exception as je:
             log.append(f"FAIL: JWT Error: {str(je)}")
             return jsonify({"success": False, "log": log, "error": str(je)})
@@ -284,7 +292,9 @@ def debug_login_test():
 
 @app.route('/api/auth/login', methods=['POST'])
 def login():
+    start_time = datetime.datetime.now()
     try:
+        print(f"[{start_time.isoformat()}] LOGIN: Request received")
         data = request.get_json(silent=True) or {}
         username = data.get('username', '').strip()
         password = data.get('password', '')
@@ -292,17 +302,12 @@ def login():
         if not username or not password:
             return jsonify({'message': 'Credentials required'}), 400
         
-        # Try to find user - Using parameterized boolean for Postgres compatibility
+        print(f"[{datetime.datetime.now().isoformat()}] LOGIN: Looking for user {username}")
         user = query_db("SELECT * FROM users WHERE username = ? AND active = ?", (username, True), one=True)
         
-        # If user not found and table might be missing or empty, handle admin logic
         if not user and username == 'admin' and password == 'admin123':
+             print(f"[{datetime.datetime.now().isoformat()}] LOGIN: Auto-provisioning admin")
              res = query_db("SELECT count(*) as cnt FROM users", one=True)
-             
-             if res is None:
-                 migrate_db_internal()
-                 res = query_db("SELECT count(*) as cnt FROM users", one=True)
-             
              if res and res['cnt'] == 0:
                  pw_hash = hash_password('admin123')
                  query_db("INSERT INTO users (username, password_hash, nome, role, active, permissions) VALUES (?, ?, ?, ?, ?, ?)",
@@ -310,11 +315,15 @@ def login():
                  user = query_db("SELECT * FROM users WHERE username = 'admin'", one=True)
 
         if not user:
+            print(f"[{datetime.datetime.now().isoformat()}] LOGIN: User not found")
             return jsonify({'message': 'Invalid credentials (User not found)'}), 401
             
+        print(f"[{datetime.datetime.now().isoformat()}] LOGIN: Verifying password")
         if not verify_password(user['password_hash'], password):
+            print(f"[{datetime.datetime.now().isoformat()}] LOGIN: Password mismatch")
             return jsonify({'message': 'Invalid credentials (Password mismatch)'}), 401
         
+        print(f"[{datetime.datetime.now().isoformat()}] LOGIN: Encoding JWT")
         try:
             token = jwt.encode({
                 'user_id': user['id'],
@@ -325,6 +334,7 @@ def login():
             if isinstance(token, bytes):
                 token = token.decode('utf-8')
         except Exception as jwt_err:
+            print(f"[{datetime.datetime.now().isoformat()}] LOGIN: JWT Error: {jwt_err}")
             return jsonify({'message': 'JWT Encoding Error', 'error': str(jwt_err)}), 500
         
         perms = {}
@@ -332,6 +342,7 @@ def login():
             try: perms = json.loads(user['permissions'])
             except: pass
         
+        print(f"[{datetime.datetime.now().isoformat()}] LOGIN: Success")
         return jsonify({
             'token': token,
             'user': {
@@ -342,6 +353,7 @@ def login():
             }
         })
     except Exception as e:
+        print(f"[{datetime.datetime.now().isoformat()}] LOGIN: UNCAUGHT ERROR: {e}")
         return jsonify({'message': 'Internal Login Error', 'error': str(e)}), 500
 
 @app.route('/api/availability')
