@@ -118,7 +118,7 @@ def token_required(f):
 
 @app.route('/api/hello')
 def hello():
-    return jsonify({"status": "ok", "message": "Full system restored (v4.1-fulltest)", "time": datetime.datetime.now().isoformat()})
+    return jsonify({"status": "ok", "message": "Full system restored (v4.2-exacttest)", "time": datetime.datetime.now().isoformat()})
 
 @app.route('/api/db-diag')
 def db_diag():
@@ -222,13 +222,11 @@ def migrate_db():
 @app.route('/api/echo-json', methods=['POST'])
 def echo_json():
     try:
-        data = request.get_json(silent=True)
-        # 1. DB test
-        conn, db_type = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("SELECT 1")
-        res = cur.fetchone()
-        conn.close()
+        data = request.get_json(silent=True) or {}
+        username = data.get('username', 'admin')
+        
+        # Exact replication of login's first DB call
+        user = query_db("SELECT * FROM users WHERE username = ? AND active = ?", (username, True), one=True)
         
         # 2. Hashing test
         h = hash_password('test')
@@ -241,12 +239,12 @@ def echo_json():
         return jsonify({
             "success": True, 
             "received": data, 
-            "db_test": res[0], 
+            "user_found_id": user['id'] if user else None,
             "hash_test": v,
             "jwt_test": token[:10]
         })
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
+        return jsonify({"success": False, "error": str(e), "trace": traceback.format_exc()})
 
 @app.route('/api/debug-login-test')
 def debug_login_test():
