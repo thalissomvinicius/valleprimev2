@@ -121,7 +121,7 @@ def token_required(f):
 
 @app.route('/api/hello')
 def hello():
-    return jsonify({"status": "ok", "message": "Full system restored (v3.2-fixed)", "time": datetime.datetime.now().isoformat()})
+    return jsonify({"status": "ok", "message": "Full system restored (v3.3-log)", "time": datetime.datetime.now().isoformat()})
 
 @app.route('/api/db-diag')
 def db_diag():
@@ -225,53 +225,83 @@ def migrate_db():
 @app.route('/api/auth/login', methods=['POST'])
 def login():
     try:
+        print("LOGIN DEBUG: Start")
         data = request.get_json(silent=True) or {}
         username = data.get('username', '').strip()
         password = data.get('password', '')
+        print(f"LOGIN DEBUG: Attempt for user '{username}'")
+        
         if not username or not password:
             return jsonify({'message': 'Credentials required'}), 400
         
         # Try to find user - Using parameterized boolean for Postgres compatibility
+        print("LOGIN DEBUG: Querying DB")
         user = query_db("SELECT * FROM users WHERE username = ? AND active = ?", (username, True), one=True)
         
         # If user not found and table might be missing or empty, handle admin logic
         if not user and username == 'admin' and password == 'admin123':
-             # Check if table exists/has users by attempting a count
+             print("LOGIN DEBUG: Admin not found, checking count")
              res = query_db("SELECT count(*) as cnt FROM users", one=True)
              
              if res is None:
-                 # Table likely doesn't exist, run migration for users table at least
-                 migrate_db_internal() # Helper for code reuse
+                 print("LOGIN DEBUG: res is None, migrating")
+                 migrate_db_internal()
                  res = query_db("SELECT count(*) as cnt FROM users", one=True)
              
              if res and res['cnt'] == 0:
+                 print("LOGIN DEBUG: count is 0, creating admin")
                  pw_hash = hash_password('admin123')
                  query_db("INSERT INTO users (username, password_hash, nome, role, active, permissions) VALUES (?, ?, ?, ?, ?, ?)",
                           ('admin', pw_hash, 'Admin', 'admin', True, json.dumps({"canViewAllClients": True})), commit=True)
                  user = query_db("SELECT * FROM users WHERE username = 'admin'", one=True)
 
         if not user:
+            print("LOGIN DEBUG: User not found after all checks")
             return jsonify({'message': 'Invalid credentials (User not found)'}), 401
             
+        print("LOGIN DEBUG: Verifying password")
         if not verify_password(user['password_hash'], password):
+            print("LOGIN DEBUG: Password mismatch")
             return jsonify({'message': 'Invalid credentials (Password mismatch)'}), 401
         
-        token = jwt.encode({
-            'user_id': user['id'],
-            'role': user['role'],
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=12)
-        }, SECRET_KEY, algorithm="HS256")
+        print("LOGIN DEBUG: Encoding JWT")
+        try:
+            token = jwt.encode({
+                'user_id': user['id'],
+                'role': user['role'],
+                'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=12)
+            }, SECRET_KEY, algorithm="HS256")
+            
+            # Handle PyJWT < 2.0.0 (returns bytes)
+            if isinstance(token, bytes):
+                token = token.decode('utf-8')
+            print("LOGIN DEBUG: Token generated successfully")
+        except Exception as jwt_err:
+            print(f"LOGIN DEBUG: JWT Error: {str(jwt_err)}")
+            return jsonify({'message': 'JWT Error', 'error': str(jwt_err)}), 500
         
-        return jsonify({
+        print("LOGIN DEBUG: Loading permissions")
+        perms = {}
+        if user['permissions']:
+            try:
+                perms = json.loads(user['permissions'])
+            except:
+                print("LOGIN DEBUG: Perms parse failed")
+        
+        resp_data = {
             'token': token,
             'user': {
                 'id': user['id'],
                 'username': user['username'],
                 'role': user['role'],
-                'permissions': json.loads(user['permissions']) if user['permissions'] else {}
+                'permissions': perms
             }
-        })
+        }
+        print("LOGIN DEBUG: Success, returning data")
+        return jsonify(resp_data)
     except Exception as e:
+        print(f"LOGIN DEBUG: UNCAUGHT ERROR: {str(e)}")
+        print(traceback.format_exc())
         return jsonify({'message': 'Internal Login Error', 'error': str(e)}), 500
 
 @app.route('/api/availability')
