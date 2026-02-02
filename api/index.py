@@ -217,10 +217,11 @@ def query_db(sql, params=(), one=False, commit=False):
         except: pass
 
 # Initialize DB on start (safe wrapper)
-try:
-    init_db()
-except Exception as e:
-    print(f"CRITICAL INIT FAILURE: {e}")
+# DISABLED: specific calls or migrate-db endpoint should handle this to prevent startup timeouts
+# try:
+#     init_db()
+# except Exception as e:
+#     print(f"CRITICAL INIT FAILURE: {e}")
 
 def format_currency(val):
     """Format value as Brazilian currency (R$ format)"""
