@@ -31,30 +31,27 @@ def get_db_connection():
     db_url = os.environ.get('DATABASE_URL')
     if db_url:
         try:
-            import psycopg2
-            conn = psycopg2.connect(db_url, sslmode='require', connect_timeout=5)
+            import pg8000.dbapi
+            import urllib.parse
+            import ssl
+            u = urllib.parse.urlparse(db_url)
+            # Safe SSL context for Vercel/Postgres
+            ssl_context = ssl.create_default_context()
+            ssl_context.check_hostname = False
+            ssl_context.verify_mode = ssl.CERT_NONE
+            
+            conn = pg8000.dbapi.connect(
+                user=u.username,
+                password=u.password,
+                host=u.hostname,
+                port=u.port or 5432,
+                database=u.path[1:],
+                ssl_context=ssl_context,
+                timeout=15
+            )
             return conn, 'postgres'
         except Exception as e:
-            print(f"DB WARNING: psycopg2 failed ({str(e)}). Falling back to pg8000.")
-            
-        import pg8000.dbapi
-        import urllib.parse
-        import ssl
-        u = urllib.parse.urlparse(db_url)
-        ssl_context = ssl.create_default_context()
-        ssl_context.check_hostname = False
-        ssl_context.verify_mode = ssl.CERT_NONE
-        
-        conn = pg8000.dbapi.connect(
-            user=u.username,
-            password=u.password,
-            host=u.hostname,
-            port=u.port,
-            database=u.path[1:],
-            ssl_context=ssl_context,
-            timeout=10
-        )
-        return conn, 'postgres'
+            print(f"DB ERROR (pg8000): {str(e)}")
     
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -121,7 +118,7 @@ def token_required(f):
 
 @app.route('/api/hello')
 def hello():
-    return jsonify({"status": "ok", "message": "Full system restored (v3.5-final-debug)", "time": datetime.datetime.now().isoformat()})
+    return jsonify({"status": "ok", "message": "Full system restored (v3.6-stable)", "time": datetime.datetime.now().isoformat()})
 
 @app.route('/api/db-diag')
 def db_diag():
