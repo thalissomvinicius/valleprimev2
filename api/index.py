@@ -32,11 +32,12 @@ else:
     DB_PATH = os.path.join(BASE_DIR, 'clients.db')
 
 # 3. Import helper (safe import)
-try:
-    from generate_proposal_reportlab import generate_pdf_reportlab
-except Exception as e:
-    print(f"IMPORT ERROR: {e}")
-    generate_pdf_reportlab = None
+# DISABLED FOR DEBUGGING STARTUP CRASH
+# try:
+#     from generate_proposal_reportlab import generate_pdf_reportlab
+# except Exception as e:
+#     print(f"IMPORT ERROR: {e}")
+generate_pdf_reportlab = None
 
 # Initialize Flask
 app = Flask(__name__)
