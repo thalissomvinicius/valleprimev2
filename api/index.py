@@ -255,19 +255,45 @@ def migrate_tipo_pessoa():
 
 @app.route('/api/debug-clients')
 def debug_clients():
-    """Debug route to see all client data"""
+    """Debug route to see all client data and test schema"""
+    result = {"success": True, "tests": {}}
+    
     try:
-        clients = query_db("SELECT id, nome, cpf_cnpj, tipo_pessoa, created_at, updated_at FROM clients ORDER BY id")
-        return {
-            "success": True,
-            "count": len(clients) if clients else 0,
-            "clients": clients if clients else []
-        }
+        # Test 1: Simple count without tipo_pessoa
+        simple_count = query_db("SELECT COUNT(*) as c FROM clients", one=True)
+        result["tests"]["simple_count"] = simple_count.get('c') if simple_count else "error"
     except Exception as e:
-        return {
-            "success": False,
-            "error": str(e)
-        }, 500
+        result["tests"]["simple_count_error"] = str(e)
+    
+    try:
+        # Test 2: Select without tipo_pessoa column
+        clients_basic = query_db("SELECT id, nome, cpf_cnpj FROM clients ORDER BY id")
+        result["tests"]["basic_select_count"] = len(clients_basic) if clients_basic else 0
+        result["clients_basic"] = clients_basic[:5] if clients_basic else []
+    except Exception as e:
+        result["tests"]["basic_select_error"] = str(e)
+    
+    try:
+        # Test 3: Select with tipo_pessoa column
+        clients_full = query_db("SELECT id, nome, cpf_cnpj, tipo_pessoa FROM clients ORDER BY id")
+        result["tests"]["full_select_count"] = len(clients_full) if clients_full else 0
+        result["clients_full"] = clients_full[:5] if clients_full else []
+    except Exception as e:
+        result["tests"]["full_select_error"] = str(e)
+    
+    try:
+        # Test 4: Check if tipo_pessoa column exists
+        # This works differently in SQLite vs PostgreSQL
+        schema_check = query_db("""
+            SELECT column_name, data_type 
+            FROM information_schema.columns 
+            WHERE table_name = 'clients'
+        """)
+        result["schema"] = schema_check if schema_check else []
+    except Exception as e:
+        result["tests"]["schema_error"] = str(e)
+    
+    return result
 
 @app.route('/api/health')
 def health():
