@@ -471,14 +471,16 @@ def generate():
         try:
             name = req.get('nome_proponente', '').strip()
             cpf = req.get('cpf_cnpj_proponente', '').strip()
+            tipo_pessoa_req = req.get('tipo_pessoa', 'PF')
             if name and cpf:
-                existing = query_db("SELECT id FROM clients WHERE cpf_cnpj = ?", (cpf,), one=True)
+                # Consider tipo_pessoa when checking duplicates / saving
+                existing = query_db("SELECT id FROM clients WHERE cpf_cnpj = ? AND tipo_pessoa = ?", (cpf, tipo_pessoa_req), one=True)
                 client_json = json.dumps(req)
                 now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 if existing:
-                    query_db("UPDATE clients SET nome = ?, data = ?, updated_at = ? WHERE id = ?", (name, client_json, now, existing['id']), commit=True)
+                    query_db("UPDATE clients SET nome = ?, tipo_pessoa = ?, data = ?, updated_at = ? WHERE id = ?", (name, tipo_pessoa_req, client_json, now, existing['id']), commit=True)
                 else:
-                    query_db("INSERT INTO clients (nome, cpf_cnpj, data, updated_at) VALUES (?, ?, ?, ?)", (name, cpf, client_json, now), commit=True)
+                    query_db("INSERT INTO clients (nome, cpf_cnpj, tipo_pessoa, data, updated_at) VALUES (?, ?, ?, ?, ?)", (name, cpf, tipo_pessoa_req, client_json, now), commit=True)
         except Exception as e:
             print(f"AUTO-SAVE ERROR: {e}")
 
