@@ -253,6 +253,22 @@ def migrate_tipo_pessoa():
             "error": str(e)
         }, 500
 
+@app.route('/api/debug-clients')
+def debug_clients():
+    """Debug route to see all client data"""
+    try:
+        clients = query_db("SELECT id, nome, cpf_cnpj, tipo_pessoa, created_at, updated_at FROM clients ORDER BY id")
+        return {
+            "success": True,
+            "count": len(clients) if clients else 0,
+            "clients": clients if clients else []
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }, 500
+
 @app.route('/api/health')
 def health():
     """Diagnostic route"""
