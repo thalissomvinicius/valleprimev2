@@ -118,7 +118,7 @@ def token_required(f):
 
 @app.route('/api/hello')
 def hello():
-    return jsonify({"status": "ok", "message": "Full system restored (v5.1-get-login)", "time": datetime.datetime.now().isoformat()})
+    return jsonify({"status": "ok", "message": "Full system restored (v5.2-auth-me)", "time": datetime.datetime.now().isoformat()})
 
 def migrate_db_internal():
     """Internal migration logic to ensure tables exist"""
@@ -189,6 +189,44 @@ def migrate_db():
         return jsonify({"success": True, "message": "Database initialized/migrated"})
     else:
         return jsonify({"success": False, "message": "Migration failed (check logs)"}), 500
+
+# Rota para verificar autenticação (usada pelo frontend ao carregar a página)
+@app.route('/api/auth/me', methods=['GET'])
+def auth_me():
+    """Valida token JWT e retorna dados do usuário"""
+    auth_header = request.headers.get('Authorization', '')
+    if not auth_header.startswith('Bearer '):
+        return jsonify({'message': 'Token required'}), 401
+    
+    token = auth_header.split(' ')[1]
+    
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        
+        # Para admin hardcoded, retorna dados diretamente
+        if payload.get('user_id') == 1 and payload.get('role') == 'admin':
+            return jsonify({
+                'user': {
+                    'id': 1,
+                    'username': 'admin',
+                    'role': 'admin',
+                    'permissions': {"canViewAllClients": True}
+                }
+            })
+        
+        # Para outros usuários, buscar no banco (se necessário)
+        return jsonify({
+            'user': {
+                'id': payload.get('user_id'),
+                'username': 'user',
+                'role': payload.get('role', 'user'),
+                'permissions': {}
+            }
+        })
+    except jwt.ExpiredSignatureError:
+        return jsonify({'message': 'Token expired'}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({'message': 'Invalid token'}), 401
 
 # ROTA ALTERNATIVA GET - para contornar problema de body parsing no Vercel
 @app.route('/api/login-get', methods=['GET'])
