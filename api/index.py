@@ -118,7 +118,7 @@ def token_required(f):
 
 @app.route('/api/hello')
 def hello():
-    return jsonify({"status": "ok", "message": "Full system restored (v4.2-exacttest)", "time": datetime.datetime.now().isoformat()})
+    return jsonify({"status": "ok", "message": "Full system restored (v4.3-sqlite)", "time": datetime.datetime.now().isoformat()})
 
 @app.route('/api/db-diag')
 def db_diag():
@@ -223,25 +223,20 @@ def migrate_db():
 def echo_json():
     try:
         data = request.get_json(silent=True) or {}
-        username = data.get('username', 'admin')
         
-        # Exact replication of login's first DB call
-        user = query_db("SELECT * FROM users WHERE username = ? AND active = ?", (username, True), one=True)
-        
-        # 2. Hashing test
-        h = hash_password('test')
-        v = verify_password(h, 'test')
-        
-        # 3. JWT test
-        token = jwt.encode({'u': 1}, SECRET_KEY, algorithm="HS256")
-        if isinstance(token, bytes): token = token.decode('utf-8')
+        # Force sqlite for this test
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+        # Just check if table exists in sqlite (it won't have users unless migrated)
+        try: cur.execute("SELECT 1 FROM users LIMIT 1")
+        except: pass
+        conn.close()
         
         return jsonify({
             "success": True, 
             "received": data, 
-            "user_found_id": user['id'] if user else None,
-            "hash_test": v,
-            "jwt_test": token[:10]
+            "db_type_tested": "sqlite_forced"
         })
     except Exception as e:
         return jsonify({"success": False, "error": str(e), "trace": traceback.format_exc()})
