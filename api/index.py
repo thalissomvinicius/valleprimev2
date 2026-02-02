@@ -121,7 +121,7 @@ def token_required(f):
 
 @app.route('/api/hello')
 def hello():
-    return jsonify({"status": "ok", "message": "Full system restored (v3.1)", "time": datetime.datetime.now().isoformat()})
+    return jsonify({"status": "ok", "message": "Full system restored (v3.2-fixed)", "time": datetime.datetime.now().isoformat()})
 
 @app.route('/api/db-diag')
 def db_diag():
@@ -131,11 +131,12 @@ def db_diag():
         cur.execute("SELECT 1")
         res = cur.fetchone()
         
-        # Check users count
-        user_count = -1
+        # Check users detail
+        users_info = []
         try:
-            cur.execute("SELECT count(*) FROM users")
-            user_count = cur.fetchone()[0]
+            cur.execute("SELECT id, username, active, role FROM users")
+            for r in cur.fetchall():
+                users_info.append({"id": r[0], "u": r[1], "a": r[2], "r": r[3]})
         except:
             pass
             
@@ -144,8 +145,9 @@ def db_diag():
             "status": "ok", 
             "db_type": db_type, 
             "result": res[0],
-            "user_count": user_count,
-            "table_users_exists": user_count >= 0
+            "user_count": len(users_info),
+            "users": users_info,
+            "table_users_exists": True if users_info or user_count >= 0 else False
         })
     except Exception as e:
         return jsonify({"status": "error", "message": str(e), "trace": traceback.format_exc()}), 500
@@ -229,8 +231,8 @@ def login():
         if not username or not password:
             return jsonify({'message': 'Credentials required'}), 400
         
-        # Try to find user
-        user = query_db("SELECT * FROM users WHERE username = ? AND active = 1", (username,), one=True)
+        # Try to find user - Using parameterized boolean for Postgres compatibility
+        user = query_db("SELECT * FROM users WHERE username = ? AND active = ?", (username, True), one=True)
         
         # If user not found and table might be missing or empty, handle admin logic
         if not user and username == 'admin' and password == 'admin123':
