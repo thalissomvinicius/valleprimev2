@@ -77,6 +77,7 @@ export function AuthProvider({ children }) {
                         obrasPermitidas: OBRAS.map(o => o.codigo),
                         statusPermitidos: STATUS_LOTES.map(s => s.value),
                         aprovado: true,
+                        canViewAllClients: true, // Admin always sees all
                         createdAt: new Date().toISOString(),
                     }];
                     localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(list));
@@ -90,7 +91,14 @@ export function AuthProvider({ children }) {
                     try {
                         const { userId } = JSON.parse(session);
                         const user = list.find(u => u.id === userId);
-                        if (user) setCurrentUser(sanitizeUser(user));
+                        if (user) {
+                            // Ensure legacy users have permission logic if admin
+                            const updatedUser = {
+                                ...user,
+                                canViewAllClients: user.canViewAllClients ?? (user.role === 'admin')
+                            };
+                            setCurrentUser(sanitizeUser(updatedUser));
+                        }
                     } catch (_) {
                         sessionStorage.removeItem(STORAGE_KEYS.SESSION);
                     }
@@ -120,7 +128,13 @@ export function AuthProvider({ children }) {
                 return { success: false, error: 'Aguardando aprovação do administrador.' };
             }
 
-            const safe = sanitizeUser(user);
+            // Ensure property exists on login
+            const updatedUser = {
+                ...user,
+                canViewAllClients: user.canViewAllClients ?? (user.role === 'admin')
+            };
+
+            const safe = sanitizeUser(updatedUser);
             setCurrentUser(safe);
             sessionStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify({ userId: user.id }));
             return { success: true, user: safe };
@@ -154,6 +168,7 @@ export function AuthProvider({ children }) {
                 obrasPermitidas: OBRAS.map(o => o.codigo),
                 statusPermitidos: STATUS_LOTES.map(s => s.value),
                 aprovado: true,
+                canViewAllClients: false, // Default: sees only own clients
                 createdAt: new Date().toISOString(),
             };
             const next = [...users, newUser];

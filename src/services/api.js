@@ -21,11 +21,12 @@ export const fetchAvailability = async (obraCode = '624') => {
   }
 };
 
-export const getClients = async ({ search = '', page = 1, limit = 50, type = '' } = {}) => {
+export const getClients = async ({ search = '', page = 1, limit = 50, type = '', created_by = '' } = {}) => {
   try {
     const params = new URLSearchParams();
     if (search) params.append('q', search);
     if (type) params.append('type', type);
+    if (created_by) params.append('created_by', created_by);
     params.append('page', page);
     params.append('limit', limit);
 
@@ -45,7 +46,7 @@ export const getClients = async ({ search = '', page = 1, limit = 50, type = '' 
 export const saveClient = async (clientData) => {
   try {
     const response = await axios.post(CLIENT_BASE, clientData);
-    return response.data;
+    return response.data; // Response should be { success: true } or { error: ... }
   } catch (error) {
     console.error('Error saving client:', error);
     throw error;

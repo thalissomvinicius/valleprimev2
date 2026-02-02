@@ -28,6 +28,7 @@ function AdminPanel() {
         setEditData({
             obrasPermitidas: [...user.obrasPermitidas],
             statusPermitidos: [...user.statusPermitidos],
+            canViewAllClients: !!user.canViewAllClients,
         });
         setExpandedUser(user.id);
     };
@@ -362,6 +363,35 @@ function AdminPanel() {
                                                                 </label>
                                                             );
                                                         })}
+                                                    </div>
+                                                </div>
+
+                                                <div className="permission-group">
+                                                    <h4>
+                                                        <Users size={18} />
+                                                        Acesso a Clientes
+                                                    </h4>
+                                                    <div className="permission-list">
+                                                        <label
+                                                            className={`permission-item ${(editingUser === user.id ? editData.canViewAllClients : user.canViewAllClients) ? 'active' : ''
+                                                                } ${editingUser !== user.id ? 'readonly' : ''}`}
+                                                            style={{ width: '100%' }}
+                                                        >
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={editingUser === user.id ? !!editData.canViewAllClients : !!user.canViewAllClients}
+                                                                onChange={() => {
+                                                                    if (editingUser === user.id) {
+                                                                        setEditData(prev => ({
+                                                                            ...prev,
+                                                                            canViewAllClients: !prev.canViewAllClients
+                                                                        }));
+                                                                    }
+                                                                }}
+                                                                disabled={editingUser !== user.id}
+                                                            />
+                                                            <span>Visualizar TODOS os clientes (ignora restrição de dono)</span>
+                                                        </label>
                                                     </div>
                                                 </div>
                                             </div>

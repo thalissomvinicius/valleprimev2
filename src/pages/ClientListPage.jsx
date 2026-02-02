@@ -6,12 +6,14 @@ import {
     Calendar, Mail, Phone, MapPin, Building2, User
 } from 'lucide-react';
 import { getClients, deleteClient, saveClient } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import ClientFormModal from '../components/ClientFormModal';
 import Header from '../components/Header';
 import './ClientListPage.css';
 
 function ClientListPage() {
     const navigate = useNavigate();
+    const { currentUser } = useAuth();
     const [clients, setClients] = useState([]);
     const [loading, setLoading] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
@@ -31,7 +33,19 @@ function ClientListPage() {
         else setLoadingMore(true);
 
         try {
-            const result = await getClients({ search, page: pageNum, limit: 50, type: clientTab });
+            // Permission check: if user is admin OR has explicit permission, see all.
+            // Otherwise, filter by their own ID.
+            const userCanSeeAll = currentUser?.role === 'admin' || currentUser?.canViewAllClients;
+            const filterBy = userCanSeeAll ? '' : (currentUser?.id || '');
+
+            const result = await getClients({
+                search,
+                page: pageNum,
+                limit: 50,
+                type: clientTab,
+                created_by: filterBy
+            });
+
             if (result.success) {
                 if (append) {
                     setClients(prev => [...prev, ...result.clients]);
@@ -61,9 +75,11 @@ function ClientListPage() {
 
     // Reload when debounced search changes
     useEffect(() => {
-        setPage(1);
-        loadClients(debouncedSearch, 1, false);
-    }, [debouncedSearch, clientTab]);
+        if (currentUser) {
+            setPage(1);
+            loadClients(debouncedSearch, 1, false);
+        }
+    }, [debouncedSearch, clientTab, currentUser]); // Reload if user changes
 
     const handleLoadMore = () => {
         const nextPage = page + 1;
@@ -97,8 +113,14 @@ function ClientListPage() {
 
     const handleFormSuccess = async (submissionData) => {
         try {
+            // Prepare submission data with ownership info
+            const dataToSave = {
+                ...submissionData,
+                created_by: currentUser?.id
+            };
+
             // Save client data
-            const result = await saveClient(submissionData);
+            const result = await saveClient(dataToSave);
             if (result.success) {
                 setShowForm(false);
                 setEditingClient(null);
