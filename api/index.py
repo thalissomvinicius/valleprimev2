@@ -724,9 +724,13 @@ def clients():
             existing = query_db("SELECT id FROM clients WHERE cpf_cnpj = ? AND tipo_pessoa = ?", (cpf, tipo_pessoa), one=True)
             
             if existing:
-                query_db("UPDATE clients SET nome = ?, tipo_pessoa = ?, data = ?, updated_at = ? WHERE id = ?", (name, tipo_pessoa, data_json, now, existing['id']), commit=True)
+                result = query_db("UPDATE clients SET nome = ?, tipo_pessoa = ?, data = ?, updated_at = ? WHERE id = ?", (name, tipo_pessoa, data_json, now, existing['id']), commit=True)
+                if result is None:
+                    return {"error": "Failed to update client in database"}, 500
             else:
-                query_db("INSERT INTO clients (nome, cpf_cnpj, tipo_pessoa, data, updated_at) VALUES (?, ?, ?, ?, ?)", (name, cpf, tipo_pessoa, data_json, now), commit=True)
+                result = query_db("INSERT INTO clients (nome, cpf_cnpj, tipo_pessoa, data, updated_at) VALUES (?, ?, ?, ?, ?)", (name, cpf, tipo_pessoa, data_json, now), commit=True)
+                if result is None:
+                    return {"error": "Failed to insert client in database"}, 500
                 
             return {"success": True}, 200
             
