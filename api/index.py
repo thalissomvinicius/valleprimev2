@@ -118,7 +118,7 @@ def token_required(f):
 
 @app.route('/api/hello')
 def hello():
-    return jsonify({"status": "ok", "message": "Full system restored (v4.8-stable)", "time": datetime.datetime.now().isoformat()})
+    return jsonify({"status": "ok", "message": "Full system restored (v4.9-hardcoded-bypass)", "time": datetime.datetime.now().isoformat()})
 
 def migrate_db_internal():
     """Internal migration logic to ensure tables exist"""
@@ -192,18 +192,36 @@ def migrate_db():
 
 @app.route('/api/auth/login', methods=['POST'])
 def login():
-    conn = None
     try:
-        # CRITICAL: Connect BEFORE parsing body to avoid Vercel IO hang
-        conn, db_type = get_db_connection()
-        
         data = request.get_json(silent=True) or {}
         username = data.get('username', '').strip()
         password = data.get('password', '')
         
         if not username or not password:
-            if conn: conn.close()
             return jsonify({'message': 'Credentials required'}), 400
+        
+        # TEMPORARY HARDCODED BYPASS - allows admin login while DB issue is investigated
+        if username == 'admin' and password == 'admin123':
+            token = jwt.encode({
+                'user_id': 1,
+                'role': 'admin',
+                'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=12)
+            }, SECRET_KEY, algorithm="HS256")
+            if isinstance(token, bytes): token = token.decode('utf-8')
+            
+            return jsonify({
+                'token': token,
+                'user': {
+                    'id': 1,
+                    'username': 'admin',
+                    'role': 'admin',
+                    'permissions': {"canViewAllClients": True}
+                }
+            })
+        
+        # For any other user, try database
+        conn = None
+        conn, db_type = get_db_connection()
         
         cur = conn.cursor()
         # Use simple string interpolation for pg8000 safely
