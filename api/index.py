@@ -218,46 +218,28 @@ def db_test():
 def migrate_tipo_pessoa():
     """Migration route to fill tipo_pessoa for old clients based on CPF/CNPJ length"""
     try:
-        conn, db_type = get_db_connection()
-        cur = conn.cursor()
+        # First, get all clients with empty tipo_pessoa
+        clients = query_db("SELECT id, cpf_cnpj FROM clients WHERE tipo_pessoa IS NULL OR tipo_pessoa = ''")
         
-        # For PostgreSQL: use LENGTH and REPLACE
-        if db_type == 'postgres':
-            update_pf = """
-                UPDATE clients 
-                SET tipo_pessoa = 'PF' 
-                WHERE (tipo_pessoa IS NULL OR tipo_pessoa = '')
-                AND LENGTH(REPLACE(REPLACE(REPLACE(cpf_cnpj, '.', ''), '-', ''), '/', '')) = 11
-            """
-            update_pj = """
-                UPDATE clients 
-                SET tipo_pessoa = 'PJ' 
-                WHERE (tipo_pessoa IS NULL OR tipo_pessoa = '')
-                AND LENGTH(REPLACE(REPLACE(REPLACE(cpf_cnpj, '.', ''), '-', ''), '/', '')) = 14
-            """
-        else:
-            # SQLite version
-            update_pf = """
-                UPDATE clients 
-                SET tipo_pessoa = 'PF' 
-                WHERE (tipo_pessoa IS NULL OR tipo_pessoa = '')
-                AND LENGTH(REPLACE(REPLACE(REPLACE(cpf_cnpj, '.', ''), '-', ''), '/', '')) = 11
-            """
-            update_pj = """
-                UPDATE clients 
-                SET tipo_pessoa = 'PJ' 
-                WHERE (tipo_pessoa IS NULL OR tipo_pessoa = '')
-                AND LENGTH(REPLACE(REPLACE(REPLACE(cpf_cnpj, '.', ''), '-', ''), '/', '')) = 14
-            """
+        if not clients:
+            return {
+                "success": True,
+                "message": "No clients to migrate - all have tipo_pessoa set",
+                "updated_pf": 0,
+                "updated_pj": 0
+            }
         
-        cur.execute(update_pf)
-        pf_count = cur.rowcount
+        pf_count = 0
+        pj_count = 0
         
-        cur.execute(update_pj)
-        pj_count = cur.rowcount
-        
-        conn.commit()
-        conn.close()
+        for client in clients:
+            cpf_cnpj = (client.get('cpf_cnpj') or '').replace('.', '').replace('-', '').replace('/', '')
+            if len(cpf_cnpj) == 11:
+                query_db("UPDATE clients SET tipo_pessoa = 'PF' WHERE id = ?", (client['id'],), commit=True)
+                pf_count += 1
+            elif len(cpf_cnpj) == 14:
+                query_db("UPDATE clients SET tipo_pessoa = 'PJ' WHERE id = ?", (client['id'],), commit=True)
+                pj_count += 1
         
         return {
             "success": True,
