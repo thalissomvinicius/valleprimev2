@@ -110,6 +110,18 @@ def token_required(f):
 def hello():
     return jsonify({"status": "ok", "message": "Auth logic restored (partially)"})
 
+@app.route('/api/db-test')
+def db_test():
+    try:
+        conn, db_type = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT 1")
+        res = cur.fetchone()
+        conn.close()
+        return jsonify({"status": "ok", "db_type": db_type, "result": res[0]})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e), "trace": traceback.format_exc()}), 500
+
 @app.route('/api/auth/login', methods=['POST'])
 def login():
     try:
