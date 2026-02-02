@@ -118,66 +118,7 @@ def token_required(f):
 
 @app.route('/api/hello')
 def hello():
-    return jsonify({"status": "ok", "message": "Full system restored (v4.8-reorder-fix)", "time": datetime.datetime.now().isoformat()})
-
-@app.route('/api/db-reset-locks')
-def db_reset_locks():
-    try:
-        conn, db_type = get_db_connection()
-        if db_type != 'postgres':
-            return jsonify({"message": "Not postgres"}), 400
-        cur = conn.cursor()
-        # Kill all other sessions
-        cur.execute("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE pid <> pg_backend_pid() AND datname = current_database()")
-        res = cur.fetchall()
-        conn.close()
-        return jsonify({"message": "Sessions terminated", "count": len(res)})
-    except Exception as e:
-        return jsonify({"message": str(e)}), 500
-
-@app.route('/api/db-diag')
-def db_diag():
-    try:
-        conn, db_type = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("SELECT 1")
-        res = cur.fetchone()
-        
-        # Check users detail
-        users_info = []
-        try:
-            cur.execute("SELECT id, username, active, role FROM users")
-            for r in cur.fetchall():
-                users_info.append({"id": r[0], "u": r[1], "a": r[2], "r": r[3]})
-        except: pass
-            
-        # Check for locks if postgres
-        locks = []
-        if db_type == 'postgres':
-            try:
-                cur.execute("""
-                    SELECT 
-                        t.relname as table_name,
-                        l.mode,
-                        l.pid,
-                        l.granted
-                    FROM pg_locks l
-                    JOIN pg_class t ON l.relation = t.oid
-                    WHERE t.relkind = 'r'
-                """)
-                locks = [dict(zip([d[0] for d in cur.description], row)) for row in cur.fetchall()]
-            except: pass
-
-        conn.close()
-        return jsonify({
-            "status": "ok", 
-            "db_type": db_type, 
-            "user_count": len(users_info),
-            "users": users_info,
-            "locks": locks
-        })
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+    return jsonify({"status": "ok", "message": "Full system restored (v4.8-stable)", "time": datetime.datetime.now().isoformat()})
 
 def migrate_db_internal():
     """Internal migration logic to ensure tables exist"""
