@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { hashPassword } from '../utils/authHash';
+import { authLogin, authMe, getUsers, createUser, updateUser, deleteUser as apiDeleteUser } from '../services/api';
 
 // Lista de obras disponíveis
 export const OBRAS = [
@@ -32,211 +32,164 @@ export const STATUS_LOTES = [
 const AuthContext = createContext(null);
 
 const STORAGE_KEYS = {
-    USERS: 'valle_users',
-    SESSION: 'valle_session',
+    TOKEN: 'valle_token',
 };
-
-/** Remove senha do objeto usuário antes de expor no estado */
-function sanitizeUser(user) {
-    if (!user) return null;
-    const { passwordHash, ...safe } = user;
-    return safe;
-}
 
 export function AuthProvider({ children }) {
     const [users, setUsers] = useState([]);
     const [currentUser, setCurrentUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    const persistUsers = useCallback((newUsers) => {
-        setUsers(newUsers);
+    const processUser = (userData) => {
+        // Flatten permissions for easy access in frontend
+        const permissions = userData.permissions || {};
+        const user = {
+            ...userData,
+            obrasPermitidas: permissions.obrasPermitidas || [],
+            statusPermitidos: permissions.statusPermitidos || [],
+            canViewAllClients: permissions.canViewAllClients || (userData.role === 'admin'),
+            aprovado: Boolean(userData.active !== false)
+        };
+        return user;
+    }
+
+    const loadUsers = async () => {
         try {
-            localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(newUsers));
+            const result = await getUsers();
+            if (result.users) {
+                const mapped = result.users.map(u => ({
+                    ...u,
+                    obrasPermitidas: (u.permissions || {}).obrasPermitidas || [],
+                    statusPermitidos: (u.permissions || {}).statusPermitidos || [],
+                    canViewAllClients: (u.permissions || {}).canViewAllClients || (u.role === 'admin'),
+                    aprovado: u.active
+                }));
+                setUsers(mapped);
+            }
         } catch (e) {
-            console.warn('Auth: falha ao salvar usuários', e);
+            console.error("Failed to load users", e);
+        }
+    };
+
+    const login = useCallback(async (username, password) => {
+        const trimmed = (username || '').trim();
+        if (!trimmed || !password) return { success: false, error: 'Usuário e senha são obrigatórios.' };
+
+        try {
+            const result = await authLogin(trimmed, password);
+            if (result.token) {
+                localStorage.setItem(STORAGE_KEYS.TOKEN, result.token);
+                const user = processUser(result.user);
+                setCurrentUser(user);
+                // Load users if admin
+                if (user.role === 'admin') {
+                    loadUsers();
+                }
+                return { success: true, user };
+            } else {
+                return { success: false, error: 'Falha no login.' };
+            }
+        } catch (e) {
+            const msg = e.response?.data?.message || 'Erro ao validar login.';
+            return { success: false, error: msg };
         }
     }, []);
 
-    // Inicialização: carregar usuários e restaurar sessão
+    const logout = useCallback(() => {
+        setCurrentUser(null);
+        setUsers([]);
+        localStorage.removeItem(STORAGE_KEYS.TOKEN);
+        // Force page reload just in case or simple clear is enough
+    }, []);
+
+    const addUser = useCallback(async (username, password, nome) => {
+        try {
+            await createUser({ username, password, nome });
+            await loadUsers(); // Refresh list
+            return { success: true };
+        } catch (e) {
+            const msg = e.response?.data?.message || 'Erro ao criar usuário.';
+            return { success: false, error: msg };
+        }
+    }, []);
+
+    const updateUserPermissions = useCallback(async (userId, data) => {
+        try {
+            await updateUser(userId, data);
+            await loadUsers();
+            return { success: true };
+        } catch (e) {
+            return { success: false, error: 'Erro ao atualizar.' };
+        }
+    }, []);
+
+    const deleteUser = useCallback(async (userId) => {
+        try {
+            await apiDeleteUser(userId);
+            await loadUsers();
+            return { success: true };
+        } catch (e) {
+            return { success: false, error: 'Erro ao excluir.' };
+        }
+    }, []);
+
+    const approveUser = useCallback(async (userId) => {
+        try {
+            await updateUser(userId, { active: true, aprovado: true });
+            await loadUsers();
+            return { success: true };
+        } catch (e) {
+            return { success: false, error: 'Erro ao aprovar.' };
+        }
+    }, []);
+
+    // Initial load
     useEffect(() => {
         let cancelled = false;
-
         async function init() {
+            const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
+            if (!token) {
+                setLoading(false);
+                return;
+            }
+
             try {
-                const raw = localStorage.getItem(STORAGE_KEYS.USERS);
-                let list = raw ? JSON.parse(raw) : null;
-
-                if (!list || !Array.isArray(list) || list.length === 0) {
-                    const passwordHash = await hashPassword('admin123');
-                    list = [{
-                        id: 'admin-1',
-                        username: 'admin',
-                        nome: 'Administrador',
-                        passwordHash,
-                        role: 'admin',
-                        obrasPermitidas: OBRAS.map(o => o.codigo),
-                        statusPermitidos: STATUS_LOTES.map(s => s.value),
-                        aprovado: true,
-                        canViewAllClients: true, // Admin always sees all
-                        createdAt: new Date().toISOString(),
-                    }];
-                    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(list));
-                }
-
-                if (cancelled) return;
-                setUsers(list);
-
-                const session = sessionStorage.getItem(STORAGE_KEYS.SESSION);
-                if (session) {
-                    try {
-                        const { userId } = JSON.parse(session);
-                        const user = list.find(u => u.id === userId);
-                        if (user) {
-                            // Ensure legacy users have permission logic if admin
-                            const updatedUser = {
-                                ...user,
-                                canViewAllClients: user.canViewAllClients ?? (user.role === 'admin')
-                            };
-                            setCurrentUser(sanitizeUser(updatedUser));
-                        }
-                    } catch (_) {
-                        sessionStorage.removeItem(STORAGE_KEYS.SESSION);
+                const result = await authMe();
+                if (!cancelled) {
+                    const user = processUser(result.user);
+                    setCurrentUser(user);
+                    if (user.role === 'admin') {
+                        loadUsers();
                     }
                 }
             } catch (e) {
-                console.warn('Auth init error', e);
+                // Token invalid
+                logout();
             } finally {
                 if (!cancelled) setLoading(false);
             }
         }
-
         init();
         return () => { cancelled = true; };
     }, []);
 
-    const login = useCallback(async (username, password) => {
-        const trimmed = (username || '').trim().toLowerCase();
-        if (!trimmed || !password) return { success: false, error: 'Usuário e senha são obrigatórios.' };
-
-        try {
-            const passwordHash = await hashPassword(password);
-            const user = users.find(u => (u.username || '').toLowerCase() === trimmed);
-            if (!user || user.passwordHash !== passwordHash) {
-                return { success: false, error: 'Usuário ou senha incorretos.' };
-            }
-            if (user.aprovado === false) {
-                return { success: false, error: 'Aguardando aprovação do administrador.' };
-            }
-
-            // Ensure property exists on login
-            const updatedUser = {
-                ...user,
-                canViewAllClients: user.canViewAllClients ?? (user.role === 'admin')
-            };
-
-            const safe = sanitizeUser(updatedUser);
-            setCurrentUser(safe);
-            sessionStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify({ userId: user.id }));
-            return { success: true, user: safe };
-        } catch (e) {
-            console.warn('Login error', e);
-            return { success: false, error: 'Erro ao validar login. Tente novamente.' };
-        }
-    }, [users]);
-
-    const logout = useCallback(() => {
-        setCurrentUser(null);
-        sessionStorage.removeItem(STORAGE_KEYS.SESSION);
-    }, []);
-
-    const addUser = useCallback(async (username, password, nome) => {
-        const trimmedUser = (username || '').trim();
-        const trimmedNome = (nome || trimmedUser || '').trim();
-        if (!trimmedUser || !password) return { success: false, error: 'Usuário e senha são obrigatórios.' };
-        if (users.some(u => (u.username || '').toLowerCase() === trimmedUser.toLowerCase())) {
-            return { success: false, error: 'Este usuário já existe.' };
-        }
-
-        try {
-            const passwordHash = await hashPassword(password);
-            const newUser = {
-                id: 'user-' + Date.now(),
-                username: trimmedUser,
-                nome: trimmedNome || trimmedUser,
-                passwordHash,
-                role: 'user',
-                obrasPermitidas: OBRAS.map(o => o.codigo),
-                statusPermitidos: STATUS_LOTES.map(s => s.value),
-                aprovado: true,
-                canViewAllClients: false, // Default: sees only own clients
-                createdAt: new Date().toISOString(),
-            };
-            const next = [...users, newUser];
-            persistUsers(next);
-            return { success: true, user: sanitizeUser(newUser) };
-        } catch (e) {
-            console.warn('Add user error', e);
-            return { success: false, error: 'Erro ao criar usuário.' };
-        }
-    }, [users, persistUsers]);
-
-    const updateUserPermissions = useCallback((userId, { obrasPermitidas, statusPermitidos }) => {
-        const next = users.map(u => {
-            if (u.id !== userId) return u;
-            return {
-                ...u,
-                obrasPermitidas: Array.isArray(obrasPermitidas) ? obrasPermitidas : u.obrasPermitidas,
-                statusPermitidos: Array.isArray(statusPermitidos) ? statusPermitidos : u.statusPermitidos,
-            };
-        });
-        persistUsers(next);
-        if (currentUser?.id === userId) {
-            setCurrentUser(sanitizeUser(next.find(u => u.id === userId)));
-        }
-    }, [users, currentUser, persistUsers]);
-
-    const deleteUser = useCallback((userId) => {
-        const next = users.filter(u => u.id !== userId);
-        persistUsers(next);
-        if (currentUser?.id === userId) {
-            setCurrentUser(null);
-            sessionStorage.removeItem(STORAGE_KEYS.SESSION);
-        }
-    }, [users, currentUser, persistUsers]);
-
-    const approveUser = useCallback((userId) => {
-        const next = users.map(u => u.id === userId ? { ...u, aprovado: true } : u);
-        persistUsers(next);
-    }, [users, persistUsers]);
-
-    const value = {
-        currentUser,
-        users,
-        loading,
-        login,
-        register: () => ({ success: false, message: 'Cadastro desativado. Peça acesso ao administrador.' }),
-        logout,
-        addUser,
-        updateUserPermissions,
-        deleteUser,
-        approveUser,
-        isAdmin: currentUser?.role === 'admin',
-        isAuthenticated: !!currentUser,
-    };
-
     return (
-        <AuthContext.Provider value={value}>
-            {!loading && children}
+        <AuthContext.Provider value={{
+            users,
+            currentUser,
+            loading,
+            login,
+            logout,
+            addUser,
+            deleteUser,
+            updateUserPermissions,
+            approveUser
+        }}>
+            {children}
         </AuthContext.Provider>
     );
 }
 
 export function useAuth() {
-    const context = useContext(AuthContext);
-    if (!context) {
-        throw new Error('useAuth must be used within an AuthProvider');
-    }
-    return context;
+    return useContext(AuthContext);
 }
-
-export default AuthContext;

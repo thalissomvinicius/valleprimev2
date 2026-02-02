@@ -7,6 +7,13 @@ import sqlite3
 import json
 import sys
 import requests
+import secrets
+import hashlib
+import jwt
+from functools import wraps
+
+# JWT Configuration
+SECRET_KEY = os.environ.get('SECRET_KEY', 'dev_secret_key_valle_prime_v2')
 
 # 1. Setup paths to find local modules
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -109,17 +116,60 @@ def init_db():
                 nome TEXT NOT NULL,
                 cpf_cnpj TEXT NOT NULL,
                 tipo_pessoa TEXT NOT NULL DEFAULT 'PF',
+                created_by TEXT,
                 data TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL,
+                nome TEXT,
+                role TEXT DEFAULT 'user',
+                permissions TEXT,
+                active BOOLEAN DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            """
+        else:
+             create_table_sql = """
+            CREATE TABLE IF NOT EXISTS clients (
+                id SERIAL PRIMARY KEY,
+                nome TEXT NOT NULL,
+                cpf_cnpj TEXT NOT NULL,
+                tipo_pessoa TEXT NOT NULL DEFAULT 'PF',
+                created_by TEXT,
+                data TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                username TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL,
+                nome TEXT,
+                role TEXT DEFAULT 'user',
+                permissions TEXT,
+                active BOOLEAN DEFAULT TRUE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
             """
         
         with conn:
             with conn.cursor() as cur:
-                cur.execute(create_table_sql)
-                if db_type == 'sqlite': conn.commit()
-                else: conn.commit()
+                # Split commands for sqlite which might not support multiple statements in execute
+                if db_type == 'sqlite':
+                    statements = create_table_sql.split(';')
+                    for stmt in statements:
+                        if stmt.strip():
+                            cur.execute(stmt)
+                    conn.commit()
+                else:
+                    cur.execute(create_table_sql)
+                    conn.commit()
     except Exception as e:
         print(f"DB INIT ERROR: {e}")
     finally:
@@ -437,6 +487,209 @@ def debug_insert():
         }
     except Exception as e:
         return {"error": str(e), "log": log}, 500
+
+@app.route('/api/auth/login', methods=['POST'])
+def auth_login():
+    data = request.get_json(silent=True) or {}
+    username = data.get('username', '').strip()
+    password = data.get('password', '')
+    
+    if not username or not password:
+        return {'message': 'Username and password are required'}, 400
+        
+    user = query_db("SELECT * FROM users WHERE username = ? AND active = 1", (username,), one=True)
+    
+    # Init admin if no users exist
+    if not user:
+        all_users = query_db("SELECT count(*) as cnt FROM users", one=True)
+        if all_users and all_users['cnt'] == 0 and username == 'admin' and password == 'admin123':
+            # Create default admin
+            try:
+                pw_hash = hash_password('admin123')
+                # Admin permissions: can view all
+                query_db("INSERT INTO users (username, password_hash, nome, role, active, permissions) VALUES (?, ?, ?, ?, ?, ?)", 
+                        ('admin', pw_hash, 'Administrador', 'admin', True, json.dumps({"canViewAllClients": True})), commit=True)
+                user = query_db("SELECT * FROM users WHERE username = 'admin'", one=True)
+            except Exception as e:
+                return {'message': f'Error creating default admin: {str(e)}'}, 500
+    
+    if not user or not verify_password(user['password_hash'], password):
+        return {'message': 'Invalid credentials'}, 401
+    
+    token = jwt.encode({
+        'user_id': user['id'],
+        'role': user['role'],
+        'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=12)
+    }, SECRET_KEY, algorithm="HS256")
+    
+    # Parse permissions if JSON
+    permissions = {}
+    if user['permissions']:
+         try: permissions = json.loads(user['permissions'])
+         except: pass
+         
+    return {
+        'token': token,
+        'user': {
+            'id': user['id'],
+            'username': user['username'],
+            'nome': user['nome'],
+            'role': user['role'],
+            'permissions': permissions
+        }
+    }
+
+@app.route('/api/auth/me', methods=['GET'])
+@token_required
+def auth_me():
+    user = query_db("SELECT id, username, nome, role, permissions FROM users WHERE id = ?", (request.user_id,), one=True)
+    if not user:
+        return {'message': 'User not found'}, 404
+        
+    permissions = {}
+    if user['permissions']:
+         try: permissions = json.loads(user['permissions'])
+         except: pass
+         
+    return {
+        'user': {
+            'id': user['id'],
+            'username': user['username'],
+            'nome': user['nome'],
+            'role': user['role'],
+            'permissions': permissions
+        }
+    }
+
+@app.route('/api/users', methods=['GET', 'POST'])
+@token_required
+def manage_users():
+    # Only admin can manage users
+    if request.user_role != 'admin':
+        return {'message': 'Permission denied'}, 403
+
+    if request.method == 'GET':
+        users = query_db("SELECT id, username, nome, role, permissions, active, created_at FROM users ORDER BY id")
+        result = []
+        for u in users:
+            perms = {}
+            if u['permissions']:
+                try: perms = json.loads(u['permissions'])
+                except: pass
+            
+            result.append({
+                'id': u['id'],
+                'username': u['username'],
+                'nome': u['nome'],
+                'role': u['role'],
+                'active': bool(u['active']),
+                'aprovado': bool(u['active']), # Compatibility
+                'permissions': perms,
+                'created_at': str(u['created_at'])
+            })
+        return {'users': result}
+
+    if request.method == 'POST':
+        data = request.get_json(silent=True) or {}
+        username = data.get('username', '').strip()
+        password = data.get('password', '')
+        nome = data.get('nome', '').strip()
+        
+        if not username or not password:
+             return {'message': 'Username and password required'}, 400
+             
+        # Check existing
+        existing = query_db("SELECT id FROM users WHERE username = ?", (username,), one=True)
+        if existing:
+            return {'message': 'Username already exists'}, 409
+            
+        pw_hash = hash_password(password)
+        
+        # Permissions
+        perms_dict = list(filter(None, [    # Default permissions could be set here
+             # "canViewAllClients": False
+        ])) 
+        # Actually permissions come often empty or specific. 
+        # Let's handle permissions if passed, otherwise empty.
+        # Frontend passes 'obrasPermitidas' etc inside the user object usually.
+        # We will store them in the 'permissions' JSON column.
+        
+        # Extract known permissions from request if they exist at top level or inside permissions
+        # The frontend AdminPanel sends: obrasPermitidas, statusPermitidos, canViewAllClients
+        permissions_data = {
+            "obrasPermitidas": data.get('obrasPermitidas', []),
+            "statusPermitidos": data.get('statusPermitidos', []),
+            "canViewAllClients": data.get('canViewAllClients', False)
+        }
+        
+        permissions_json = json.dumps(permissions_data)
+        
+        query_db("INSERT INTO users (username, password_hash, nome, role, permissions, active) VALUES (?, ?, ?, ?, ?, ?)",
+                (username, pw_hash, nome, 'user', permissions_json, True), commit=True)
+                
+        return {'success': True}
+
+@app.route('/api/users/<int:user_id>', methods=['PUT', 'DELETE'])
+@token_required
+def user_operations(user_id):
+    if request.user_role != 'admin':
+        return {'message': 'Permission denied'}, 403
+        
+    if request.method == 'DELETE':
+        # Prevent self-delete
+        if user_id == request.user_id:
+            return {'message': 'Cannot delete yourself'}, 400
+            
+        query_db("DELETE FROM users WHERE id = ?", (user_id,), commit=True)
+        return {'success': True}
+
+    if request.method == 'PUT':
+        data = request.get_json(silent=True) or {}
+        
+        # Valid fields to update
+        updates = []
+        params = []
+        
+        if 'nome' in data:
+            updates.append("nome = ?")
+            params.append(data['nome'])
+            
+        if 'password' in data and data['password']:
+            updates.append("password_hash = ?")
+            params.append(hash_password(data['password']))
+            
+        if 'active' in data: # mapped from 'aprovado' potentially
+            updates.append("active = ?")
+            params.append(bool(data['active']))
+            
+        if 'aprovado' in data: # Frontend compatibility
+            updates.append("active = ?")
+            params.append(bool(data['aprovado']))
+            
+        # Permissions update
+        if 'obrasPermitidas' in data or 'statusPermitidos' in data or 'canViewAllClients' in data:
+            # We need to fetch existing permissions to merge? Or just overwrite?
+            # Overwrite is safer/simpler for admin panel usually.
+            permissions_data = {
+                "obrasPermitidas": data.get('obrasPermitidas', []),
+                "statusPermitidos": data.get('statusPermitidos', []),
+                "canViewAllClients": data.get('canViewAllClients', False)
+            }
+            updates.append("permissions = ?")
+            params.append(json.dumps(permissions_data))
+            
+        if 'role' in data:
+            updates.append("role = ?")
+            params.append(data['role'])
+
+        if not updates:
+            return {'message': 'No data to update'}, 400
+            
+        params.append(user_id)
+        sql = f"UPDATE users SET {', '.join(updates)} WHERE id = ?"
+        query_db(sql, tuple(params), commit=True)
+        
+        return {'success': True}
 
 @app.route('/api/generate_proposal', methods=['POST'])
 def generate():

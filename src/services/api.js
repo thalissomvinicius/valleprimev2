@@ -2,13 +2,69 @@ import axios from 'axios';
 
 const CLIENT_BASE = '/api/manage-clients';
 const API_BASE = '/api/consulta';
+const USERS_BASE = '/api/users';
+const AUTH_BASE = '/api/auth';
 
-// Set global default timeout to 15 seconds
-axios.defaults.timeout = 15000;
+// Create axios instance
+const api = axios.create({
+  timeout: 15000,
+});
+
+// Request interceptor to add token
+api.interceptors.request.use(config => {
+  const token = localStorage.getItem('valle_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+}, error => {
+  return Promise.reject(error);
+});
+
+// Response interceptor to handle 401 (logout)
+api.interceptors.response.use(response => response, error => {
+  if (error.response && error.response.status === 401) {
+    // Optional: Auto logout if 401
+    // localStorage.removeItem('valle_token');
+    // window.location.href = '/login'; 
+  }
+  return Promise.reject(error);
+});
+
+export const authLogin = async (username, password) => {
+  const response = await api.post(`${AUTH_BASE}/login`, { username, password });
+  return response.data;
+};
+
+export const authMe = async () => {
+  const response = await api.get(`${AUTH_BASE}/me`);
+  return response.data;
+};
+
+// User Management
+export const getUsers = async () => {
+  const response = await api.get(USERS_BASE);
+  return response.data;
+};
+
+export const createUser = async (userData) => {
+  const response = await api.post(USERS_BASE, userData);
+  return response.data;
+};
+
+export const updateUser = async (id, data) => {
+  const response = await api.put(`${USERS_BASE}/${id}`, data);
+  return response.data;
+};
+
+export const deleteUser = async (id) => {
+  const response = await api.delete(`${USERS_BASE}/${id}`);
+  return response.data;
+};
 
 export const fetchAvailability = async (obraCode = '624') => {
   try {
-    const response = await axios.get(`${API_BASE}/${obraCode}`);
+    const response = await api.get(`${API_BASE}/${obraCode}`);
     if (response.data && response.data.success) {
       return response.data.data;
     } else {
@@ -30,7 +86,7 @@ export const getClients = async ({ search = '', page = 1, limit = 50, type = '',
     params.append('page', page);
     params.append('limit', limit);
 
-    const response = await axios.get(`${CLIENT_BASE}?${params.toString()}`);
+    const response = await api.get(`${CLIENT_BASE}?${params.toString()}`);
     const data = response.data;
     // Normalize: backend may return { clients } or { success, clients, total_count }
     if (data && Array.isArray(data.clients) && data.success === undefined) {
@@ -45,7 +101,7 @@ export const getClients = async ({ search = '', page = 1, limit = 50, type = '',
 
 export const saveClient = async (clientData) => {
   try {
-    const response = await axios.post(CLIENT_BASE, clientData);
+    const response = await api.post(CLIENT_BASE, clientData);
     return response.data; // Response should be { success: true } or { error: ... }
   } catch (error) {
     console.error('Error saving client:', error);
@@ -53,9 +109,9 @@ export const saveClient = async (clientData) => {
   }
 };
 
-export const deleteClient = async (clientId) => {
+export const deleteClient = async (id) => {
   try {
-    const response = await axios.delete(`${CLIENT_BASE}/${clientId}`);
+    const response = await api.delete(`${CLIENT_BASE}/${id}`);
     return response.data;
   } catch (error) {
     console.error('Error deleting client:', error);
@@ -63,17 +119,16 @@ export const deleteClient = async (clientId) => {
   }
 };
 
-export const checkDuplicate = async (cpfCnpj, clientId = null, tipo_pessoa = 'PF') => {
+export const checkDuplicate = async (cpf, tipo = 'PF', clientId = null) => {
   try {
-    const params = new URLSearchParams();
-    params.append('cpf_cnpj', cpfCnpj);
-    params.append('tipo_pessoa', tipo_pessoa);
-    if (clientId) params.append('client_id', clientId);
-
-    const response = await axios.get(`${CLIENT_BASE}/check-duplicate?${params.toString()}`);
-    return response.data;
-  } catch (error) {
-    console.error('Error checking duplicate:', error);
-    throw error;
+    let url = `${CLIENT_BASE}/check-duplicate?cpf_cnpj=${encodeURIComponent(cpf)}&tipo_pessoa=${tipo}`;
+    if (clientId) url += `&client_id=${clientId}`;
+    const response = await api.get(url);
+    return response.data; //{ exists: bool }
+  } catch (e) {
+    console.error("Duplicate check error", e);
+    return { exists: false };
   }
-};
+}
+
+

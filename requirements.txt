@@ -6,3 +6,4 @@ requests==2.31.0
 pg8000
 scramp
 psycopg2-binary
+PyJWT==2.8.0
