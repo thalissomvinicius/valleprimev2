@@ -596,7 +596,14 @@ def clients():
             params = []
 
             if tipo and tipo not in ['TODOS', 'ALL', '']:
-                where_clauses.append("tipo_pessoa = ?")
+                # Include clients with NULL tipo_pessoa based on CPF/CNPJ length
+                # CPF has 11 digits = PF, CNPJ has 14 digits = PJ
+                if tipo == 'PF':
+                    where_clauses.append("(tipo_pessoa = ? OR (tipo_pessoa IS NULL AND LENGTH(REPLACE(REPLACE(REPLACE(cpf_cnpj, '.', ''), '-', ''), '/', '')) = 11))")
+                elif tipo == 'PJ':
+                    where_clauses.append("(tipo_pessoa = ? OR (tipo_pessoa IS NULL AND LENGTH(REPLACE(REPLACE(REPLACE(cpf_cnpj, '.', ''), '-', ''), '/', '')) = 14))")
+                else:
+                    where_clauses.append("tipo_pessoa = ?")
                 params.append(tipo)
 
             if q:
