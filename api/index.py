@@ -576,7 +576,44 @@ def consulta(numprod_psc):
 def clients():
     try:
         if request.method == 'GET':
-            rows = query_db("SELECT * FROM clients ORDER BY updated_at DESC")
+            # Support optional query parameters for search, pagination and type filtering
+            q = (request.args.get('q') or '').strip()
+            tipo = (request.args.get('type') or request.args.get('tipo_pessoa') or '').strip().upper()
+            try:
+                page = int(request.args.get('page', 1))
+            except:
+                page = 1
+            try:
+                limit = int(request.args.get('limit', 50))
+            except:
+                limit = 50
+
+            offset = max(0, (page - 1) * limit)
+
+            where_clauses = []
+            params = []
+
+            if tipo and tipo not in ['TODOS', 'ALL', '']:
+                where_clauses.append("tipo_pessoa = ?")
+                params.append(tipo)
+
+            if q:
+                where_clauses.append("(nome LIKE ? OR cpf_cnpj LIKE ?)")
+                qparam = f"%{q}%"
+                params.extend([qparam, qparam])
+
+            where_sql = ("WHERE " + " AND ".join(where_clauses)) if where_clauses else ""
+
+            # Total count
+            count_sql = f"SELECT COUNT(*) as total FROM clients {where_sql}"
+            count_row = query_db(count_sql, tuple(params), one=True)
+            total = int(count_row.get('total', 0)) if count_row else 0
+
+            # Data page
+            select_sql = f"SELECT id, nome, cpf_cnpj, data, created_at, updated_at, tipo_pessoa FROM clients {where_sql} ORDER BY updated_at DESC LIMIT ? OFFSET ?"
+            params_with_pagination = params + [limit, offset]
+            rows = query_db(select_sql, tuple(params_with_pagination))
+
             clients_list = []
             if rows:
                 for row in rows:
@@ -586,7 +623,7 @@ def clients():
                         client['created_at'] = client['created_at'].isoformat()
                     if isinstance(client.get('updated_at'), datetime.datetime):
                         client['updated_at'] = client['updated_at'].isoformat()
-                    
+
                     # Parse JSON data if it's a string
                     if isinstance(client.get('data'), str):
                         try:
@@ -594,8 +631,8 @@ def clients():
                         except:
                             client['data'] = {}
                     clients_list.append(client)
-            # Frontend expects success and total_count
-            return {"success": True, "clients": clients_list, "total_count": len(clients_list)}, 200
+
+            return {"success": True, "clients": clients_list, "total_count": total}, 200
             
         if request.method == 'POST':
             # Use force=True to ignore Content-Type, silent=True to return None instead of 400
