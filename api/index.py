@@ -118,7 +118,7 @@ def token_required(f):
 
 @app.route('/api/hello')
 def hello():
-    return jsonify({"status": "ok", "message": "Full system restored (v4.3-sqlite)", "time": datetime.datetime.now().isoformat()})
+    return jsonify({"status": "ok", "message": "Full system restored (v4.4-reordered)", "time": datetime.datetime.now().isoformat()})
 
 @app.route('/api/db-diag')
 def db_diag():
@@ -301,31 +301,40 @@ def debug_login_test():
     except Exception as e:
         return jsonify({"success": False, "error": str(e), "trace": traceback.format_exc(), "log": log})
 
-@app.route('/api/auth-login-v2', methods=['POST'])
-def login_v2():
+@app.route('/api/auth/login', methods=['POST'])
+def login():
+    conn = None
     try:
+        # Connect BEFORE parsing body if possible
+        conn, db_type = get_db_connection()
+        
         data = request.get_json(silent=True) or {}
         username = data.get('username', '').strip()
         password = data.get('password', '')
         
         if not username or not password:
+            if conn: conn.close()
             return jsonify({'message': 'Credentials required'}), 400
         
-        user = query_db("SELECT * FROM users WHERE username = ? AND active = ?", (username, True), one=True)
+        cur = conn.cursor()
+        # Use simple string interpolation for pg8000 if needed, but let's try the safe way first
+        sql = "SELECT * FROM users WHERE username = %s AND active = %s" if db_type == 'postgres' else "SELECT * FROM users WHERE username = ? AND active = ?"
+        cur.execute(sql, (username, True))
+        rv = cur.fetchone()
+        user = None
+        if rv:
+            col_names = [desc[0] for desc in cur.description]
+            user = dict(zip(col_names, rv))
         
-        if not user and username == 'admin' and password == 'admin123':
-             res = query_db("SELECT count(*) as cnt FROM users", one=True)
-             if res and res['cnt'] == 0:
-                 pw_hash = hash_password('admin123')
-                 query_db("INSERT INTO users (username, password_hash, nome, role, active, permissions) VALUES (?, ?, ?, ?, ?, ?)",
-                          ('admin', pw_hash, 'Admin', 'admin', True, json.dumps({"canViewAllClients": True})), commit=True)
-                 user = query_db("SELECT * FROM users WHERE username = 'admin'", one=True)
-
         if not user:
+            conn.close()
             return jsonify({'message': 'Invalid credentials (User not found)'}), 401
             
         if not verify_password(user['password_hash'], password):
+            conn.close()
             return jsonify({'message': 'Invalid credentials (Password mismatch)'}), 401
+        
+        conn.close()
         
         try:
             token = jwt.encode({
@@ -333,9 +342,7 @@ def login_v2():
                 'role': user['role'],
                 'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=12)
             }, SECRET_KEY, algorithm="HS256")
-            
-            if isinstance(token, bytes):
-                token = token.decode('utf-8')
+            if isinstance(token, bytes): token = token.decode('utf-8')
         except Exception as jwt_err:
             return jsonify({'message': 'JWT Encoding Error', 'error': str(jwt_err)}), 500
         
@@ -354,6 +361,7 @@ def login_v2():
             }
         })
     except Exception as e:
+        if conn: conn.close()
         return jsonify({'message': 'Internal Login Error', 'error': str(e)}), 500
 
 @app.route('/api/availability')
