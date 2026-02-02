@@ -216,42 +216,88 @@ def db_test():
 
 @app.route('/api/migrate-tipo-pessoa')
 def migrate_tipo_pessoa():
-    """Migration route to fill tipo_pessoa for old clients based on CPF/CNPJ length"""
+    """Migration route to add tipo_pessoa column and fill based on CPF/CNPJ length"""
+    result = {"success": True, "steps": []}
+    
     try:
-        # First, get all clients with empty tipo_pessoa
-        clients = query_db("SELECT id, cpf_cnpj FROM clients WHERE tipo_pessoa IS NULL OR tipo_pessoa = ''")
+        conn, db_type = get_db_connection()
+        cur = conn.cursor()
         
-        if not clients:
-            return {
-                "success": True,
-                "message": "No clients to migrate - all have tipo_pessoa set",
-                "updated_pf": 0,
-                "updated_pj": 0
-            }
+        # Step 1: Check if tipo_pessoa column exists
+        if db_type == 'postgres':
+            cur.execute("""
+                SELECT column_name FROM information_schema.columns 
+                WHERE table_name = 'clients' AND column_name = 'tipo_pessoa'
+            """)
+            has_column = cur.fetchone() is not None
+        else:
+            cur.execute("PRAGMA table_info(clients)")
+            columns = [row[1] for row in cur.fetchall()]
+            has_column = 'tipo_pessoa' in columns
         
-        pf_count = 0
-        pj_count = 0
+        result["steps"].append(f"Column exists: {has_column}")
         
-        for client in clients:
-            cpf_cnpj = (client.get('cpf_cnpj') or '').replace('.', '').replace('-', '').replace('/', '')
-            if len(cpf_cnpj) == 11:
-                query_db("UPDATE clients SET tipo_pessoa = 'PF' WHERE id = ?", (client['id'],), commit=True)
-                pf_count += 1
-            elif len(cpf_cnpj) == 14:
-                query_db("UPDATE clients SET tipo_pessoa = 'PJ' WHERE id = ?", (client['id'],), commit=True)
-                pj_count += 1
+        # Step 2: Add column if it doesn't exist
+        if not has_column:
+            if db_type == 'postgres':
+                cur.execute("ALTER TABLE clients ADD COLUMN tipo_pessoa TEXT DEFAULT 'PF'")
+            else:
+                cur.execute("ALTER TABLE clients ADD COLUMN tipo_pessoa TEXT DEFAULT 'PF'")
+            conn.commit()
+            result["steps"].append("Added tipo_pessoa column")
         
-        return {
-            "success": True,
-            "updated_pf": pf_count,
-            "updated_pj": pj_count,
-            "message": f"Migration complete: {pf_count} PF, {pj_count} PJ updated"
-        }
+        # Step 3: Update existing rows without tipo_pessoa
+        if db_type == 'postgres':
+            # Update PF (CPF has 11 digits)
+            cur.execute("""
+                UPDATE clients 
+                SET tipo_pessoa = 'PF' 
+                WHERE (tipo_pessoa IS NULL OR tipo_pessoa = '')
+                AND LENGTH(REPLACE(REPLACE(REPLACE(cpf_cnpj, '.', ''), '-', ''), '/', '')) = 11
+            """)
+            pf_count = cur.rowcount
+            
+            # Update PJ (CNPJ has 14 digits)
+            cur.execute("""
+                UPDATE clients 
+                SET tipo_pessoa = 'PJ' 
+                WHERE (tipo_pessoa IS NULL OR tipo_pessoa = '')
+                AND LENGTH(REPLACE(REPLACE(REPLACE(cpf_cnpj, '.', ''), '-', ''), '/', '')) = 14
+            """)
+            pj_count = cur.rowcount
+        else:
+            # SQLite version
+            cur.execute("""
+                UPDATE clients 
+                SET tipo_pessoa = 'PF' 
+                WHERE (tipo_pessoa IS NULL OR tipo_pessoa = '')
+                AND LENGTH(REPLACE(REPLACE(REPLACE(cpf_cnpj, '.', ''), '-', ''), '/', '')) = 11
+            """)
+            pf_count = cur.rowcount
+            
+            cur.execute("""
+                UPDATE clients 
+                SET tipo_pessoa = 'PJ' 
+                WHERE (tipo_pessoa IS NULL OR tipo_pessoa = '')
+                AND LENGTH(REPLACE(REPLACE(REPLACE(cpf_cnpj, '.', ''), '-', ''), '/', '')) = 14
+            """)
+            pj_count = cur.rowcount
+        
+        conn.commit()
+        conn.close()
+        
+        result["steps"].append(f"Updated {pf_count} rows to PF")
+        result["steps"].append(f"Updated {pj_count} rows to PJ")
+        result["updated_pf"] = pf_count
+        result["updated_pj"] = pj_count
+        result["message"] = f"Migration complete! Column added: {not has_column}, PF: {pf_count}, PJ: {pj_count}"
+        
+        return result
+        
     except Exception as e:
-        return {
-            "success": False,
-            "error": str(e)
-        }, 500
+        result["success"] = False
+        result["error"] = str(e)
+        return result, 500
 
 @app.route('/api/debug-clients')
 def debug_clients():
