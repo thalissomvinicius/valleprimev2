@@ -44,6 +44,10 @@ app = Flask(__name__)
 # More permissive CORS for debugging
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
+@app.route('/api/hello')
+def hello_world():
+    return {"message": "Hello from Python", "version": sys.version}
+
 # Helper to get connection
 def get_db_connection():
     """Get database connection (Postgres or SQLite)"""
