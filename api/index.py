@@ -118,7 +118,7 @@ def token_required(f):
 
 @app.route('/api/hello')
 def hello():
-    return jsonify({"status": "ok", "message": "Full system restored (v3.9-v2route)", "time": datetime.datetime.now().isoformat()})
+    return jsonify({"status": "ok", "message": "Full system restored (v4.0-dbtest)", "time": datetime.datetime.now().isoformat()})
 
 @app.route('/api/db-diag')
 def db_diag():
@@ -223,7 +223,13 @@ def migrate_db():
 def echo_json():
     try:
         data = request.get_json(silent=True)
-        return jsonify({"success": True, "received": data})
+        # Test DB connection in POST
+        conn, db_type = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT 1")
+        res = cur.fetchone()
+        conn.close()
+        return jsonify({"success": True, "received": data, "db_test": res[0]})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
