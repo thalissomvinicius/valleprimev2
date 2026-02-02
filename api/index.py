@@ -118,7 +118,7 @@ def token_required(f):
 
 @app.route('/api/hello')
 def hello():
-    return jsonify({"status": "ok", "message": "Full system restored (v3.8-stable-final)", "time": datetime.datetime.now().isoformat()})
+    return jsonify({"status": "ok", "message": "Full system restored (v3.9-v2route)", "time": datetime.datetime.now().isoformat()})
 
 @app.route('/api/db-diag')
 def db_diag():
@@ -287,8 +287,8 @@ def debug_login_test():
     except Exception as e:
         return jsonify({"success": False, "error": str(e), "trace": traceback.format_exc(), "log": log})
 
-@app.route('/api/auth/login', methods=['POST'])
-def login():
+@app.route('/api/auth-login-v2', methods=['POST'])
+def login_v2():
     try:
         data = request.get_json(silent=True) or {}
         username = data.get('username', '').strip()
