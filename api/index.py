@@ -118,7 +118,7 @@ def token_required(f):
 
 @app.route('/api/hello')
 def hello():
-    return jsonify({"status": "ok", "message": "Full system restored (v4.9-hardcoded-bypass)", "time": datetime.datetime.now().isoformat()})
+    return jsonify({"status": "ok", "message": "Full system restored (v5.0-new-route)", "time": datetime.datetime.now().isoformat()})
 
 def migrate_db_internal():
     """Internal migration logic to ensure tables exist"""
@@ -189,6 +189,11 @@ def migrate_db():
         return jsonify({"success": True, "message": "Database initialized/migrated"})
     else:
         return jsonify({"success": False, "message": "Migration failed (check logs)"}), 500
+
+# ROTA ALTERNATIVA - para contornar problema de roteamento
+@app.route('/api/login', methods=['POST'])
+def login_alt():
+    return login()
 
 @app.route('/api/auth/login', methods=['POST'])
 def login():

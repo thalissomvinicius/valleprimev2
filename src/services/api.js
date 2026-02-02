@@ -32,7 +32,8 @@ api.interceptors.response.use(response => response, error => {
 });
 
 export const authLogin = async (username, password) => {
-  const response = await api.post(`${AUTH_BASE}/login`, { username, password });
+  // Usando /api/login diretamente para contornar problema de roteamento Vercel
+  const response = await api.post('/api/login', { username, password });
   return response.data;
 };
 
