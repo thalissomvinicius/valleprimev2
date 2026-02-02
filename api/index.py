@@ -118,7 +118,7 @@ def token_required(f):
 
 @app.route('/api/hello')
 def hello():
-    return jsonify({"status": "ok", "message": "Full system restored (v4.7-lockreset)", "time": datetime.datetime.now().isoformat()})
+    return jsonify({"status": "ok", "message": "Full system restored (v4.8-reorder-fix)", "time": datetime.datetime.now().isoformat()})
 
 @app.route('/api/db-reset-locks')
 def db_reset_locks():
@@ -251,30 +251,62 @@ def migrate_db():
 
 @app.route('/api/auth/login', methods=['POST'])
 def login():
+    conn = None
     try:
+        # CRITICAL: Connect BEFORE parsing body to avoid Vercel IO hang
+        conn, db_type = get_db_connection()
+        
         data = request.get_json(silent=True) or {}
         username = data.get('username', '').strip()
         password = data.get('password', '')
         
         if not username or not password:
+            if conn: conn.close()
             return jsonify({'message': 'Credentials required'}), 400
         
-        user = query_db("SELECT * FROM users WHERE username = ? AND active = ?", (username, True), one=True)
+        cur = conn.cursor()
+        # Use simple string interpolation for pg8000 safely
+        sql = "SELECT * FROM users WHERE username = %s AND active = %s" if db_type == 'postgres' else "SELECT * FROM users WHERE username = ? AND active = ?"
+        cur.execute(sql, (username, True))
+        rv = cur.fetchone()
+        
+        user = None
+        if rv:
+            col_names = [desc[0] for desc in cur.description]
+            user = dict(zip(col_names, rv))
         
         # If user not found and table might be empty, try to create admin once
         if not user and username == 'admin' and password == 'admin123':
-             res = query_db("SELECT count(*) as cnt FROM users", one=True)
-             if res and res['cnt'] == 0:
+             # We need to re-query count using the same cursor
+             cnt_sql = "SELECT count(*) as cnt FROM users"
+             cur.execute(cnt_sql)
+             res = cur.fetchone()
+             # handle result mapping manually since we are raw
+             cnt = res[0] if res else 0
+             
+             if cnt == 0:
                  pw_hash = hash_password('admin123')
-                 query_db("INSERT INTO users (username, password_hash, nome, role, active, permissions) VALUES (?, ?, ?, ?, ?, ?)",
-                          ('admin', pw_hash, 'Admin', 'admin', True, json.dumps({"canViewAllClients": True})), commit=True)
-                 user = query_db("SELECT * FROM users WHERE username = 'admin'", one=True)
+                 # Insert
+                 ins_sql = "INSERT INTO users (username, password_hash, nome, role, active, permissions) VALUES (%s, %s, %s, %s, %s, %s)" if db_type == 'postgres' else "INSERT INTO users (username, password_hash, nome, role, active, permissions) VALUES (?, ?, ?, ?, ?, ?)"
+                 cur.execute(ins_sql, ('admin', pw_hash, 'Admin', 'admin', True, json.dumps({"canViewAllClients": True})))
+                 conn.commit()
+                 
+                 # Re-fetch
+                 cur.execute(sql, ('admin', True))
+                 rv = cur.fetchone()
+                 if rv:
+                    col_names = [desc[0] for desc in cur.description]
+                    user = dict(zip(col_names, rv))
 
         if not user:
+            conn.close()
             return jsonify({'message': 'Invalid credentials (User not found)'}), 401
             
         if not verify_password(user['password_hash'], password):
+            conn.close()
             return jsonify({'message': 'Invalid credentials (Password mismatch)'}), 401
+        
+        conn.close()
         
         try:
             token = jwt.encode({
@@ -301,6 +333,7 @@ def login():
             }
         })
     except Exception as e:
+        if conn: conn.close()
         return jsonify({'message': 'Internal Login Error', 'error': str(e)}), 500
 
 @app.route('/api/availability')
