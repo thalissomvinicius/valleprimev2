@@ -9,7 +9,12 @@ import sys
 import requests
 import secrets
 import hashlib
-import jwt
+try:
+    import jwt
+except ImportError:
+    jwt = None
+    print("CRITICAL: Failed to import PyJWT via 'import jwt'")
+
 from functools import wraps
 
 # JWT Configuration
