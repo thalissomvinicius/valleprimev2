@@ -118,7 +118,7 @@ def token_required(f):
 
 @app.route('/api/hello')
 def hello():
-    return jsonify({"status": "ok", "message": "Full system restored (v3.7-isolation)", "time": datetime.datetime.now().isoformat()})
+    return jsonify({"status": "ok", "message": "Full system restored (v3.8-stable-final)", "time": datetime.datetime.now().isoformat()})
 
 @app.route('/api/db-diag')
 def db_diag():
@@ -291,13 +291,56 @@ def debug_login_test():
 def login():
     try:
         data = request.get_json(silent=True) or {}
-        return jsonify({"test": "early_success", "received": data.get('username')})
+        username = data.get('username', '').strip()
+        password = data.get('password', '')
         
-        # username = data.get('username', '').strip()
-        # password = data.get('password', '')
-        # ... rest commented out ...
+        if not username or not password:
+            return jsonify({'message': 'Credentials required'}), 400
+        
+        user = query_db("SELECT * FROM users WHERE username = ? AND active = ?", (username, True), one=True)
+        
+        if not user and username == 'admin' and password == 'admin123':
+             res = query_db("SELECT count(*) as cnt FROM users", one=True)
+             if res and res['cnt'] == 0:
+                 pw_hash = hash_password('admin123')
+                 query_db("INSERT INTO users (username, password_hash, nome, role, active, permissions) VALUES (?, ?, ?, ?, ?, ?)",
+                          ('admin', pw_hash, 'Admin', 'admin', True, json.dumps({"canViewAllClients": True})), commit=True)
+                 user = query_db("SELECT * FROM users WHERE username = 'admin'", one=True)
+
+        if not user:
+            return jsonify({'message': 'Invalid credentials (User not found)'}), 401
+            
+        if not verify_password(user['password_hash'], password):
+            return jsonify({'message': 'Invalid credentials (Password mismatch)'}), 401
+        
+        try:
+            token = jwt.encode({
+                'user_id': user['id'],
+                'role': user['role'],
+                'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=12)
+            }, SECRET_KEY, algorithm="HS256")
+            
+            if isinstance(token, bytes):
+                token = token.decode('utf-8')
+        except Exception as jwt_err:
+            return jsonify({'message': 'JWT Encoding Error', 'error': str(jwt_err)}), 500
+        
+        perms = {}
+        if user['permissions']:
+            try: perms = json.loads(user['permissions'])
+            except: pass
+        
+        return jsonify({
+            'token': token,
+            'user': {
+                'id': user['id'],
+                'username': user['username'],
+                'role': user['role'],
+                'permissions': perms
+            }
+        })
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({'message': 'Internal Login Error', 'error': str(e)}), 500
 
 @app.route('/api/availability')
 def get_availability():
