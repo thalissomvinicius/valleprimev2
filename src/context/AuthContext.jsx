@@ -76,20 +76,27 @@ export function AuthProvider({ children }) {
         if (!trimmed || !password) return { success: false, error: 'Usuário e senha são obrigatórios.' };
 
         try {
+            console.log('[DEBUG] Calling authLogin...');
             const result = await authLogin(trimmed, password);
+            console.log('[DEBUG] authLogin result:', result);
             if (result.token) {
+                console.log('[DEBUG] Token received, saving...');
                 localStorage.setItem(STORAGE_KEYS.TOKEN, result.token);
                 const user = processUser(result.user);
+                console.log('[DEBUG] User processed:', user);
                 setCurrentUser(user);
                 // Load users if admin
                 if (user.role === 'admin') {
                     loadUsers();
                 }
+                console.log('[DEBUG] Returning success: true');
                 return { success: true, user };
             } else {
+                console.log('[DEBUG] No token in result!');
                 return { success: false, error: 'Falha no login.' };
             }
         } catch (e) {
+            console.error('[DEBUG] Login error:', e);
             const msg = e.response?.data?.message || 'Erro ao validar login.';
             return { success: false, error: msg };
         }
