@@ -108,10 +108,12 @@ def token_required(f):
 
 @app.route('/api/hello')
 def hello():
-    return jsonify({"status": "ok", "message": "Auth logic restored (partially)"})
+    print("DEBUG: /api/hello called")
+    return jsonify({"status": "ok", "message": "Auth logic restored (v2)", "routes": ["hello", "db-diag", "login", "migrate-db"]})
 
-@app.route('/api/db-test')
-def db_test():
+@app.route('/api/db-diag')
+def db_diag():
+    print("DEBUG: /api/db-diag called")
     try:
         conn, db_type = get_db_connection()
         cur = conn.cursor()
