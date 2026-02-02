@@ -118,7 +118,7 @@ def token_required(f):
 
 @app.route('/api/hello')
 def hello():
-    return jsonify({"status": "ok", "message": "Full system restored (v4.0-dbtest)", "time": datetime.datetime.now().isoformat()})
+    return jsonify({"status": "ok", "message": "Full system restored (v4.1-fulltest)", "time": datetime.datetime.now().isoformat()})
 
 @app.route('/api/db-diag')
 def db_diag():
@@ -223,13 +223,28 @@ def migrate_db():
 def echo_json():
     try:
         data = request.get_json(silent=True)
-        # Test DB connection in POST
+        # 1. DB test
         conn, db_type = get_db_connection()
         cur = conn.cursor()
         cur.execute("SELECT 1")
         res = cur.fetchone()
         conn.close()
-        return jsonify({"success": True, "received": data, "db_test": res[0]})
+        
+        # 2. Hashing test
+        h = hash_password('test')
+        v = verify_password(h, 'test')
+        
+        # 3. JWT test
+        token = jwt.encode({'u': 1}, SECRET_KEY, algorithm="HS256")
+        if isinstance(token, bytes): token = token.decode('utf-8')
+        
+        return jsonify({
+            "success": True, 
+            "received": data, 
+            "db_test": res[0], 
+            "hash_test": v,
+            "jwt_test": token[:10]
+        })
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
