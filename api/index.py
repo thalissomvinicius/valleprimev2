@@ -57,8 +57,9 @@ def query_supabase_rest(table, method='GET', data=None, params=None):
             resp = requests.post(url, headers=headers, json=data, timeout=10)
         
         if resp.status_code in [200, 201]:
+            print(f"[Supabase API] Success {method} on {table}")
             return resp.json()
-        print(f"[Supabase API] Error {resp.status_code}: {resp.text}")
+        print(f"[Supabase API] Error {resp.status_code} on {method} {table}: {resp.text}")
         return None
     except Exception as e:
         print(f"[Supabase API] Exception: {e}")
@@ -123,6 +124,7 @@ def query_db(sql, params=(), one=False, commit=False):
                     if filters:
                         filters["select"] = "*"
                         res = query_supabase_rest(table, 'GET', params=filters)
+                        print(f"[Supabase API] Query WHERE result count: {len(res) if res else 0}")
                         if one: return res[0] if res else None
                         return res or []
 
@@ -215,7 +217,7 @@ def token_required(f):
 
 @app.route('/api/hello')
 def hello():
-    return jsonify({"status": "ok", "message": "Full system restored (v8.1-rest-fix)", "time": datetime.datetime.now().isoformat()})
+    return jsonify({"status": "ok", "message": "Full system restored (v8.2-diag-rest)", "time": datetime.datetime.now().isoformat()})
 
 def migrate_db_internal():
     """Internal migration logic to ensure tables exist"""
