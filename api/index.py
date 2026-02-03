@@ -81,9 +81,19 @@ def query_db(sql, params=(), one=False, commit=False):
         return []
     except Exception as e:
         print(f"QUERY ERROR: {e}")
-        return None
+        if conn:
+            try:
+                conn.rollback()
+            except:
+                pass
+        # Re-raise the exception instead of returning None
+        raise
     finally:
-        if conn: conn.close()
+        if conn: 
+            try:
+                conn.close()
+            except:
+                pass
 
 def hash_password(password):
     salt = secrets.token_hex(16)
@@ -118,7 +128,7 @@ def token_required(f):
 
 @app.route('/api/hello')
 def hello():
-    return jsonify({"status": "ok", "message": "Full system restored (v6.6-debug-logs)", "time": datetime.datetime.now().isoformat()})
+    return jsonify({"status": "ok", "message": "Full system restored (v6.7-fix-query-db)", "time": datetime.datetime.now().isoformat()})
 
 def migrate_db_internal():
     """Internal migration logic to ensure tables exist"""
