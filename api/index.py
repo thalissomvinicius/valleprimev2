@@ -37,32 +37,45 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn, 'sqlite'
 
-def query_supabase_rest(table, method='GET', data=None, params=None):
-    """Fallback driver using Supabase REST API (HTTP) to bypass TCP blocks"""
+def query_supabase_rest(table, method='GET', params=None, data=None):
     if not SUPABASE_URL or not SUPABASE_KEY:
         return None
+        
+    url = f"{SUPABASE_URL}/rest/v1/{table}"
+    if params:
+        url += f"?{params}"
     
     headers = {
         "apikey": SUPABASE_KEY,
         "Authorization": f"Bearer {SUPABASE_KEY}",
         "Content-Type": "application/json",
-        "Prefer": "return=representation"
+        "Prefer": "return=representation" if method in ['POST', 'PATCH'] else ""
     }
     
-    url = f"{SUPABASE_URL}/rest/v1/{table}"
     try:
         if method == 'GET':
-            resp = requests.get(url, headers=headers, params=params, timeout=10)
+            response = requests.get(url, headers=headers, timeout=10)
         elif method == 'POST':
-            resp = requests.post(url, headers=headers, json=data, timeout=10)
+            response = requests.post(url, headers=headers, json=data, timeout=10)
+        elif method == 'PATCH':
+            response = requests.patch(url, headers=headers, json=data, timeout=10)
+        elif method == 'DELETE':
+            response = requests.delete(url, headers=headers, timeout=10)
         
-        if resp.status_code in [200, 201]:
-            print(f"[Supabase API] Success {method} on {table}")
-            return resp.json()
-        print(f"[Supabase API] Error {resp.status_code} on {method} {table}: {resp.text}")
+        # Log response for debug
+        print(f"[Supabase REST] {method} {url} -> {response.status_code}")
+        
+        if response.status_code in [200, 201, 204, 206]:
+            if not response.text: return True
+            try:
+                return response.json()
+            except:
+                return True
+        
+        print(f"[Supabase REST ERROR] {response.status_code}: {response.text}")
         return None
     except Exception as e:
-        print(f"[Supabase API] Exception: {e}")
+        print(f"[Supabase REST EXCEPTION] {e}")
         return None
 
 def query_db(sql, params=(), one=False, commit=False):
@@ -94,39 +107,50 @@ def query_db(sql, params=(), one=False, commit=False):
                             "active": params[4]
                         }
                     res = query_supabase_rest(table, 'POST', data=payload)
-                    return True if res else False
+                    return True if res is not None else False
                 
-                # Handle SELECT COUNT(*)
-                if "SELECT COUNT(*)" in sql or "count(*)" in sql.lower():
-                    # PostgREST count is usually done via HEAD request or 'select' parameter
-                    res = query_supabase_rest(table, 'GET', params={"select": "id"})
-                    total = len(res) if res else 0
-                    if one: return {"count": total}
-                    return [{"count": total}]
+                # Handle DELETE
+                if "DELETE FROM" in sql:
+                    where_id = f"id=eq.{params[0]}"
+                    res = query_supabase_rest(table, 'DELETE', params=where_id)
+                    return True if res is not None else False
 
-                # Handle SELECT ALL
-                if "SELECT * FROM" in sql and "WHERE" not in sql:
-                    res = query_supabase_rest(table, 'GET', params={"select": "*", "order": "created_at.desc" if table == "clients" else "id.asc"})
-                    if one: return res[0] if res else None
-                    return res or []
-                
-                # Handle SELECT WHERE (Simple cases like login or duplicate check)
-                if "WHERE" in sql:
-                    # Simple mapping for login: WHERE username = ? AND active = ?
-                    # Or duplicate check: WHERE cpf_cnpj = ?
-                    filters = {}
-                    if "username =" in sql: filters["username"] = f"eq.{params[0]}"
-                    if "cpf_cnpj =" in sql: filters["cpf_cnpj"] = f"eq.{params[0]}"
-                    if "active =" in sql: filters["active"] = f"eq.{params[1]}"
-                    if "created_by =" in sql: filters["created_by"] = f"eq.{params[0]}"
-                    if "id =" in sql: filters["id"] = f"eq.{params[0]}"
+                # Handle SELECT COUNT
+                if "COUNT(*)" in sql:
+                    where_clause = None
+                    if "WHERE" in sql:
+                        if "created_by =" in sql:
+                            where_clause = f"created_by=eq.{params[0]}"
+                        elif "id =" in sql:
+                            where_clause = f"id=eq.{params[0]}"
                     
-                    if filters:
-                        filters["select"] = "*"
-                        res = query_supabase_rest(table, 'GET', params=filters)
-                        print(f"[Supabase API] Query WHERE result count: {len(res) if res else 0}")
-                        if one: return res[0] if res else None
-                        return res or []
+                    # PostgREST count is a bit tricky, but we'll use a simple approach
+                    # Just get the list and return length or use Prefer: count=exact if needed
+                    # For now, let's get matching items
+                    res = query_supabase_rest(table, 'GET', params=where_clause)
+                    count = len(res) if isinstance(res, list) else 0
+                    return (count,) if one else [(count,)]
+
+                # Handle SELECT ALL or WHERE
+                if "SELECT *" in sql:
+                    rest_params = []
+                    if "WHERE" in sql:
+                        if "created_by =" in sql:
+                            rest_params.append(f"created_by=eq.{params[0]}")
+                        elif "id =" in sql:
+                            rest_params.append(f"id=eq.{params[0]}")
+                        elif "cpf_cnpj =" in sql:
+                            rest_params.append(f"cpf_cnpj=eq.{params[0]}")
+                    
+                    if "ORDER BY created_at DESC" in sql:
+                        rest_params.append("order=created_at.desc")
+                    
+                    final_params = "&".join(rest_params) if rest_params else None
+                    res = query_supabase_rest(table, 'GET', params=final_params)
+                    
+                    if one:
+                        return res[0] if (isinstance(res, list) and len(res) > 0) else None
+                    return res or []
 
             except Exception as api_err:
                 print(f"[Supabase API Fallback Error] {api_err}")
@@ -219,8 +243,8 @@ def token_required(f):
 
 @app.route('/api/hello')
 def hello():
-    # v8.5 Force rebuild and sync
-    return jsonify({"status": "ok", "message": "Full system restored (v8.5-sync-v1)", "time": datetime.datetime.now().isoformat()})
+    # v8.6 Full REST mapping with DELETE support
+    return jsonify({"status": "ok", "message": "Full system restored (v8.6-master-sync)", "time": datetime.datetime.now().isoformat()})
 
 def migrate_db_internal():
     """Internal migration logic to ensure tables exist"""
