@@ -128,7 +128,7 @@ def token_required(f):
 
 @app.route('/api/hello')
 def hello():
-    return jsonify({"status": "ok", "message": "Full system restored (v6.8-auto-migrate)", "time": datetime.datetime.now().isoformat()})
+    return jsonify({"status": "ok", "message": "Full system restored (v6.9-fix-check-duplicate)", "time": datetime.datetime.now().isoformat()})
 
 def migrate_db_internal():
     """Internal migration logic to ensure tables exist"""
@@ -482,27 +482,42 @@ def manage_clients():
 @token_required
 def check_duplicate_client():
     """Check if CPF/CNPJ already exists"""
-    cpf_cnpj = request.args.get('cpf_cnpj', '').strip()
-    tipo_pessoa = request.args.get('tipo_pessoa', 'PF')
-    client_id = request.args.get('client_id')
-    
-    if not cpf_cnpj:
+    try:
+        cpf_cnpj = request.args.get('cpf_cnpj', '').strip()
+        tipo_pessoa = request.args.get('tipo_pessoa', 'PF')
+        client_id_raw = request.args.get('client_id')
+        
+        if not cpf_cnpj:
+            return jsonify({'exists': False})
+        
+        # Extract numeric ID from client_id (may be in format "PF:123" or just "123")
+        client_id = None
+        if client_id_raw:
+            # Try to extract numeric part
+            import re
+            match = re.search(r'\d+', str(client_id_raw))
+            if match:
+                client_id = int(match.group())
+        
+        # Check if exists
+        if client_id:
+            # Editing existing client - exclude self from check
+            existing = query_db("SELECT id, nome FROM clients WHERE cpf_cnpj = ? AND id != ?", 
+                               (cpf_cnpj, client_id), one=True)
+        else:
+            # New client
+            existing = query_db("SELECT id, nome FROM clients WHERE cpf_cnpj = ?", 
+                               (cpf_cnpj,), one=True)
+        
+        if existing:
+            return jsonify({'exists': True, 'client_name': existing['nome'], 'client_id': existing['id']})
+        
         return jsonify({'exists': False})
-    
-    # Check if exists
-    if client_id:
-        # Editing existing client - exclude self from check
-        existing = query_db("SELECT id, nome FROM clients WHERE cpf_cnpj = ? AND id != ?", 
-                           (cpf_cnpj, client_id), one=True)
-    else:
-        # New client
-        existing = query_db("SELECT id, nome FROM clients WHERE cpf_cnpj = ?", 
-                           (cpf_cnpj,), one=True)
-    
-    if existing:
-        return jsonify({'exists': True, 'client_name': existing['nome'], 'client_id': existing['id']})
-    
-    return jsonify({'exists': False})
+        
+    except Exception as e:
+        print(f"[ERROR] check_duplicate_client: {str(e)}")
+        return jsonify({'exists': False, 'error': str(e)})
+
 
 
 @app.route('/api/users', methods=['GET', 'POST'])
