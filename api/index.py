@@ -118,7 +118,7 @@ def token_required(f):
 
 @app.route('/api/hello')
 def hello():
-    return jsonify({"status": "ok", "message": "Full system restored (v5.3-debug-logs)", "time": datetime.datetime.now().isoformat()})
+    return jsonify({"status": "ok", "message": "Full system restored (v6.0-new-login)", "time": datetime.datetime.now().isoformat()})
 
 def migrate_db_internal():
     """Internal migration logic to ensure tables exist"""

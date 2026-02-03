@@ -1,65 +1,95 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { User, Lock, Building2 } from 'lucide-react';
 import logo from '../assets/Valle-logo-azul.png';
 import './LoginPage.css';
 
 function LoginPage() {
-    const { login } = useAuth();
-    const navigate = useNavigate();
-    const location = useLocation();
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
-    const [submitting, setSubmitting] = useState(false);
-
-    const from = location.state?.from?.pathname || '/';
+    const [success, setSuccess] = useState(false);
+    const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
-        setSubmitting(true);
+        setLoading(true);
+
+        console.log('[LOGIN] Iniciando login para:', username);
+
         try {
-            const result = await login(username, password);
-            if (result.success) {
-                const isAdmin = result.user?.role === 'admin';
-                const targetPath = (isAdmin || from !== '/admin') ? from : '/';
-                navigate(targetPath, { replace: true });
+            // Chamada direta via fetch para garantir controle total
+            const response = await fetch(`/api/login-get?username=${encodeURIComponent(username.trim())}&password=${encodeURIComponent(password)}`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                }
+            });
+
+            console.log('[LOGIN] Response status:', response.status);
+
+            const data = await response.json();
+            console.log('[LOGIN] Response data:', data);
+
+            if (response.ok && data.token) {
+                // Sucesso! Salvar token e mostrar animação
+                console.log('[LOGIN] Token recebido, salvando no localStorage');
+                localStorage.setItem('valle_token', data.token);
+
+                // Mostrar sucesso
+                setSuccess(true);
+                setLoading(false);
+
+                // Aguardar animação e redirecionar
+                console.log('[LOGIN] Redirecionando para home em 1.5s...');
+                setTimeout(() => {
+                    // Usando window.location para garantir redirecionamento
+                    window.location.href = '/';
+                }, 1500);
             } else {
-                setError(result.error || 'Falha no login.');
+                // Erro do servidor
+                console.log('[LOGIN] Erro:', data.message);
+                setError(data.message || 'Credenciais inválidas');
+                setLoading(false);
             }
         } catch (err) {
-            setError('Erro ao fazer login. Tente novamente.');
-        } finally {
-            setSubmitting(false);
+            console.error('[LOGIN] Erro de rede:', err);
+            setError('Erro de conexão. Tente novamente.');
+            setLoading(false);
         }
     };
 
     return (
-        <div className="login-page">
-            <div className="login-background">
-                <div className="bg-shape shape-1" />
-                <div className="bg-shape shape-2" />
-                <div className="bg-shape shape-3" />
+        <div className="login-wrapper">
+            {/* Background animado */}
+            <div className="login-bg">
+                <div className="blob blob-1"></div>
+                <div className="blob blob-2"></div>
+                <div className="blob blob-3"></div>
             </div>
 
-            <div className="login-container">
-                <div className="login-card">
-                    <div className="login-header">
-                        <div className="login-logo-wrap">
-                            <img src={logo} alt="Valle Empreendimentos" className="login-logo-img" />
-                        </div>
-                        <h1>Sistema de Disponibilidades</h1>
-                        <p className="login-subtitle">Entre com seu usuário e senha para acessar</p>
-                    </div>
+            <div className="login-box">
+                {/* Logo e título */}
+                <div className="login-brand">
+                    <img src={logo} alt="Valle" className="login-logo" />
+                    <h1>Valle Prime</h1>
+                    <p>Sistema de Disponibilidades</p>
+                </div>
 
-                    <form className="login-form" onSubmit={handleSubmit}>
-                        <div className="form-group">
-                            <label>
-                                <User size={18} />
-                                Usuário
-                            </label>
+                {/* Formulário ou mensagem de sucesso */}
+                {success ? (
+                    <div className="login-success">
+                        <div className="success-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </div>
+                        <h2>Login realizado!</h2>
+                        <p>Redirecionando...</p>
+                    </div>
+                ) : (
+                    <form onSubmit={handleSubmit} className="login-form">
+                        <div className="input-group">
+                            <label>Usuário</label>
                             <input
                                 type="text"
                                 value={username}
@@ -67,50 +97,47 @@ function LoginPage() {
                                 placeholder="Digite seu usuário"
                                 autoComplete="username"
                                 autoFocus
-                                disabled={submitting}
+                                disabled={loading}
+                                required
                             />
                         </div>
-                        <div className="form-group">
-                            <label>
-                                <Lock size={18} />
-                                Senha
-                            </label>
+
+                        <div className="input-group">
+                            <label>Senha</label>
                             <input
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 placeholder="Digite sua senha"
                                 autoComplete="current-password"
-                                disabled={submitting}
+                                disabled={loading}
+                                required
                             />
                         </div>
 
                         {error && (
-                            <div className="message error-message" role="alert">
+                            <div className="login-error">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                </svg>
                                 {error}
                             </div>
                         )}
 
-                        <button type="submit" className="btn-submit" disabled={submitting}>
-                            {submitting ? (
-                                <span className="loading-spinner" />
+                        <button type="submit" className="login-btn" disabled={loading}>
+                            {loading ? (
+                                <span className="spinner"></span>
                             ) : (
                                 'Entrar'
                             )}
                         </button>
                     </form>
-                </div>
+                )}
 
-                <div className="login-info">
-                    <p className="login-info-tagline">Bem-vindo ao</p>
-                    <h2>Valle Empreendimentos</h2>
-                    <p className="login-info-desc">Consulte disponibilidades de lotes, gere propostas e gerencie clientes em um só lugar.</p>
-                    <ul className="login-features">
-                        <li><Building2 size={20} /> Múltiplas obras</li>
-                        <li><Building2 size={20} /> Filtros e exportação PDF</li>
-                        <li><Building2 size={20} /> Cadastro de clientes</li>
-                    </ul>
-                    <p className="login-info-slogan">Viva bem, viva Valle.</p>
+                <div className="login-footer">
+                    <p>© 2025 Valle Empreendimentos</p>
                 </div>
             </div>
         </div>
