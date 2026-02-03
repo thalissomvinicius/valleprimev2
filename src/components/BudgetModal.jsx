@@ -10,6 +10,8 @@ import { generateResidenceDeclaration } from '../utils/generateResidenceDeclarat
 
 import logo from '../assets/Valle-logo-azul.png';
 
+const API_BASE_URL = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '');
+
 const BudgetModal = ({ lot, onClose, obraName, developerName = "Vinicius Dev" }) => {
     const lotValue = parseFloat(lot.Valor_Terreno.replace(/\./g, '').replace(',', '.')) || 0;
 
@@ -333,7 +335,8 @@ ${sinalSection}
         const [saldoYear, saldoMonth, saldoDay] = saldoFirstDate.split('-');
 
         try {
-            const response = await fetch('/api/generate_proposal', {
+            const proposalUrl = API_BASE_URL ? `${API_BASE_URL}/api/generate_proposal` : '/api/generate_proposal';
+            const response = await fetch(proposalUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

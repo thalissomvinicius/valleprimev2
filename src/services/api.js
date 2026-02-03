@@ -1,5 +1,6 @@
 import axios from 'axios';
 
+const API_BASE_URL = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '');
 const CLIENT_BASE = '/api/manage-clients';
 const API_BASE = '/api/consulta';
 const USERS_BASE = '/api/users';
@@ -7,6 +8,7 @@ const AUTH_BASE = '/api/auth';
 
 // Create axios instance
 const api = axios.create({
+  baseURL: API_BASE_URL || undefined,
   timeout: 15000,
 });
 

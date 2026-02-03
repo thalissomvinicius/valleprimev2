@@ -8,6 +8,8 @@ import { saveClient } from '../services/api';
 import { useToast } from '../context/ToastContext';
 import logo from '../assets/Valle-logo-azul.png';
 
+const API_BASE_URL = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '');
+
 const BudgetWizard = ({ lot, onClose, obraName, developerName = "Vinicius Dev" }) => {
     const { showToast } = useToast();
     const lotValue = parseFloat(lot.Valor_Terreno.replace(/\./g, '').replace(',', '.')) || 0;
@@ -377,7 +379,8 @@ ${sinalSection}
         };
 
         try {
-            const response = await fetch('/api/generate_proposal', {
+            const proposalUrl = API_BASE_URL ? `${API_BASE_URL}/api/generate_proposal` : '/api/generate_proposal';
+            const response = await fetch(proposalUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
