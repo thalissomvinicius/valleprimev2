@@ -254,7 +254,7 @@ def token_required(f):
 @app.route('/api/hello')
 def hello():
     # v8.6 Full REST mapping with DELETE support
-    return jsonify({"status": "ok", "message": "Full system restored (v8.7-supabase-fix)", "time": datetime.datetime.now().isoformat()})
+    return jsonify({"status": "ok", "message": "Full system restored (v8.8-force-deploy)", "time": datetime.datetime.now().isoformat()})
 
 def migrate_db_internal():
     """Internal migration logic to ensure tables exist"""
