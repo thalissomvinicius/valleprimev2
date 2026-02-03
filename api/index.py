@@ -129,7 +129,7 @@ def token_required(f):
 
 @app.route('/api/hello')
 def hello():
-    return jsonify({"status": "ok", "message": "Full system restored (v7.0-supabase)", "time": datetime.datetime.now().isoformat()})
+    return jsonify({"status": "ok", "message": "Full system restored (v7.2-debug-db)", "time": datetime.datetime.now().isoformat()})
 
 def migrate_db_internal():
     """Internal migration logic to ensure tables exist"""
@@ -187,12 +187,51 @@ def migrate_db_internal():
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
+        # Ensure admin user exists
+        admin_exists = False
+        if db_type == 'postgres':
+            cur.execute("SELECT 1 FROM users WHERE username = 'admin'")
+            admin_exists = bool(cur.fetchone())
+        else:
+            cur.execute("SELECT 1 FROM users WHERE username = 'admin'")
+            admin_exists = bool(cur.fetchone())
+            
+        if not admin_exists:
+            # Hash for 'admin123'
+            # salt: 1234567890abcdef1234567890abcdef
+            # pbkdf2: SHA256, 100k, admin123 -> a09be...
+            default_hash = "a09be37937be13180bb2ef0133b37803df3bf7c2688029514e868f0b09315d16:1234567890abcdef1234567890abcdef"
+            if db_type == 'postgres':
+                cur.execute("INSERT INTO users (username, password_hash, nome, role, active) VALUES (%s, %s, %s, %s, %s)",
+                           ('admin', default_hash, 'Administrador', 'admin', True))
+            else:
+                cur.execute("INSERT INTO users (username, password_hash, nome, role, active) VALUES (?, ?, ?, ?, ?)",
+                           ('admin', default_hash, 'Administrador', 'admin', 1))
+        
         conn.commit()
         conn.close()
         return True
     except Exception as e:
         print(f"MIGRATION ERROR: {e}")
+        traceback.print_exc()
         return False
+
+@app.route('/api/debug/db')
+def debug_db():
+    try:
+        clients_count = query_db("SELECT COUNT(*) as count FROM clients", one=True)
+        users_count = query_db("SELECT COUNT(*) as count FROM users", one=True)
+        last_clients = query_db("SELECT id, nome, created_at, created_by FROM clients ORDER BY id DESC LIMIT 5")
+        
+        return jsonify({
+            "database": "connected",
+            "clients_total": clients_count['count'] if clients_count else 0,
+            "users_total": users_count['count'] if users_count else 0,
+            "last_clients": last_clients or [],
+            "db_type": "postgres" if os.environ.get('DATABASE_URL1') else "sqlite"
+        })
+    except Exception as e:
+        return jsonify({"error": str(e), "trace": traceback.format_exc()}), 500
 
 @app.route('/api/migrate-db')
 def migrate_db():
