@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const API_BASE_URL = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '');
+const DEFAULT_RENDER_API = 'https://valleprimev2.onrender.com';
+const ENV_API = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '');
+const API_BASE_URL = ENV_API || (typeof window !== 'undefined' && window.location.hostname.includes('netlify.app') ? DEFAULT_RENDER_API : '');
 const CLIENT_BASE = '/api/manage-clients';
 const API_BASE = '/api/consulta';
 const USERS_BASE = '/api/users';
@@ -33,12 +35,27 @@ api.interceptors.response.use(response => response, error => {
   return Promise.reject(error);
 });
 
+const parseJsonResponse = (payload) => {
+  if (typeof payload !== 'string') return payload;
+  const trimmed = payload.trim();
+  if (trimmed.startsWith('<!doctype') || trimmed.startsWith('<html')) {
+    throw new Error('Resposta HTML recebida. Verifique VITE_API_BASE.');
+  }
+  try {
+    return JSON.parse(trimmed);
+  } catch (e) {
+    throw new Error('Resposta inválida do servidor.');
+  }
+};
+
 export const authLogin = async (username, password) => {
-  // Usando GET com query params para contornar problema de body parsing no Vercel
+  // Usando GET com query params para contornar problema de body parsing
   const response = await api.get('/api/login-get', {
-    params: { username, password }
+    params: { username, password },
+    responseType: 'text',
+    transformResponse: [data => data]
   });
-  return response.data;
+  return parseJsonResponse(response.data);
 };
 
 export const authMe = async () => {
