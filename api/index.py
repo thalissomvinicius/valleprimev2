@@ -1,6 +1,7 @@
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file, after_this_request
 from flask_cors import CORS
 import os
+import tempfile
 import datetime
 import traceback
 import json
@@ -30,6 +31,11 @@ SUPABASE_KEY = os.environ.get('SUPABASE_SERVICE_ROLE_KEY') or os.environ.get('SU
 
 # PDF Engine placeholder
 generate_pdf_reportlab = None
+try:
+    from generate_proposal_reportlab import generate_pdf_reportlab as _generate_pdf_reportlab
+    generate_pdf_reportlab = _generate_pdf_reportlab
+except Exception as e:
+    print(f"[PDF] ReportLab not available: {e}")
 
 def get_db_connection():
     # Only SQLite fallback now
@@ -248,7 +254,7 @@ def token_required(f):
 @app.route('/api/hello')
 def hello():
     # v8.6 Full REST mapping with DELETE support
-    return jsonify({"status": "ok", "message": "Full system restored (v8.6-master-sync)", "time": datetime.datetime.now().isoformat()})
+    return jsonify({"status": "ok", "message": "Full system restored (v8.7-supabase-fix)", "time": datetime.datetime.now().isoformat()})
 
 def migrate_db_internal():
     """Internal migration logic to ensure tables exist"""
@@ -778,6 +784,7 @@ def manage_clients():
 
             # Prefer Supabase REST if configured
             if SUPABASE_URL and SUPABASE_KEY:
+                error_details = None
                 # Permission check for update (only admin or owner)
                 if client_id and request.user_role != 'admin':
                     owner_res = query_supabase_rest(
@@ -811,6 +818,12 @@ def manage_clients():
                     )
                     # Retry with JSON string if data column is TEXT
                     if isinstance(res, dict) and res.get("error"):
+                        error_details = res
+                        err_text = str(res.get("error", ""))
+                        if "tipo_pessoa" in err_text:
+                            payload.pop("tipo_pessoa", None)
+                        if "created_by" in err_text:
+                            payload.pop("created_by", None)
                         payload["data"] = data_json
                         res = query_supabase_rest(
                             "clients",
@@ -819,6 +832,8 @@ def manage_clients():
                             data=payload,
                             return_error=True
                         )
+                    if isinstance(res, dict) and res.get("error"):
+                        error_details = res
                     success = not (isinstance(res, dict) and res.get("error"))
                     action = 'atualizado'
                 else:
@@ -831,6 +846,12 @@ def manage_clients():
                     )
                     # Retry with JSON string if data column is TEXT
                     if isinstance(res, dict) and res.get("error"):
+                        error_details = res
+                        err_text = str(res.get("error", ""))
+                        if "tipo_pessoa" in err_text:
+                            payload.pop("tipo_pessoa", None)
+                        if "created_by" in err_text:
+                            payload.pop("created_by", None)
                         payload["data"] = data_json
                         res = query_supabase_rest(
                             "clients",
@@ -838,6 +859,8 @@ def manage_clients():
                             data=payload,
                             return_error=True
                         )
+                    if isinstance(res, dict) and res.get("error"):
+                        error_details = res
                     success = not (isinstance(res, dict) and res.get("error"))
                     action = 'salvo'
             else:
@@ -865,6 +888,12 @@ def manage_clients():
             if success:
                 return jsonify({'success': True, 'message': f'Cliente {action} com sucesso'})
             else:
+                if SUPABASE_URL and SUPABASE_KEY and error_details:
+                    return jsonify({
+                        'success': False,
+                        'error': 'Falha ao salvar no Supabase',
+                        'details': error_details
+                    }), 500
                 return jsonify({'success': False, 'error': 'Falha ao salvar no banco de dados'}), 500
                 
         except Exception as e:
@@ -877,6 +906,54 @@ def manage_clients():
                 'message': str(e),
                 'trace': error_trace if os.getenv('VERCEL') else None
             }), 500
+
+
+@app.route('/api/generate_proposal', methods=['POST'])
+def generate_proposal():
+    try:
+        if not generate_pdf_reportlab:
+            return jsonify({'success': False, 'error': 'Gerador de PDF nao disponivel'}), 500
+
+        data = request.get_json(silent=True) or {}
+        if not data:
+            return jsonify({'success': False, 'error': 'Dados vazios para gerar proposta'}), 400
+
+        positions_path = os.path.join(BASE_DIR, 'posicoes_campos.json')
+        if not os.path.exists(positions_path):
+            return jsonify({'success': False, 'error': 'Arquivo posicoes_campos.json nao encontrado'}), 500
+
+        # Try known background names
+        possible_images = [
+            os.path.join(BASE_DIR, 'PROPOSTA LIMPA.jpg'),
+            os.path.join(BASE_DIR, 'PROPOSTA_LIMPA.jpg'),
+            os.path.join(BASE_DIR, 'proposta_limpa.jpg'),
+            os.path.join(BASE_DIR, 'proposta-limpa.jpg')
+        ]
+        background_image_path = next((p for p in possible_images if os.path.exists(p)), None)
+        if not background_image_path:
+            print("[WARN] Background image not found. Generating PDF without template.")
+
+        tmp_dir = '/tmp' if os.environ.get('VERCEL') == '1' or os.path.exists('/tmp') else None
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf', dir=tmp_dir) as tmp:
+            output_pdf = tmp.name
+
+        generate_pdf_reportlab(data, background_image_path, positions_path, output_filename=output_pdf)
+
+        @after_this_request
+        def cleanup_file(response):
+            try:
+                if os.path.exists(output_pdf):
+                    os.remove(output_pdf)
+            except Exception as cleanup_err:
+                print(f"[WARN] Failed to cleanup temp pdf: {cleanup_err}")
+            return response
+
+        return send_file(output_pdf, mimetype='application/pdf', as_attachment=False, download_name='proposta.pdf')
+    except Exception as e:
+        error_trace = traceback.format_exc()
+        print(f"[ERROR] generate_proposal: {str(e)}")
+        print(f"[ERROR] Traceback: {error_trace}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @app.route('/api/clients/check-duplicate', methods=['GET'])
@@ -915,7 +992,19 @@ def check_duplicate_client():
 
             existing = query_supabase_rest("clients", "GET", params="&".join(params), return_error=True)
             if isinstance(existing, dict) and existing.get("error"):
-                return jsonify({'exists': False, 'error': existing.get("error")})
+                err_text = str(existing.get("error", ""))
+                if "tipo_pessoa" in err_text:
+                    # Retry without tipo_pessoa filter if column does not exist
+                    params = [
+                        "select=id,nome",
+                        f"cpf_cnpj=eq.{cpf_cnpj_clean}"
+                    ]
+                    if client_id:
+                        params.append(f"id=neq.{client_id}")
+                    params.append("limit=1")
+                    existing = query_supabase_rest("clients", "GET", params="&".join(params), return_error=True)
+                else:
+                    return jsonify({'exists': False, 'error': existing.get("error")})
             if existing and isinstance(existing, list):
                 item = existing[0] if existing else None
                 if item:

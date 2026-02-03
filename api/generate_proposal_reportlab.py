@@ -57,8 +57,11 @@ def generate_pdf_reportlab(data, background_image_path, positions_path, output_f
     c = canvas.Canvas(output_filename, pagesize=A4)
     width, height = A4 # 210mm, 297mm approx (in points)
     
-    # Draw background image
-    c.drawImage(background_image_path, 0, 0, width=width, height=height)
+    # Draw background image if available
+    if background_image_path and os.path.exists(background_image_path):
+        c.drawImage(background_image_path, 0, 0, width=width, height=height)
+    else:
+        print("[WARN] Background image not found. Generating PDF without template.")
     
     # Set default font
     c.setFont("Helvetica", 10) # Using 10pt as a starting guess
