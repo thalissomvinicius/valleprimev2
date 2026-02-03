@@ -118,7 +118,7 @@ def token_required(f):
 
 @app.route('/api/hello')
 def hello():
-    return jsonify({"status": "ok", "message": "Full system restored (v6.2-manage-clients)", "time": datetime.datetime.now().isoformat()})
+    return jsonify({"status": "ok", "message": "Full system restored (v6.3-client-fields)", "time": datetime.datetime.now().isoformat()})
 
 def migrate_db_internal():
     """Internal migration logic to ensure tables exist"""
@@ -419,16 +419,18 @@ def manage_clients():
 
     if request.method == 'POST':
         data = request.get_json()
-        nome = data.get('nome')
-        cpf_cnpj = data.get('cpf_cnpj')
+        # Accept both direct fields and form fields
+        nome = data.get('nome') or data.get('nome_proponente')
+        cpf_cnpj = data.get('cpf_cnpj') or data.get('cpf_cnpj_proponente')
         tipo_pessoa = data.get('tipo_pessoa', 'PF')
         
         if not nome or not cpf_cnpj:
-            return jsonify({'message': 'Missing fields'}), 400
+            return jsonify({'message': 'Missing fields', 'required': ['nome or nome_proponente', 'cpf_cnpj or cpf_cnpj_proponente']}), 400
             
         success = query_db("INSERT INTO clients (nome, cpf_cnpj, tipo_pessoa, created_by, data) VALUES (?, ?, ?, ?, ?)",
                          (nome, cpf_cnpj, tipo_pessoa, str(request.user_id), json.dumps(data)), commit=True)
         return jsonify({'success': bool(success)})
+
 
 @app.route('/api/users', methods=['GET', 'POST'])
 @token_required
