@@ -66,8 +66,10 @@ def query_db(sql, params=(), one=False, commit=False):
         if db_type == 'postgres':
             sql = sql.replace('?', '%s')
         cur.execute(sql, params)
+        rowcount = cur.rowcount
         if commit:
             conn.commit()
+            print(f"[DB] Committed. Rowcount: {rowcount}")
             return True
         if one:
             rv = cur.fetchone()
@@ -129,7 +131,7 @@ def token_required(f):
 
 @app.route('/api/hello')
 def hello():
-    return jsonify({"status": "ok", "message": "Full system restored (v7.2-debug-db)", "time": datetime.datetime.now().isoformat()})
+    return jsonify({"status": "ok", "message": "Full system restored (v7.3-test-insert)", "time": datetime.datetime.now().isoformat()})
 
 def migrate_db_internal():
     """Internal migration logic to ensure tables exist"""
@@ -219,16 +221,24 @@ def migrate_db_internal():
 @app.route('/api/debug/db')
 def debug_db():
     try:
+        # Test manual insert if requested
+        if request.args.get('test_insert') == 'true':
+            query_db("INSERT INTO clients (nome, cpf_cnpj, tipo_pessoa, created_by, data) VALUES (?, ?, ?, ?, ?)",
+                     ("Teste Manual", "00000000000", "PF", "system", "{}"), commit=True)
+            return jsonify({"message": "Manual test insert executed. Refresh this page to see count."})
+
         clients_count = query_db("SELECT COUNT(*) as count FROM clients", one=True)
         users_count = query_db("SELECT COUNT(*) as count FROM users", one=True)
         last_clients = query_db("SELECT id, nome, created_at, created_by FROM clients ORDER BY id DESC LIMIT 5")
+        raw_tables = query_db("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
         
         return jsonify({
             "database": "connected",
             "clients_total": clients_count['count'] if clients_count else 0,
             "users_total": users_count['count'] if users_count else 0,
             "last_clients": last_clients or [],
-            "db_type": "postgres" if os.environ.get('DATABASE_URL1') else "sqlite"
+            "db_type": "postgres" if os.environ.get('DATABASE_URL1') else "sqlite",
+            "schema_tables": [t['table_name'] for t in raw_tables] if raw_tables else []
         })
     except Exception as e:
         return jsonify({"error": str(e), "trace": traceback.format_exc()}), 500
