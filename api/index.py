@@ -118,7 +118,7 @@ def token_required(f):
 
 @app.route('/api/hello')
 def hello():
-    return jsonify({"status": "ok", "message": "Full system restored (v6.4-check-duplicate)", "time": datetime.datetime.now().isoformat()})
+    return jsonify({"status": "ok", "message": "Full system restored (v6.5-error-handling)", "time": datetime.datetime.now().isoformat()})
 
 def migrate_db_internal():
     """Internal migration logic to ensure tables exist"""
@@ -418,18 +418,44 @@ def manage_clients():
         return jsonify(clients or [])
 
     if request.method == 'POST':
-        data = request.get_json()
-        # Accept both direct fields and form fields
-        nome = data.get('nome') or data.get('nome_proponente')
-        cpf_cnpj = data.get('cpf_cnpj') or data.get('cpf_cnpj_proponente')
-        tipo_pessoa = data.get('tipo_pessoa', 'PF')
-        
-        if not nome or not cpf_cnpj:
-            return jsonify({'message': 'Missing fields', 'required': ['nome or nome_proponente', 'cpf_cnpj or cpf_cnpj_proponente']}), 400
+        try:
+            data = request.get_json()
+            if not data:
+                return jsonify({'success': False, 'error': 'No data provided'}), 400
             
-        success = query_db("INSERT INTO clients (nome, cpf_cnpj, tipo_pessoa, created_by, data) VALUES (?, ?, ?, ?, ?)",
-                         (nome, cpf_cnpj, tipo_pessoa, str(request.user_id), json.dumps(data)), commit=True)
-        return jsonify({'success': bool(success)})
+            # Accept both direct fields and form fields
+            nome = data.get('nome') or data.get('nome_proponente')
+            cpf_cnpj = data.get('cpf_cnpj') or data.get('cpf_cnpj_proponente')
+            tipo_pessoa = data.get('tipo_pessoa', 'PF')
+            
+            if not nome or not cpf_cnpj:
+                return jsonify({
+                    'success': False, 
+                    'error': 'Campos obrigatórios faltando',
+                    'message': 'Nome e CPF/CNPJ são obrigatórios',
+                    'required': ['nome or nome_proponente', 'cpf_cnpj or cpf_cnpj_proponente']
+                }), 400
+            
+            # Insert into database
+            success = query_db(
+                "INSERT INTO clients (nome, cpf_cnpj, tipo_pessoa, created_by, data) VALUES (?, ?, ?, ?, ?)",
+                (nome, cpf_cnpj, tipo_pessoa, str(request.user_id), json.dumps(data)), 
+                commit=True
+            )
+            
+            if success:
+                return jsonify({'success': True, 'message': 'Cliente salvo com sucesso'})
+            else:
+                return jsonify({'success': False, 'error': 'Falha ao inserir no banco de dados'}), 500
+                
+        except Exception as e:
+            print(f"Error saving client: {str(e)}")  # Log to console
+            return jsonify({
+                'success': False, 
+                'error': f'Erro ao salvar cliente: {str(e)}',
+                'message': str(e)
+            }), 500
+
 
 @app.route('/api/clients/check-duplicate', methods=['GET'])
 @app.route('/api/manage-clients/check-duplicate', methods=['GET'])
