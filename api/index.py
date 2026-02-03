@@ -31,28 +31,33 @@ def get_db_connection():
     # Prioritize DATABASE_URL1 (Supabase) then DATABASE_URL
     db_url = os.environ.get('DATABASE_URL1') or os.environ.get('DATABASE_URL')
     if db_url:
+        u = None
         try:
-            import pg8000.dbapi
             import urllib.parse
-            import ssl
-            import socket
             u = urllib.parse.urlparse(db_url)
-            
-            # Use port 6543 (Pooler) by default on Vercel if not specified or if 5432
             db_port = u.port or 5432
             if os.environ.get('VERCEL') == '1' and db_port == 5432:
-                db_port = 6543
-                
-            # FORCE IPv4 resolution to avoid Errno 99 (Cannot assign requested address)
+                db_port = 6543 # Use Pooler
+            
+            # TRY PSYCOPG2 FIRST (more robust)
             try:
-                # This ensures we get an IPv4 address
-                host_ip = socket.gethostbyname(u.hostname)
-                print(f"[DB] Resolved hostname {u.hostname} to IPv4: {host_ip}")
-            except Exception as res_err:
-                print(f"[DB] Host resolution failed: {res_err}")
-                host_ip = u.hostname
-
-            # Safe SSL context for Vercel/Postgres
+                import psycopg2
+                conn = psycopg2.connect(
+                    user=u.username,
+                    password=urllib.parse.unquote(u.password) if u.password else None,
+                    host=u.hostname,
+                    port=db_port,
+                    database=u.path[1:],
+                    sslmode='require',
+                    connect_timeout=10
+                )
+                return conn, 'postgres'
+            except Exception as ps_err:
+                print(f"PSYCOPG2 ERROR: {ps_err}")
+                
+            # FALLBACK TO PG8000
+            import pg8000.dbapi
+            import ssl
             ssl_context = ssl.create_default_context()
             ssl_context.check_hostname = False
             ssl_context.verify_mode = ssl.CERT_NONE
@@ -60,17 +65,17 @@ def get_db_connection():
             conn = pg8000.dbapi.connect(
                 user=u.username,
                 password=urllib.parse.unquote(u.password) if u.password else None,
-                host=host_ip,
+                host=u.hostname,
                 port=db_port,
                 database=u.path[1:],
                 ssl_context=ssl_context,
-                timeout=30
+                timeout=20
             )
             return conn, 'postgres'
         except Exception as e:
-            print(f"DB ERROR (pg8000 connection attempt): {str(e)}")
+            print(f"DB ERROR (Postgres attempt): {str(e)}")
             if os.environ.get('VERCEL') == '1':
-                 raise Exception(f"CRITICAL: Failed to connect to PostgreSQL (Supabase) on Vercel. Host: {u.hostname}, Port: {db_port}. Error: {str(e)}")
+                 raise Exception(f"CRITICAL: Final Postgres connection failure on Vercel. Host: {u.hostname if u else 'N/A'}. Error: {str(e)}")
     
     print(f"[DB] Falling back to SQLite: {DB_PATH}")
     conn = sqlite3.connect(DB_PATH)
@@ -163,7 +168,7 @@ def token_required(f):
 
 @app.route('/api/hello')
 def hello():
-    return jsonify({"status": "ok", "message": "Full system restored (v7.7-ipv4-fix)", "time": datetime.datetime.now().isoformat()})
+    return jsonify({"status": "ok", "message": "Full system restored (v7.8-psycopg2-try)", "time": datetime.datetime.now().isoformat()})
 
 def migrate_db_internal():
     """Internal migration logic to ensure tables exist"""
