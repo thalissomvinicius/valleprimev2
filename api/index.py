@@ -35,14 +35,23 @@ def get_db_connection():
             import pg8000.dbapi
             import urllib.parse
             import ssl
+            import socket
             u = urllib.parse.urlparse(db_url)
             
             # Use port 6543 (Pooler) by default on Vercel if not specified or if 5432
             db_port = u.port or 5432
             if os.environ.get('VERCEL') == '1' and db_port == 5432:
-                print("[DB] Redirecting from 5432 to 6543 for Supabase Pooler compatibility")
                 db_port = 6543
                 
+            # FORCE IPv4 resolution to avoid Errno 99 (Cannot assign requested address)
+            try:
+                # This ensures we get an IPv4 address
+                host_ip = socket.gethostbyname(u.hostname)
+                print(f"[DB] Resolved hostname {u.hostname} to IPv4: {host_ip}")
+            except Exception as res_err:
+                print(f"[DB] Host resolution failed: {res_err}")
+                host_ip = u.hostname
+
             # Safe SSL context for Vercel/Postgres
             ssl_context = ssl.create_default_context()
             ssl_context.check_hostname = False
@@ -51,18 +60,17 @@ def get_db_connection():
             conn = pg8000.dbapi.connect(
                 user=u.username,
                 password=urllib.parse.unquote(u.password) if u.password else None,
-                host=u.hostname,
+                host=host_ip,
                 port=db_port,
                 database=u.path[1:],
                 ssl_context=ssl_context,
-                timeout=20  # Increased timeout
+                timeout=30
             )
             return conn, 'postgres'
         except Exception as e:
             print(f"DB ERROR (pg8000 connection attempt): {str(e)}")
-            # If we were supposed to use Postgres but it failed, let's NOT fallback to sqlite silently on Vercel
             if os.environ.get('VERCEL') == '1':
-                 raise Exception(f"CRITICAL: Failed to connect to PostgreSQL (Supabase) on Vercel port {db_port}. Error: {str(e)}")
+                 raise Exception(f"CRITICAL: Failed to connect to PostgreSQL (Supabase) on Vercel. Host: {u.hostname}, Port: {db_port}. Error: {str(e)}")
     
     print(f"[DB] Falling back to SQLite: {DB_PATH}")
     conn = sqlite3.connect(DB_PATH)
@@ -155,7 +163,7 @@ def token_required(f):
 
 @app.route('/api/hello')
 def hello():
-    return jsonify({"status": "ok", "message": "Full system restored (v7.6-pooler-fix)", "time": datetime.datetime.now().isoformat()})
+    return jsonify({"status": "ok", "message": "Full system restored (v7.7-ipv4-fix)", "time": datetime.datetime.now().isoformat()})
 
 def migrate_db_internal():
     """Internal migration logic to ensure tables exist"""
