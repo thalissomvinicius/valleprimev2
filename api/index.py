@@ -52,8 +52,15 @@ def get_db_connection():
             )
             return conn, 'postgres'
         except Exception as e:
-            print(f"DB ERROR (pg8000): {str(e)}")
+            print(f"DB ERROR (pg8000 connection): {str(e)}")
+            import traceback
+            traceback.print_exc()
+            # If we were supposed to use Postgres but it failed, let's NOT fallback to sqlite silently
+            # in a production environment where we expect real data.
+            if os.environ.get('VERCEL') == '1':
+                 raise Exception(f"Failed to connect to PostgreSQL on Vercel: {str(e)}")
     
+    print(f"[DB] Falling back to SQLite: {DB_PATH}")
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn, 'sqlite'
@@ -144,7 +151,7 @@ def token_required(f):
 
 @app.route('/api/hello')
 def hello():
-    return jsonify({"status": "ok", "message": "Full system restored (v7.4-fix-datetime)", "time": datetime.datetime.now().isoformat()})
+    return jsonify({"status": "ok", "message": "Full system restored (v7.5-forced-postgres)", "time": datetime.datetime.now().isoformat()})
 
 def migrate_db_internal():
     """Internal migration logic to ensure tables exist"""
@@ -245,13 +252,19 @@ def debug_db():
         last_clients = query_db("SELECT id, nome, created_at, created_by FROM clients ORDER BY id DESC LIMIT 5")
         raw_tables = query_db("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
         
+        # Environment check (hiding secrets)
+        env_vars = {k: "SET" if "KEY" in k or "URL" in k or "PASSWORD" in k or "SECRET" in k else v 
+                   for k, v in os.environ.items() if k in ['DATABASE_URL', 'DATABASE_URL1', 'VERCEL', 'SECRET_KEY']}
+        
         return jsonify({
             "database": "connected",
             "clients_total": clients_count['count'] if clients_count else 0,
             "users_total": users_count['count'] if users_count else 0,
             "last_clients": last_clients or [],
-            "db_type": "postgres" if os.environ.get('DATABASE_URL1') else "sqlite",
-            "schema_tables": [t['table_name'] for t in raw_tables] if raw_tables else []
+            "db_type": "postgres" if db_type == 'postgres' else "sqlite",
+            "schema_tables": [t['table_name'] for t in raw_tables] if raw_tables else [],
+            "env_check": env_vars,
+            "current_db_path": DB_PATH if db_type == 'sqlite' else 'Supabase/Postgres'
         })
     except Exception as e:
         return jsonify({"error": str(e), "trace": traceback.format_exc()}), 500
