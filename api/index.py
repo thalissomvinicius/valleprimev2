@@ -118,7 +118,7 @@ def token_required(f):
 
 @app.route('/api/hello')
 def hello():
-    return jsonify({"status": "ok", "message": "Full system restored (v6.3-client-fields)", "time": datetime.datetime.now().isoformat()})
+    return jsonify({"status": "ok", "message": "Full system restored (v6.4-check-duplicate)", "time": datetime.datetime.now().isoformat()})
 
 def migrate_db_internal():
     """Internal migration logic to ensure tables exist"""
@@ -430,6 +430,33 @@ def manage_clients():
         success = query_db("INSERT INTO clients (nome, cpf_cnpj, tipo_pessoa, created_by, data) VALUES (?, ?, ?, ?, ?)",
                          (nome, cpf_cnpj, tipo_pessoa, str(request.user_id), json.dumps(data)), commit=True)
         return jsonify({'success': bool(success)})
+
+@app.route('/api/clients/check-duplicate', methods=['GET'])
+@app.route('/api/manage-clients/check-duplicate', methods=['GET'])
+@token_required
+def check_duplicate_client():
+    """Check if CPF/CNPJ already exists"""
+    cpf_cnpj = request.args.get('cpf_cnpj', '').strip()
+    tipo_pessoa = request.args.get('tipo_pessoa', 'PF')
+    client_id = request.args.get('client_id')
+    
+    if not cpf_cnpj:
+        return jsonify({'exists': False})
+    
+    # Check if exists
+    if client_id:
+        # Editing existing client - exclude self from check
+        existing = query_db("SELECT id, nome FROM clients WHERE cpf_cnpj = ? AND id != ?", 
+                           (cpf_cnpj, client_id), one=True)
+    else:
+        # New client
+        existing = query_db("SELECT id, nome FROM clients WHERE cpf_cnpj = ?", 
+                           (cpf_cnpj,), one=True)
+    
+    if existing:
+        return jsonify({'exists': True, 'client_name': existing['nome'], 'client_id': existing['id']})
+    
+    return jsonify({'exists': False})
 
 
 @app.route('/api/users', methods=['GET', 'POST'])
