@@ -415,17 +415,20 @@ def fetch_consulta(numprod_psc):
 @token_required
 def manage_clients():
     if request.method == 'GET':
+        print(f"[DEBUG] GET Clients for user_id: {request.user_id}, role: {request.user_role}")
         can_see_all = request.user_role == 'admin'
         if not can_see_all:
              # Check specific permissions
              user = query_db("SELECT permissions FROM users WHERE id = ?", (request.user_id,), one=True)
-             perms = json.loads(user['permissions']) if user['permissions'] else {}
+             perms = json.loads(user['permissions']) if user and user['permissions'] else {}
              can_see_all = perms.get('canViewAllClients', False)
              
         if can_see_all:
             clients = query_db("SELECT * FROM clients ORDER BY created_at DESC")
         else:
             clients = query_db("SELECT * FROM clients WHERE created_by = ? ORDER BY created_at DESC", (str(request.user_id),))
+        
+        print(f"[DEBUG] Found {len(clients) if clients else 0} clients")
         return jsonify(clients or [])
 
     if request.method == 'POST':
