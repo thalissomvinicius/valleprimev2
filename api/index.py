@@ -28,7 +28,8 @@ else:
 generate_pdf_reportlab = None
 
 def get_db_connection():
-    db_url = os.environ.get('DATABASE_URL')
+    # Prioritize DATABASE_URL1 (Supabase) then DATABASE_URL
+    db_url = os.environ.get('DATABASE_URL1') or os.environ.get('DATABASE_URL')
     if db_url:
         try:
             import pg8000.dbapi
@@ -128,7 +129,7 @@ def token_required(f):
 
 @app.route('/api/hello')
 def hello():
-    return jsonify({"status": "ok", "message": "Full system restored (v6.9-fix-check-duplicate)", "time": datetime.datetime.now().isoformat()})
+    return jsonify({"status": "ok", "message": "Full system restored (v7.0-supabase)", "time": datetime.datetime.now().isoformat()})
 
 def migrate_db_internal():
     """Internal migration logic to ensure tables exist"""
