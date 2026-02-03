@@ -578,50 +578,137 @@ def fetch_consulta(numprod_psc):
             
     return jsonify({"data": []})
 
+@app.route('/api/clients/<int:client_id>', methods=['DELETE'])
+@app.route('/api/manage-clients/<int:client_id>', methods=['DELETE'])
+@token_required
+def delete_client(client_id):
+    """Delete a specific client by ID"""
+    try:
+        print(f"[DEBUG] DELETE Client {client_id} by user {request.user_id}")
+        
+        # Check if user can delete this client
+        can_delete = request.user_role == 'admin'
+        if not can_delete:
+            # Check if user owns this client
+            client = query_db("SELECT created_by FROM clients WHERE id = ?", (client_id,), one=True)
+            if client and str(client.get('created_by')) == str(request.user_id):
+                can_delete = True
+        
+        if not can_delete:
+            return jsonify({'success': False, 'error': 'Sem permissão para excluir este cliente'}), 403
+        
+        # Delete the client
+        query_db("DELETE FROM clients WHERE id = ?", (client_id,), commit=True)
+        
+        return jsonify({'success': True, 'message': 'Cliente excluído com sucesso'})
+    except Exception as e:
+        print(f"[ERROR] Delete client: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @app.route('/api/clients', methods=['GET', 'POST'])
 @app.route('/api/manage-clients', methods=['GET', 'POST'])
 @token_required
 def manage_clients():
     if request.method == 'GET':
         print(f"[DEBUG] GET Clients for user_id: {request.user_id}, role: {request.user_role}")
+        
+        # Get query parameters
+        search = request.args.get('q', '').strip()
+        type_filter = request.args.get('type', '').strip().upper()  # 'PF' or 'PJ'
+        created_by_filter = request.args.get('created_by', '').strip()
+        page = int(request.args.get('page', 1))
+        limit = int(request.args.get('limit', 50))
+        offset = (page - 1) * limit
+        
         can_see_all = request.user_role == 'admin'
         if not can_see_all:
              # Check specific permissions
              user = query_db("SELECT permissions FROM users WHERE id = ?", (request.user_id,), one=True)
              perms = json.loads(user['permissions']) if user and user['permissions'] else {}
              can_see_all = perms.get('canViewAllClients', False)
-             
-        if can_see_all:
-            clients = query_db("SELECT * FROM clients ORDER BY created_at DESC")
-        else:
-            clients = query_db("SELECT * FROM clients WHERE created_by = ? ORDER BY created_at DESC", (str(request.user_id),))
         
-        print(f"[DEBUG] Found {len(clients) if clients else 0} clients")
-        # Normalize response for frontend
+        # Build WHERE clause
+        conditions = []
+        params = []
+        
+        # Filter by type (PF/PJ)
+        if type_filter in ['PF', 'PJ']:
+            conditions.append("tipo_pessoa = ?")
+            params.append(type_filter)
+        
+        # Filter by created_by (if user can't see all, or if explicitly filtered)
+        if not can_see_all:
+            conditions.append("created_by = ?")
+            params.append(str(request.user_id))
+        elif created_by_filter:
+            conditions.append("created_by = ?")
+            params.append(created_by_filter)
+        
+        # Search filter
+        if search:
+            conditions.append("(nome LIKE ? OR cpf_cnpj LIKE ?)")
+            params.append(f"%{search}%")
+            params.append(f"%{search}%")
+        
+        where_clause = " WHERE " + " AND ".join(conditions) if conditions else ""
+        
+        # Count total
+        count_sql = f"SELECT COUNT(*) as count FROM clients{where_clause}"
+        count_result = query_db(count_sql, tuple(params), one=True)
+        total_count = count_result['count'] if count_result else 0
+        
+        # Get clients with pagination
+        select_sql = f"SELECT * FROM clients{where_clause} ORDER BY created_at DESC LIMIT ? OFFSET ?"
+        params.extend([limit, offset])
+        clients = query_db(select_sql, tuple(params))
+        
+        print(f"[DEBUG] Found {len(clients) if clients else 0} clients (total: {total_count})")
+        
+        # Parse 'data' field from JSON string to object for each client
         if isinstance(clients, list):
+            for client in clients:
+                if 'data' in client and client['data']:
+                    try:
+                        if isinstance(client['data'], str):
+                            client['data'] = json.loads(client['data'])
+                    except json.JSONDecodeError:
+                        client['data'] = {}
+                else:
+                    client['data'] = {}
+            
             return jsonify({
                 "success": True,
                 "clients": clients,
-                "total_count": len(clients)
+                "total_count": total_count
             })
         return jsonify({"success": True, "clients": [], "total_count": 0})
 
     if request.method == 'POST':
         try:
             data = request.get_json()
-            print(f"[DEBUG] Received data: {data}")  # Log received data
+            print(f"[DEBUG] Received data keys: {list(data.keys()) if data else 'None'}")
             
             if not data:
                 return jsonify({'success': False, 'error': 'No data provided'}), 400
             
+            # Check if this is an UPDATE (client_id provided) or INSERT (new client)
+            client_id = data.get('client_id') or data.get('id')
+            
             # Robust data extraction for both sources (Proposal vs Client Tab)
             nome = data.get('nome') or data.get('nome_proponente') or data.get('razao_social_proponente')
             cpf_cnpj = data.get('cpf_cnpj') or data.get('cpf_cnpj_proponente')
-            tipo_pessoa = data.get('tipo_pessoa', 'PF')
+            tipo_pessoa = data.get('tipo_pessoa', 'PF').upper()
             
-            print(f"[DEBUG] Extracted - nome: {nome}, cpf_cnpj: {cpf_cnpj}, tipo_pessoa: {tipo_pessoa}")
+            # Clean CPF/CNPJ - remove formatting for storage
+            if cpf_cnpj:
+                cpf_cnpj_clean = ''.join(c for c in cpf_cnpj if c.isdigit())
+            else:
+                cpf_cnpj_clean = ''
             
-            if not nome or not cpf_cnpj:
+            print(f"[DEBUG] Extracted - nome: {nome}, cpf_cnpj: {cpf_cnpj_clean}, tipo_pessoa: {tipo_pessoa}, client_id: {client_id}")
+            
+            if not nome or not cpf_cnpj_clean:
                 return jsonify({
                     'success': False, 
                     'error': 'Campos obrigatórios faltando',
@@ -629,26 +716,37 @@ def manage_clients():
                     'required': ['nome or nome_proponente', 'cpf_cnpj or cpf_cnpj_proponente']
                 }), 400
             
-            # Insert into database
-            print(f"[DEBUG] Attempting to insert client: {nome} - {cpf_cnpj}")
-            success = query_db(
-                "INSERT INTO clients (nome, cpf_cnpj, tipo_pessoa, created_by, data) VALUES (?, ?, ?, ?, ?)",
-                (nome, cpf_cnpj, tipo_pessoa, str(request.user_id), json.dumps(data)), 
-                commit=True
-            )
+            # Prepare data JSON (remove id/client_id to avoid recursion)
+            data_to_store = {k: v for k, v in data.items() if k not in ['id', 'client_id', 'created_by']}
+            data_json = json.dumps(data_to_store, ensure_ascii=False)
             
-            # Additional logic: if it's a proposal flow, we might want to store extra metadata
-            # but for now, ensuring it saves in the same central table is the priority.
-            print(f"[DEBUG] Insert result: {success}")
+            if client_id:
+                # UPDATE existing client
+                print(f"[DEBUG] Attempting to UPDATE client {client_id}: {nome}")
+                success = query_db(
+                    "UPDATE clients SET nome = ?, cpf_cnpj = ?, tipo_pessoa = ?, data = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                    (nome, cpf_cnpj_clean, tipo_pessoa, data_json, client_id), 
+                    commit=True
+                )
+                action = 'atualizado'
+            else:
+                # INSERT new client
+                print(f"[DEBUG] Attempting to INSERT client: {nome} - {cpf_cnpj_clean}")
+                success = query_db(
+                    "INSERT INTO clients (nome, cpf_cnpj, tipo_pessoa, created_by, data) VALUES (?, ?, ?, ?, ?)",
+                    (nome, cpf_cnpj_clean, tipo_pessoa, str(request.user_id), data_json), 
+                    commit=True
+                )
+                action = 'salvo'
+            
+            print(f"[DEBUG] Database operation result: {success}")
             
             if success:
-                # Return success in the format both areas expect
-                return jsonify({'success': True, 'message': 'Cliente salvo com sucesso', 'database': 'supabase-rest'})
+                return jsonify({'success': True, 'message': f'Cliente {action} com sucesso'})
             else:
-                return jsonify({'success': False, 'error': 'Falha ao inserir no banco de dados Supabase'}), 500
+                return jsonify({'success': False, 'error': 'Falha ao salvar no banco de dados'}), 500
                 
         except Exception as e:
-            import traceback
             error_trace = traceback.format_exc()
             print(f"[ERROR] Exception saving client: {str(e)}")
             print(f"[ERROR] Traceback: {error_trace}")
@@ -656,7 +754,7 @@ def manage_clients():
                 'success': False, 
                 'error': f'Erro ao salvar cliente: {str(e)}',
                 'message': str(e),
-                'trace': error_trace if os.getenv('VERCEL') else None  # Only show trace in production for debugging
+                'trace': error_trace if os.getenv('VERCEL') else None
             }), 500
 
 

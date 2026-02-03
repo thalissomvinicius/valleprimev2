@@ -278,9 +278,8 @@ ${sinalSection}
     };
 
     const handleSelectClient = (client) => {
-        // Extract data from client object - API returns { id, data: {...} }
-        const clientData = client.data || client;
-        setSelectedClientData(clientData);
+        // Keep the full client object with id and data
+        setSelectedClientData(client);
         setShowClientSelection(false);
         setShowClientForm(true);
     };
@@ -297,7 +296,17 @@ ${sinalSection}
         setShowClientForm(false);
 
         try {
-            await saveClient(clientData);
+            // Include client_id if editing an existing client
+            const dataToSave = {
+                ...clientData,
+                client_id: selectedClientData?.id || null
+            };
+            console.log('[BudgetWizard] Saving client:', { 
+                isEdit: !!selectedClientData?.id, 
+                clientId: dataToSave.client_id 
+            });
+            
+            await saveClient(dataToSave);
         } catch (err) {
             console.error('Error saving client:', err);
         }
@@ -534,7 +543,10 @@ ${sinalSection}
                 <ClientFormModal
                     onClose={() => setShowClientForm(false)}
                     onConfirm={handleGeneratePDF}
-                    initialData={selectedClientData}
+                    initialData={selectedClientData?.data || selectedClientData}
+                    clientId={selectedClientData?.id}
+                    lot={lot}
+                    obraName={obraName}
                 />
             )}
         </>

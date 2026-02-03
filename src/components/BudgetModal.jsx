@@ -279,18 +279,24 @@ ${sinalSection}
 
         // Save client data first to ensure persistence
         try {
-            const saveResult = await saveClient(clientData);
+            // Include client_id if editing an existing client
+            const dataToSave = {
+                ...clientData,
+                client_id: selectedClientData?.id || null
+            };
+            console.log('[BudgetModal] Saving client:', { 
+                isEdit: !!selectedClientData?.id, 
+                clientId: dataToSave.client_id 
+            });
+            
+            const saveResult = await saveClient(dataToSave);
             if (!saveResult.success) {
                 alert('Aviso: Não foi possível salvar as alterações no cadastro do cliente, mas a proposta será gerada com os dados atuais.');
                 console.error('Error saving client:', saveResult.error);
-            } else {
-                // Update selected client data with saved data (optional but good practice)
-                // setSelectedClientData(prev => ({ ...prev, data: clientData }));
             }
         } catch (err) {
             console.error('Error saving client:', err);
-            // Continue generation even if save fails, but warn? Or just silent fail?
-            // Better to proceed so user gets their PDF.
+            // Continue generation even if save fails - better to proceed so user gets their PDF.
         }
 
         // Build sinal data for backend

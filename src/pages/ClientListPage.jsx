@@ -113,11 +113,20 @@ function ClientListPage() {
 
     const handleFormSuccess = async (submissionData) => {
         try {
-            // Prepare submission data with ownership info
+            // Prepare submission data with ownership info and client_id for updates
             const dataToSave = {
                 ...submissionData,
-                created_by: currentUser?.id
+                created_by: currentUser?.id,
+                // Include client_id if editing an existing client
+                client_id: editingClient?.id || null
             };
+
+            console.log('[ClientListPage] Saving client data:', {
+                isEdit: !!editingClient,
+                clientId: dataToSave.client_id,
+                nome: dataToSave.nome_proponente,
+                tipo_pessoa: dataToSave.tipo_pessoa
+            });
 
             // Save client data
             const result = await saveClient(dataToSave);

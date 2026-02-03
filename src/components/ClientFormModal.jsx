@@ -244,17 +244,18 @@ const ClientFormModal = ({ onClose, onConfirm, onDelete, initialData = null, cli
     const checkDuplicateCPF = useCallback(
         debounce(async (cpfCnpj, fieldName, personType) => {
             try {
-                const result = await checkDuplicate(cpfCnpj, clientId, personType);
+                // checkDuplicate(cpf, tipo, clientId) - ordem correta dos parâmetros
+                const result = await checkDuplicate(cpfCnpj, personType, clientId);
                 if (result.exists) {
                     setDuplicateWarning({
                         show: true,
-                        clientName: result.client.nome_proponente,
-                        clientId: result.client.id,
+                        clientName: result.client_name || result.client?.nome_proponente || 'Cliente existente',
+                        clientId: result.client_id || result.client?.id,
                         field: fieldName
                     });
                     setFieldErrors(prev => ({
                         ...prev,
-                        [fieldName]: `CPF/CNPJ já cadastrado: ${result.client.nome_proponente}`
+                        [fieldName]: `CPF/CNPJ já cadastrado: ${result.client_name || 'outro cliente'}`
                     }));
                 } else {
                     setDuplicateWarning({ show: false, clientName: '', clientId: null, field: null });
