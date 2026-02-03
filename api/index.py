@@ -128,7 +128,7 @@ def token_required(f):
 
 @app.route('/api/hello')
 def hello():
-    return jsonify({"status": "ok", "message": "Full system restored (v6.7-fix-query-db)", "time": datetime.datetime.now().isoformat()})
+    return jsonify({"status": "ok", "message": "Full system restored (v6.8-auto-migrate)", "time": datetime.datetime.now().isoformat()})
 
 def migrate_db_internal():
     """Internal migration logic to ensure tables exist"""
@@ -563,3 +563,11 @@ def user_ops(user_id):
 @app.route('/api/health')
 def health_check():
     return jsonify({"status": "healthy", "python": sys.version})
+
+# Auto-migrate database on startup
+try:
+    print("[STARTUP] Running database migration...")
+    migrate_db_internal()
+    print("[STARTUP] Database migration completed successfully")
+except Exception as e:
+    print(f"[STARTUP] Database migration failed: {e}")
