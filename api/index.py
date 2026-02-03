@@ -832,7 +832,7 @@ def manage_clients():
             # Clean CPF/CNPJ - remove formatting for storage
             if cpf_cnpj:
                 cpf_cnpj_clean = ''.join(c for c in cpf_cnpj if c.isdigit())
-        else:
+            else:
                 cpf_cnpj_clean = ''
             
             print(f"[DEBUG] Extracted - nome: {nome}, cpf_cnpj: {cpf_cnpj_clean}, tipo_pessoa: {tipo_pessoa}, client_id: {client_id}")
