@@ -314,21 +314,21 @@ def debug_db():
         clients_count = query_db("SELECT COUNT(*) as count FROM clients", one=True)
         users_count = query_db("SELECT COUNT(*) as count FROM users", one=True)
         last_clients = query_db("SELECT id, nome, created_at, created_by FROM clients ORDER BY id DESC LIMIT 5")
-        raw_tables = query_db("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
         
         # Environment check (hiding secrets)
         env_vars = {k: "SET" if "KEY" in k or "URL" in k or "PASSWORD" in k or "SECRET" in k else v 
-                   for k, v in os.environ.items() if k in ['DATABASE_URL', 'DATABASE_URL1', 'VERCEL', 'SECRET_KEY']}
+                   for k, v in os.environ.items() if k in ['DATABASE_URL', 'DATABASE_URL1', 'VERCEL', 'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY']}
         
         return jsonify({
             "database": "connected",
             "clients_total": clients_count['count'] if clients_count else 0,
             "users_total": users_count['count'] if users_count else 0,
             "last_clients": last_clients or [],
-            "db_type": "postgres" if db_type == 'postgres' else "sqlite",
-            "schema_tables": [t['table_name'] for t in raw_tables] if raw_tables else [],
-            "env_check": env_vars,
-            "current_db_path": DB_PATH if db_type == 'sqlite' else 'Supabase/Postgres'
+            "supabase_api": {
+                "active": bool(SUPABASE_URL and SUPABASE_KEY),
+                "url": SUPABASE_URL
+            },
+            "env_check": env_vars
         })
     except Exception as e:
         return jsonify({"error": str(e), "trace": traceback.format_exc()}), 500
