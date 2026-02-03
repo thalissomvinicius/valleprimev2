@@ -43,10 +43,15 @@ export function AuthProvider({ children }) {
     const processUser = (userData) => {
         // Flatten permissions for easy access in frontend
         const permissions = userData.permissions || {};
+        const allObras = OBRAS.map(obra => obra.codigo);
         const user = {
             ...userData,
-            obrasPermitidas: permissions.obrasPermitidas || [],
-            statusPermitidos: permissions.statusPermitidos || [],
+            obrasPermitidas: (permissions.obrasPermitidas && permissions.obrasPermitidas.length > 0)
+                ? permissions.obrasPermitidas
+                : (userData.role === 'admin' ? allObras : []),
+            statusPermitidos: (permissions.statusPermitidos && permissions.statusPermitidos.length > 0)
+                ? permissions.statusPermitidos
+                : [],
             canViewAllClients: permissions.canViewAllClients || (userData.role === 'admin'),
             aprovado: Boolean(userData.active !== false)
         };

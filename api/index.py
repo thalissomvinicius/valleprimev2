@@ -18,6 +18,10 @@ CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'dev_secret_key_valle_prime_v2')
 
+# Default admin permissions for frontend filters
+ADMIN_OBRAS = ['600', '601', '602', '603', '604', '605', '610', '616', '618', '620', '621', '623', '624', '625']
+ADMIN_STATUS = ['0 - Disponível', '1 - Vendido', '2 - Reservado', '4 - Quitado', '7 - Suspenso', '8 - Fora de venda']
+
 # Database path for SQLite
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 if os.environ.get('VERCEL') == '1' or os.path.exists('/tmp'):
@@ -191,7 +195,7 @@ def query_db(sql, params=(), one=False, commit=False):
                         result[key] = val.isoformat()
                 return result
             return None
-        rv = cur.fetchall()
+            rv = cur.fetchall()
         if cur.description:
             col_names = [desc[0] for desc in cur.description]
             results = []
@@ -399,7 +403,11 @@ def auth_me():
                     'id': 1,
                     'username': 'admin',
                     'role': 'admin',
-                    'permissions': {"canViewAllClients": True}
+                    'permissions': {
+                        "canViewAllClients": True,
+                        "obrasPermitidas": ADMIN_OBRAS,
+                        "statusPermitidos": ADMIN_STATUS
+                    }
                 }
             })
         
@@ -442,7 +450,11 @@ def login_get():
                 'id': 1,
                 'username': 'admin',
                 'role': 'admin',
-                'permissions': {"canViewAllClients": True}
+                'permissions': {
+                    "canViewAllClients": True,
+                    "obrasPermitidas": ADMIN_OBRAS,
+                    "statusPermitidos": ADMIN_STATUS
+                }
             }
         })
     
@@ -478,7 +490,11 @@ def login():
                     'id': 1,
                     'username': 'admin',
                     'role': 'admin',
-                    'permissions': {"canViewAllClients": True}
+                    'permissions': {
+                        "canViewAllClients": True,
+                        "obrasPermitidas": ADMIN_OBRAS,
+                        "statusPermitidos": ADMIN_STATUS
+                    }
                 }
             })
         
@@ -511,7 +527,7 @@ def login():
                  # Insert
                  ins_sql = "INSERT INTO users (username, password_hash, nome, role, active, permissions) VALUES (%s, %s, %s, %s, %s, %s)" if db_type == 'postgres' else "INSERT INTO users (username, password_hash, nome, role, active, permissions) VALUES (?, ?, ?, ?, ?, ?)"
                  cur.execute(ins_sql, ('admin', pw_hash, 'Admin', 'admin', True, json.dumps({"canViewAllClients": True})))
-                 conn.commit()
+        conn.commit()
                  
                  # Re-fetch
                  cur.execute(sql, ('admin', True))
@@ -525,7 +541,7 @@ def login():
             return jsonify({'message': 'Invalid credentials (User not found)'}), 401
             
         if not verify_password(user['password_hash'], password):
-            conn.close()
+        conn.close()
             return jsonify({'message': 'Invalid credentials (Password mismatch)'}), 401
         
         conn.close()
@@ -576,7 +592,7 @@ def fetch_consulta(numprod_psc):
         resp = requests.get(f"http://177.221.240.85:8000/api/consulta/{numprod_psc}/", timeout=8)
         if resp.status_code == 200:
             return jsonify(resp.json())
-    except:
+            except:
         pass
     
     # Fallback to local files
@@ -653,7 +669,7 @@ def manage_clients():
                 safe_term = search.replace('*', '').replace('%', '')
                 if search_digits:
                     params.append(f"or=(nome.ilike.*{safe_term}*,cpf_cnpj.ilike.*{search_digits}*)")
-                else:
+        else:
                     params.append(f"or=(nome.ilike.*{safe_term}*,cpf_cnpj.ilike.*{safe_term}*)")
             params.append("order=created_at.desc")
             params.append(f"limit={limit}")
@@ -765,7 +781,7 @@ def manage_clients():
             # Clean CPF/CNPJ - remove formatting for storage
             if cpf_cnpj:
                 cpf_cnpj_clean = ''.join(c for c in cpf_cnpj if c.isdigit())
-            else:
+        else:
                 cpf_cnpj_clean = ''
             
             print(f"[DEBUG] Extracted - nome: {nome}, cpf_cnpj: {cpf_cnpj_clean}, tipo_pessoa: {tipo_pessoa}, client_id: {client_id}")
@@ -836,7 +852,7 @@ def manage_clients():
                         error_details = res
                     success = not (isinstance(res, dict) and res.get("error"))
                     action = 'atualizado'
-                else:
+        else:
                     print(f"[DEBUG] Attempting Supabase INSERT client: {nome} - {cpf_cnpj_clean}")
                     res = query_supabase_rest(
                         "clients",
@@ -896,7 +912,7 @@ def manage_clients():
                     }), 500
                 return jsonify({'success': False, 'error': 'Falha ao salvar no banco de dados'}), 500
                 
-        except Exception as e:
+    except Exception as e:
             error_trace = traceback.format_exc()
             print(f"[ERROR] Exception saving client: {str(e)}")
             print(f"[ERROR] Traceback: {error_trace}")
@@ -1003,7 +1019,7 @@ def check_duplicate_client():
                         params.append(f"id=neq.{client_id}")
                     params.append("limit=1")
                     existing = query_supabase_rest("clients", "GET", params="&".join(params), return_error=True)
-                else:
+            else:
                     return jsonify({'exists': False, 'error': existing.get("error")})
             if existing and isinstance(existing, list):
                 item = existing[0] if existing else None
@@ -1031,7 +1047,7 @@ def check_duplicate_client():
             return jsonify({'exists': True, 'client_name': existing['nome'], 'client_id': existing['id']})
         
         return jsonify({'exists': False})
-        
+            
     except Exception as e:
         print(f"[ERROR] check_duplicate_client: {str(e)}")
         return jsonify({'exists': False, 'error': str(e)})
