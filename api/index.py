@@ -118,7 +118,7 @@ def token_required(f):
 
 @app.route('/api/hello')
 def hello():
-    return jsonify({"status": "ok", "message": "Full system restored (v6.5-error-handling)", "time": datetime.datetime.now().isoformat()})
+    return jsonify({"status": "ok", "message": "Full system restored (v6.6-debug-logs)", "time": datetime.datetime.now().isoformat()})
 
 def migrate_db_internal():
     """Internal migration logic to ensure tables exist"""
@@ -420,6 +420,8 @@ def manage_clients():
     if request.method == 'POST':
         try:
             data = request.get_json()
+            print(f"[DEBUG] Received data: {data}")  # Log received data
+            
             if not data:
                 return jsonify({'success': False, 'error': 'No data provided'}), 400
             
@@ -427,6 +429,8 @@ def manage_clients():
             nome = data.get('nome') or data.get('nome_proponente')
             cpf_cnpj = data.get('cpf_cnpj') or data.get('cpf_cnpj_proponente')
             tipo_pessoa = data.get('tipo_pessoa', 'PF')
+            
+            print(f"[DEBUG] Extracted - nome: {nome}, cpf_cnpj: {cpf_cnpj}, tipo_pessoa: {tipo_pessoa}")
             
             if not nome or not cpf_cnpj:
                 return jsonify({
@@ -437,11 +441,13 @@ def manage_clients():
                 }), 400
             
             # Insert into database
+            print(f"[DEBUG] Attempting to insert client: {nome} - {cpf_cnpj}")
             success = query_db(
                 "INSERT INTO clients (nome, cpf_cnpj, tipo_pessoa, created_by, data) VALUES (?, ?, ?, ?, ?)",
                 (nome, cpf_cnpj, tipo_pessoa, str(request.user_id), json.dumps(data)), 
                 commit=True
             )
+            print(f"[DEBUG] Insert result: {success}")
             
             if success:
                 return jsonify({'success': True, 'message': 'Cliente salvo com sucesso'})
@@ -449,11 +455,15 @@ def manage_clients():
                 return jsonify({'success': False, 'error': 'Falha ao inserir no banco de dados'}), 500
                 
         except Exception as e:
-            print(f"Error saving client: {str(e)}")  # Log to console
+            import traceback
+            error_trace = traceback.format_exc()
+            print(f"[ERROR] Exception saving client: {str(e)}")
+            print(f"[ERROR] Traceback: {error_trace}")
             return jsonify({
                 'success': False, 
                 'error': f'Erro ao salvar cliente: {str(e)}',
-                'message': str(e)
+                'message': str(e),
+                'trace': error_trace if os.getenv('VERCEL') else None  # Only show trace in production for debugging
             }), 500
 
 
