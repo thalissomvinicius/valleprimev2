@@ -31,6 +31,12 @@ SUPABASE_KEY = os.environ.get('SUPABASE_SERVICE_ROLE_KEY') or os.environ.get('SU
 # PDF Engine placeholder
 generate_pdf_reportlab = None
 
+def get_db_connection():
+    # Only SQLite fallback now
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn, 'sqlite'
+
 def query_supabase_rest(table, method='GET', data=None, params=None):
     """Fallback driver using Supabase REST API (HTTP) to bypass TCP blocks"""
     if not SUPABASE_URL or not SUPABASE_KEY:
@@ -89,10 +95,19 @@ def query_db(sql, params=(), one=False, commit=False):
                     res = query_supabase_rest(table, 'POST', data=payload)
                     return True if res else False
                 
+                # Handle SELECT COUNT(*)
+                if "SELECT COUNT(*)" in sql or "count(*)" in sql.lower():
+                    # PostgREST count is usually done via HEAD request or 'select' parameter
+                    res = query_supabase_rest(table, 'GET', params={"select": "id"})
+                    total = len(res) if res else 0
+                    if one: return {"count": total}
+                    return [{"count": total}]
+
                 # Handle SELECT ALL
                 if "SELECT * FROM" in sql and "WHERE" not in sql:
                     res = query_supabase_rest(table, 'GET', params={"select": "*", "order": "created_at.desc" if table == "clients" else "id.asc"})
-                    return res if not one else (res[0] if res else None)
+                    if one: return res[0] if res else None
+                    return res or []
                 
                 # Handle SELECT WHERE (Simple cases like login or duplicate check)
                 if "WHERE" in sql:
@@ -200,7 +215,7 @@ def token_required(f):
 
 @app.route('/api/hello')
 def hello():
-    return jsonify({"status": "ok", "message": "Full system restored (v8.0-supabase-rest)", "time": datetime.datetime.now().isoformat()})
+    return jsonify({"status": "ok", "message": "Full system restored (v8.1-rest-fix)", "time": datetime.datetime.now().isoformat()})
 
 def migrate_db_internal():
     """Internal migration logic to ensure tables exist"""
