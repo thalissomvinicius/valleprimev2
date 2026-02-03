@@ -515,24 +515,24 @@ def login():
         
         # If user not found and table might be empty, try to create admin once
         if not user and username == 'admin' and password == 'admin123':
-             # We need to re-query count using the same cursor
-             cnt_sql = "SELECT count(*) as cnt FROM users"
-             cur.execute(cnt_sql)
-             res = cur.fetchone()
-             # handle result mapping manually since we are raw
-             cnt = res[0] if res else 0
-             
-             if cnt == 0:
-                 pw_hash = hash_password('admin123')
-                 # Insert
-                 ins_sql = "INSERT INTO users (username, password_hash, nome, role, active, permissions) VALUES (%s, %s, %s, %s, %s, %s)" if db_type == 'postgres' else "INSERT INTO users (username, password_hash, nome, role, active, permissions) VALUES (?, ?, ?, ?, ?, ?)"
-                 cur.execute(ins_sql, ('admin', pw_hash, 'Admin', 'admin', True, json.dumps({"canViewAllClients": True})))
-        conn.commit()
-                 
-                 # Re-fetch
-                 cur.execute(sql, ('admin', True))
-                 rv = cur.fetchone()
-                 if rv:
+            # We need to re-query count using the same cursor
+            cnt_sql = "SELECT count(*) as cnt FROM users"
+            cur.execute(cnt_sql)
+            res = cur.fetchone()
+            # handle result mapping manually since we are raw
+            cnt = res[0] if res else 0
+
+            if cnt == 0:
+                pw_hash = hash_password('admin123')
+                # Insert
+                ins_sql = "INSERT INTO users (username, password_hash, nome, role, active, permissions) VALUES (%s, %s, %s, %s, %s, %s)" if db_type == 'postgres' else "INSERT INTO users (username, password_hash, nome, role, active, permissions) VALUES (?, ?, ?, ?, ?, ?)"
+                cur.execute(ins_sql, ('admin', pw_hash, 'Admin', 'admin', True, json.dumps({"canViewAllClients": True})))
+                conn.commit()
+
+                # Re-fetch
+                cur.execute(sql, ('admin', True))
+                rv = cur.fetchone()
+                if rv:
                     col_names = [desc[0] for desc in cur.description]
                     user = dict(zip(col_names, rv))
 
@@ -541,7 +541,7 @@ def login():
             return jsonify({'message': 'Invalid credentials (User not found)'}), 401
             
         if not verify_password(user['password_hash'], password):
-        conn.close()
+            conn.close()
             return jsonify({'message': 'Invalid credentials (Password mismatch)'}), 401
         
         conn.close()
