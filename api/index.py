@@ -592,7 +592,7 @@ def fetch_consulta(numprod_psc):
         resp = requests.get(f"http://177.221.240.85:8000/api/consulta/{numprod_psc}/", timeout=8)
         if resp.status_code == 200:
             return jsonify(resp.json())
-            except:
+    except Exception:
         pass
     
     # Fallback to local files
@@ -656,8 +656,39 @@ def manage_clients():
         
         search_digits = ''.join(c for c in search if c.isdigit())
 
+        def _fetch_clients_sqlite():
+            conditions = []
+            params = []
+
+            if type_filter in ['PF', 'PJ']:
+                conditions.append("tipo_pessoa = ?")
+                params.append(type_filter)
+
+            if not can_see_all:
+                conditions.append("created_by = ?")
+                params.append(str(request.user_id))
+            elif created_by_filter:
+                conditions.append("created_by = ?")
+                params.append(created_by_filter)
+
+            if search:
+                conditions.append("(nome LIKE ? OR cpf_cnpj LIKE ?)")
+                params.append(f"%{search}%")
+                params.append(f"%{search_digits or search}%")
+
+            where_clause = " WHERE " + " AND ".join(conditions) if conditions else ""
+            count_sql = f"SELECT COUNT(*) as count FROM clients{where_clause}"
+            count_result = query_db(count_sql, tuple(params), one=True)
+            total = count_result['count'] if count_result else 0
+
+            select_sql = f"SELECT * FROM clients{where_clause} ORDER BY created_at DESC LIMIT ? OFFSET ?"
+            params.extend([limit, offset])
+            rows = query_db(select_sql, tuple(params))
+            return rows, total
+
         # Prefer Supabase REST if configured to avoid SQLite mismatch
         if SUPABASE_URL and SUPABASE_KEY:
+            use_sqlite = False
             params = ["select=*"]
             if type_filter in ['PF', 'PJ']:
                 params.append(f"tipo_pessoa=eq.{type_filter}")
@@ -681,7 +712,16 @@ def manage_clients():
                 if "tipo_pessoa" in err_text:
                     params = [p for p in params if not p.startswith("tipo_pessoa=")]
                     clients = query_supabase_rest("clients", "GET", params="&".join(params), return_error=True)
-                if isinstance(clients, dict) and clients.get("error"):
+                if isinstance(clients, dict) and clients.get("error") and ("PGRST205" in str(clients.get("error")) or "Could not find the table" in str(clients.get("error"))):
+                    use_sqlite = True
+                if use_sqlite:
+                    clients, total_count = _fetch_clients_sqlite()
+                    clients = clients or []
+                    # Skip Supabase count
+                    count_res = None
+                else:
+                    count_res = None
+                if isinstance(clients, dict) and clients.get("error") and not use_sqlite:
                     return jsonify({
                         "success": False,
                         "error": "Erro ao buscar clientes (Supabase)",
@@ -690,30 +730,31 @@ def manage_clients():
             clients = clients or []
 
             # Total count (fallback to list length if error)
-            count_params = ["select=id"]
-            if type_filter in ['PF', 'PJ']:
-                count_params.append(f"tipo_pessoa=eq.{type_filter}")
-            if not can_see_all:
-                count_params.append(f"created_by=eq.{request.user_id}")
-            elif created_by_filter:
-                count_params.append(f"created_by=eq.{created_by_filter}")
-            if search:
-                safe_term = search.replace('*', '').replace('%', '')
-                if search_digits:
-                    count_params.append(f"or=(nome.ilike.*{safe_term}*,cpf_cnpj.ilike.*{search_digits}*)")
-                else:
-                    count_params.append(f"or=(nome.ilike.*{safe_term}*,cpf_cnpj.ilike.*{safe_term}*)")
+            if not use_sqlite:
+                count_params = ["select=id"]
+                if type_filter in ['PF', 'PJ']:
+                    count_params.append(f"tipo_pessoa=eq.{type_filter}")
+                if not can_see_all:
+                    count_params.append(f"created_by=eq.{request.user_id}")
+                elif created_by_filter:
+                    count_params.append(f"created_by=eq.{created_by_filter}")
+                if search:
+                    safe_term = search.replace('*', '').replace('%', '')
+                    if search_digits:
+                        count_params.append(f"or=(nome.ilike.*{safe_term}*,cpf_cnpj.ilike.*{search_digits}*)")
+                    else:
+                        count_params.append(f"or=(nome.ilike.*{safe_term}*,cpf_cnpj.ilike.*{safe_term}*)")
 
-            count_res = query_supabase_rest("clients", "GET", params="&".join(count_params), return_error=True)
-            if isinstance(count_res, dict) and count_res.get("error"):
-                err_text = str(count_res.get("error", ""))
-                if "tipo_pessoa" in err_text:
-                    count_params = [p for p in count_params if not p.startswith("tipo_pessoa=")]
-                    count_res = query_supabase_rest("clients", "GET", params="&".join(count_params), return_error=True)
-            if isinstance(count_res, list):
-                total_count = len(count_res)
-            else:
-                total_count = len(clients)
+                count_res = query_supabase_rest("clients", "GET", params="&".join(count_params), return_error=True)
+                if isinstance(count_res, dict) and count_res.get("error"):
+                    err_text = str(count_res.get("error", ""))
+                    if "tipo_pessoa" in err_text:
+                        count_params = [p for p in count_params if not p.startswith("tipo_pessoa=")]
+                        count_res = query_supabase_rest("clients", "GET", params="&".join(count_params), return_error=True)
+                if isinstance(count_res, list):
+                    total_count = len(count_res)
+                else:
+                    total_count = len(clients)
 
         else:
             # Build WHERE clause (SQLite)
