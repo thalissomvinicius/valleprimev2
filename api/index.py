@@ -75,12 +75,25 @@ def query_db(sql, params=(), one=False, commit=False):
             rv = cur.fetchone()
             if rv:
                 col_names = [desc[0] for desc in cur.description]
-                return dict(zip(col_names, rv))
+                result = dict(zip(col_names, rv))
+                # Convert datetime to string for JSON compatibility
+                for key, val in result.items():
+                    if isinstance(val, (datetime.datetime, datetime.date)):
+                        result[key] = val.isoformat()
+                return result
             return None
         rv = cur.fetchall()
         if cur.description:
             col_names = [desc[0] for desc in cur.description]
-            return [dict(zip(col_names, row)) for row in rv]
+            results = []
+            for row in rv:
+                row_dict = dict(zip(col_names, row))
+                # Convert datetime to string for JSON compatibility
+                for key, val in row_dict.items():
+                    if isinstance(val, (datetime.datetime, datetime.date)):
+                        row_dict[key] = val.isoformat()
+                results.append(row_dict)
+            return results
         return []
     except Exception as e:
         print(f"QUERY ERROR: {e}")
@@ -131,7 +144,7 @@ def token_required(f):
 
 @app.route('/api/hello')
 def hello():
-    return jsonify({"status": "ok", "message": "Full system restored (v7.3-test-insert)", "time": datetime.datetime.now().isoformat()})
+    return jsonify({"status": "ok", "message": "Full system restored (v7.4-fix-datetime)", "time": datetime.datetime.now().isoformat()})
 
 def migrate_db_internal():
     """Internal migration logic to ensure tables exist"""
