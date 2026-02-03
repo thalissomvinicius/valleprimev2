@@ -24,65 +24,97 @@ if os.environ.get('VERCEL') == '1' or os.path.exists('/tmp'):
 else:
     DB_PATH = os.path.join(BASE_DIR, 'clients.db')
 
+# Supabase REST Config
+SUPABASE_URL = os.environ.get('SUPABASE_URL', '').rstrip('/')
+SUPABASE_KEY = os.environ.get('SUPABASE_SERVICE_ROLE_KEY') or os.environ.get('SUPABASE_ANON_KEY')
+
 # PDF Engine placeholder
 generate_pdf_reportlab = None
 
-def get_db_connection():
-    # Prioritize DATABASE_URL1 (Supabase) then DATABASE_URL
-    db_url = os.environ.get('DATABASE_URL1') or os.environ.get('DATABASE_URL')
-    if db_url:
-        u = None
-        try:
-            import urllib.parse
-            u = urllib.parse.urlparse(db_url)
-            db_port = u.port or 5432
-            if os.environ.get('VERCEL') == '1' and db_port == 5432:
-                db_port = 6543 # Use Pooler
-            
-            # TRY PSYCOPG2 FIRST (more robust)
-            try:
-                import psycopg2
-                conn = psycopg2.connect(
-                    user=u.username,
-                    password=urllib.parse.unquote(u.password) if u.password else None,
-                    host=u.hostname,
-                    port=db_port,
-                    database=u.path[1:],
-                    sslmode='require',
-                    connect_timeout=10
-                )
-                return conn, 'postgres'
-            except Exception as ps_err:
-                print(f"PSYCOPG2 ERROR: {ps_err}")
-                
-            # FALLBACK TO PG8000
-            import pg8000.dbapi
-            import ssl
-            ssl_context = ssl.create_default_context()
-            ssl_context.check_hostname = False
-            ssl_context.verify_mode = ssl.CERT_NONE
-            
-            conn = pg8000.dbapi.connect(
-                user=u.username,
-                password=urllib.parse.unquote(u.password) if u.password else None,
-                host=u.hostname,
-                port=db_port,
-                database=u.path[1:],
-                ssl_context=ssl_context,
-                timeout=20
-            )
-            return conn, 'postgres'
-        except Exception as e:
-            print(f"DB ERROR (Postgres attempt): {str(e)}")
-            if os.environ.get('VERCEL') == '1':
-                 raise Exception(f"CRITICAL: Final Postgres connection failure on Vercel. Host: {u.hostname if u else 'N/A'}. Error: {str(e)}")
+def query_supabase_rest(table, method='GET', data=None, params=None):
+    """Fallback driver using Supabase REST API (HTTP) to bypass TCP blocks"""
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        return None
     
-    print(f"[DB] Falling back to SQLite: {DB_PATH}")
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn, 'sqlite'
+    headers = {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": "application/json",
+        "Prefer": "return=representation"
+    }
+    
+    url = f"{SUPABASE_URL}/rest/v1/{table}"
+    try:
+        if method == 'GET':
+            resp = requests.get(url, headers=headers, params=params, timeout=10)
+        elif method == 'POST':
+            resp = requests.post(url, headers=headers, json=data, timeout=10)
+        
+        if resp.status_code in [200, 201]:
+            return resp.json()
+        print(f"[Supabase API] Error {resp.status_code}: {resp.text}")
+        return None
+    except Exception as e:
+        print(f"[Supabase API] Exception: {e}")
+        return None
 
 def query_db(sql, params=(), one=False, commit=False):
+    # Try Supabase REST API first if configured and it's a known simple query
+    if SUPABASE_URL and SUPABASE_KEY:
+        table = None
+        if "FROM clients" in sql or "INTO clients" in sql: table = "clients"
+        elif "FROM users" in sql or "INTO users" in sql: table = "users"
+        
+        if table:
+            try:
+                # Handle INSERT
+                if "INSERT INTO" in sql:
+                    # Very basic parser for our specific inserts
+                    if table == "clients":
+                        payload = {
+                            "nome": params[0],
+                            "cpf_cnpj": params[1],
+                            "tipo_pessoa": params[2],
+                            "created_by": params[3],
+                            "data": params[4]
+                        }
+                    else: # users
+                        payload = {
+                            "username": params[0],
+                            "password_hash": params[1],
+                            "nome": params[2],
+                            "role": params[3],
+                            "active": params[4]
+                        }
+                    res = query_supabase_rest(table, 'POST', data=payload)
+                    return True if res else False
+                
+                # Handle SELECT ALL
+                if "SELECT * FROM" in sql and "WHERE" not in sql:
+                    res = query_supabase_rest(table, 'GET', params={"select": "*", "order": "created_at.desc" if table == "clients" else "id.asc"})
+                    return res if not one else (res[0] if res else None)
+                
+                # Handle SELECT WHERE (Simple cases like login or duplicate check)
+                if "WHERE" in sql:
+                    # Simple mapping for login: WHERE username = ? AND active = ?
+                    # Or duplicate check: WHERE cpf_cnpj = ?
+                    filters = {}
+                    if "username =" in sql: filters["username"] = f"eq.{params[0]}"
+                    if "cpf_cnpj =" in sql: filters["cpf_cnpj"] = f"eq.{params[0]}"
+                    if "active =" in sql: filters["active"] = f"eq.{params[1]}"
+                    if "created_by =" in sql: filters["created_by"] = f"eq.{params[0]}"
+                    if "id =" in sql: filters["id"] = f"eq.{params[0]}"
+                    
+                    if filters:
+                        filters["select"] = "*"
+                        res = query_supabase_rest(table, 'GET', params=filters)
+                        if one: return res[0] if res else None
+                        return res or []
+
+            except Exception as api_err:
+                print(f"[Supabase API Fallback Error] {api_err}. Trying direct connection...")
+
+    # Original direct connection logic
     conn, db_type = None, None
     try:
         conn, db_type = get_db_connection()
@@ -168,7 +200,7 @@ def token_required(f):
 
 @app.route('/api/hello')
 def hello():
-    return jsonify({"status": "ok", "message": "Full system restored (v7.8-psycopg2-try)", "time": datetime.datetime.now().isoformat()})
+    return jsonify({"status": "ok", "message": "Full system restored (v8.0-supabase-rest)", "time": datetime.datetime.now().isoformat()})
 
 def migrate_db_internal():
     """Internal migration logic to ensure tables exist"""
