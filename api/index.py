@@ -669,7 +669,7 @@ def manage_clients():
                 safe_term = search.replace('*', '').replace('%', '')
                 if search_digits:
                     params.append(f"or=(nome.ilike.*{safe_term}*,cpf_cnpj.ilike.*{search_digits}*)")
-        else:
+                else:
                     params.append(f"or=(nome.ilike.*{safe_term}*,cpf_cnpj.ilike.*{safe_term}*)")
             params.append("order=created_at.desc")
             params.append(f"limit={limit}")
@@ -677,11 +677,16 @@ def manage_clients():
 
             clients = query_supabase_rest("clients", "GET", params="&".join(params), return_error=True)
             if isinstance(clients, dict) and clients.get("error"):
-                return jsonify({
-                    "success": False,
-                    "error": "Erro ao buscar clientes (Supabase)",
-                    "details": clients
-                }), 500
+                err_text = str(clients.get("error", ""))
+                if "tipo_pessoa" in err_text:
+                    params = [p for p in params if not p.startswith("tipo_pessoa=")]
+                    clients = query_supabase_rest("clients", "GET", params="&".join(params), return_error=True)
+                if isinstance(clients, dict) and clients.get("error"):
+                    return jsonify({
+                        "success": False,
+                        "error": "Erro ao buscar clientes (Supabase)",
+                        "details": clients
+                    }), 500
             clients = clients or []
 
             # Total count (fallback to list length if error)
@@ -700,6 +705,11 @@ def manage_clients():
                     count_params.append(f"or=(nome.ilike.*{safe_term}*,cpf_cnpj.ilike.*{safe_term}*)")
 
             count_res = query_supabase_rest("clients", "GET", params="&".join(count_params), return_error=True)
+            if isinstance(count_res, dict) and count_res.get("error"):
+                err_text = str(count_res.get("error", ""))
+                if "tipo_pessoa" in err_text:
+                    count_params = [p for p in count_params if not p.startswith("tipo_pessoa=")]
+                    count_res = query_supabase_rest("clients", "GET", params="&".join(count_params), return_error=True)
             if isinstance(count_res, list):
                 total_count = len(count_res)
             else:
