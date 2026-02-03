@@ -129,7 +129,9 @@ def query_db(sql, params=(), one=False, commit=False):
                         return res or []
 
             except Exception as api_err:
-                print(f"[Supabase API Fallback Error] {api_err}. Trying direct connection...")
+                print(f"[Supabase API Fallback Error] {api_err}")
+                import traceback
+                traceback.print_exc()
 
     # Original direct connection logic
     conn, db_type = None, None
@@ -217,7 +219,7 @@ def token_required(f):
 
 @app.route('/api/hello')
 def hello():
-    return jsonify({"status": "ok", "message": "Full system restored (v8.2-diag-rest)", "time": datetime.datetime.now().isoformat()})
+    return jsonify({"status": "ok", "message": "Full system restored (v8.4-rest-sync)", "time": datetime.datetime.now().isoformat()})
 
 def migrate_db_internal():
     """Internal migration logic to ensure tables exist"""
@@ -570,7 +572,14 @@ def manage_clients():
             clients = query_db("SELECT * FROM clients WHERE created_by = ? ORDER BY created_at DESC", (str(request.user_id),))
         
         print(f"[DEBUG] Found {len(clients) if clients else 0} clients")
-        return jsonify(clients or [])
+        # Normalize response for frontend
+        if isinstance(clients, list):
+            return jsonify({
+                "success": True,
+                "clients": clients,
+                "total_count": len(clients)
+            })
+        return jsonify({"success": True, "clients": [], "total_count": 0})
 
     if request.method == 'POST':
         try:
@@ -602,6 +611,9 @@ def manage_clients():
                 (nome, cpf_cnpj, tipo_pessoa, str(request.user_id), json.dumps(data)), 
                 commit=True
             )
+            
+            # Additional logic: if it's a proposal flow, we might want to store extra metadata
+            # but for now, ensuring it saves in the same central table is the priority.
             print(f"[DEBUG] Insert result: {success}")
             
             if success:
