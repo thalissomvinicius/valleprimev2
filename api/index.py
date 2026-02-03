@@ -219,7 +219,8 @@ def token_required(f):
 
 @app.route('/api/hello')
 def hello():
-    return jsonify({"status": "ok", "message": "Full system restored (v8.4-rest-sync)", "time": datetime.datetime.now().isoformat()})
+    # v8.5 Force rebuild and sync
+    return jsonify({"status": "ok", "message": "Full system restored (v8.5-sync-v1)", "time": datetime.datetime.now().isoformat()})
 
 def migrate_db_internal():
     """Internal migration logic to ensure tables exist"""
@@ -589,8 +590,8 @@ def manage_clients():
             if not data:
                 return jsonify({'success': False, 'error': 'No data provided'}), 400
             
-            # Accept both direct fields and form fields
-            nome = data.get('nome') or data.get('nome_proponente')
+            # Robust data extraction for both sources (Proposal vs Client Tab)
+            nome = data.get('nome') or data.get('nome_proponente') or data.get('razao_social_proponente')
             cpf_cnpj = data.get('cpf_cnpj') or data.get('cpf_cnpj_proponente')
             tipo_pessoa = data.get('tipo_pessoa', 'PF')
             
@@ -617,9 +618,10 @@ def manage_clients():
             print(f"[DEBUG] Insert result: {success}")
             
             if success:
-                return jsonify({'success': True, 'message': 'Cliente salvo com sucesso'})
+                # Return success in the format both areas expect
+                return jsonify({'success': True, 'message': 'Cliente salvo com sucesso', 'database': 'supabase-rest'})
             else:
-                return jsonify({'success': False, 'error': 'Falha ao inserir no banco de dados'}), 500
+                return jsonify({'success': False, 'error': 'Falha ao inserir no banco de dados Supabase'}), 500
                 
         except Exception as e:
             import traceback
