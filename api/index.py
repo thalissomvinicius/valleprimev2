@@ -118,7 +118,7 @@ def token_required(f):
 
 @app.route('/api/hello')
 def hello():
-    return jsonify({"status": "ok", "message": "Full system restored (v6.1-fix-consulta)", "time": datetime.datetime.now().isoformat()})
+    return jsonify({"status": "ok", "message": "Full system restored (v6.2-manage-clients)", "time": datetime.datetime.now().isoformat()})
 
 def migrate_db_internal():
     """Internal migration logic to ensure tables exist"""
@@ -400,6 +400,7 @@ def fetch_consulta(numprod_psc):
     return jsonify({"data": []})
 
 @app.route('/api/clients', methods=['GET', 'POST'])
+@app.route('/api/manage-clients', methods=['GET', 'POST'])
 @token_required
 def manage_clients():
     if request.method == 'GET':
