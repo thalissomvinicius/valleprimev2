@@ -107,7 +107,8 @@ export const saveClient = async (clientData) => {
     const response = await api.post(CLIENT_BASE, clientData);
     return response.data; // Response should be { success: true } or { error: ... }
   } catch (error) {
-    console.error('Error saving client:', error);
+    const details = error?.response?.data;
+    console.error('Error saving client:', error, details);
     throw error;
   }
 };

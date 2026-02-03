@@ -37,7 +37,7 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn, 'sqlite'
 
-def query_supabase_rest(table, method='GET', params=None, data=None):
+def query_supabase_rest(table, method='GET', params=None, data=None, return_error=False):
     if not SUPABASE_URL or not SUPABASE_KEY:
         return None
         
@@ -73,9 +73,13 @@ def query_supabase_rest(table, method='GET', params=None, data=None):
                 return True
         
         print(f"[Supabase REST ERROR] {response.status_code}: {response.text}")
+        if return_error:
+            return {"status": response.status_code, "error": response.text}
         return None
     except Exception as e:
         print(f"[Supabase REST EXCEPTION] {e}")
+        if return_error:
+            return {"status": "exception", "error": str(e)}
         return None
 
 def query_db(sql, params=(), one=False, commit=False):
@@ -628,40 +632,92 @@ def manage_clients():
              perms = json.loads(user['permissions']) if user and user['permissions'] else {}
              can_see_all = perms.get('canViewAllClients', False)
         
-        # Build WHERE clause
-        conditions = []
-        params = []
-        
-        # Filter by type (PF/PJ)
-        if type_filter in ['PF', 'PJ']:
-            conditions.append("tipo_pessoa = ?")
-            params.append(type_filter)
-        
-        # Filter by created_by (if user can't see all, or if explicitly filtered)
-        if not can_see_all:
-            conditions.append("created_by = ?")
-            params.append(str(request.user_id))
-        elif created_by_filter:
-            conditions.append("created_by = ?")
-            params.append(created_by_filter)
-        
-        # Search filter
-        if search:
-            conditions.append("(nome LIKE ? OR cpf_cnpj LIKE ?)")
-            params.append(f"%{search}%")
-            params.append(f"%{search}%")
-        
-        where_clause = " WHERE " + " AND ".join(conditions) if conditions else ""
-        
-        # Count total
-        count_sql = f"SELECT COUNT(*) as count FROM clients{where_clause}"
-        count_result = query_db(count_sql, tuple(params), one=True)
-        total_count = count_result['count'] if count_result else 0
-        
-        # Get clients with pagination
-        select_sql = f"SELECT * FROM clients{where_clause} ORDER BY created_at DESC LIMIT ? OFFSET ?"
-        params.extend([limit, offset])
-        clients = query_db(select_sql, tuple(params))
+        search_digits = ''.join(c for c in search if c.isdigit())
+
+        # Prefer Supabase REST if configured to avoid SQLite mismatch
+        if SUPABASE_URL and SUPABASE_KEY:
+            params = ["select=*"]
+            if type_filter in ['PF', 'PJ']:
+                params.append(f"tipo_pessoa=eq.{type_filter}")
+            if not can_see_all:
+                params.append(f"created_by=eq.{request.user_id}")
+            elif created_by_filter:
+                params.append(f"created_by=eq.{created_by_filter}")
+            if search:
+                safe_term = search.replace('*', '').replace('%', '')
+                if search_digits:
+                    params.append(f"or=(nome.ilike.*{safe_term}*,cpf_cnpj.ilike.*{search_digits}*)")
+                else:
+                    params.append(f"or=(nome.ilike.*{safe_term}*,cpf_cnpj.ilike.*{safe_term}*)")
+            params.append("order=created_at.desc")
+            params.append(f"limit={limit}")
+            params.append(f"offset={offset}")
+
+            clients = query_supabase_rest("clients", "GET", params="&".join(params), return_error=True)
+            if isinstance(clients, dict) and clients.get("error"):
+                return jsonify({
+                    "success": False,
+                    "error": "Erro ao buscar clientes (Supabase)",
+                    "details": clients
+                }), 500
+            clients = clients or []
+
+            # Total count (fallback to list length if error)
+            count_params = ["select=id"]
+            if type_filter in ['PF', 'PJ']:
+                count_params.append(f"tipo_pessoa=eq.{type_filter}")
+            if not can_see_all:
+                count_params.append(f"created_by=eq.{request.user_id}")
+            elif created_by_filter:
+                count_params.append(f"created_by=eq.{created_by_filter}")
+            if search:
+                safe_term = search.replace('*', '').replace('%', '')
+                if search_digits:
+                    count_params.append(f"or=(nome.ilike.*{safe_term}*,cpf_cnpj.ilike.*{search_digits}*)")
+                else:
+                    count_params.append(f"or=(nome.ilike.*{safe_term}*,cpf_cnpj.ilike.*{safe_term}*)")
+
+            count_res = query_supabase_rest("clients", "GET", params="&".join(count_params), return_error=True)
+            if isinstance(count_res, list):
+                total_count = len(count_res)
+            else:
+                total_count = len(clients)
+
+        else:
+            # Build WHERE clause (SQLite)
+            conditions = []
+            params = []
+            
+            # Filter by type (PF/PJ)
+            if type_filter in ['PF', 'PJ']:
+                conditions.append("tipo_pessoa = ?")
+                params.append(type_filter)
+            
+            # Filter by created_by (if user can't see all, or if explicitly filtered)
+            if not can_see_all:
+                conditions.append("created_by = ?")
+                params.append(str(request.user_id))
+            elif created_by_filter:
+                conditions.append("created_by = ?")
+                params.append(created_by_filter)
+            
+            # Search filter
+            if search:
+                conditions.append("(nome LIKE ? OR cpf_cnpj LIKE ?)")
+                params.append(f"%{search}%")
+                params.append(f"%{search_digits or search}%")
+            
+            where_clause = " WHERE " + " AND ".join(conditions) if conditions else ""
+            
+            # Count total
+            count_sql = f"SELECT COUNT(*) as count FROM clients{where_clause}"
+            count_result = query_db(count_sql, tuple(params), one=True)
+            total_count = count_result['count'] if count_result else 0
+            
+            # Get clients with pagination
+            select_sql = f"SELECT * FROM clients{where_clause} ORDER BY created_at DESC LIMIT ? OFFSET ?"
+            params.extend([limit, offset])
+            clients = query_db(select_sql, tuple(params))
         
         print(f"[DEBUG] Found {len(clients) if clients else 0} clients (total: {total_count})")
         
@@ -719,25 +775,90 @@ def manage_clients():
             # Prepare data JSON (remove id/client_id to avoid recursion)
             data_to_store = {k: v for k, v in data.items() if k not in ['id', 'client_id', 'created_by']}
             data_json = json.dumps(data_to_store, ensure_ascii=False)
-            
-            if client_id:
-                # UPDATE existing client
-                print(f"[DEBUG] Attempting to UPDATE client {client_id}: {nome}")
-                success = query_db(
-                    "UPDATE clients SET nome = ?, cpf_cnpj = ?, tipo_pessoa = ?, data = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-                    (nome, cpf_cnpj_clean, tipo_pessoa, data_json, client_id), 
-                    commit=True
-                )
-                action = 'atualizado'
+
+            # Prefer Supabase REST if configured
+            if SUPABASE_URL and SUPABASE_KEY:
+                # Permission check for update (only admin or owner)
+                if client_id and request.user_role != 'admin':
+                    owner_res = query_supabase_rest(
+                        "clients",
+                        "GET",
+                        params=f"select=created_by&id=eq.{client_id}",
+                        return_error=True
+                    )
+                    if isinstance(owner_res, dict) and owner_res.get("error"):
+                        return jsonify({'success': False, 'error': 'Erro ao validar permissões', 'details': owner_res}), 500
+                    if owner_res and str(owner_res[0].get('created_by')) != str(request.user_id):
+                        return jsonify({'success': False, 'error': 'Sem permissão para editar este cliente'}), 403
+
+                payload = {
+                    "nome": nome,
+                    "cpf_cnpj": cpf_cnpj_clean,
+                    "tipo_pessoa": tipo_pessoa,
+                    "data": data_to_store
+                }
+                if not client_id:
+                    payload["created_by"] = str(request.user_id)
+
+                if client_id:
+                    print(f"[DEBUG] Attempting Supabase UPDATE client {client_id}: {nome}")
+                    res = query_supabase_rest(
+                        "clients",
+                        "PATCH",
+                        params=f"id=eq.{client_id}",
+                        data=payload,
+                        return_error=True
+                    )
+                    # Retry with JSON string if data column is TEXT
+                    if isinstance(res, dict) and res.get("error"):
+                        payload["data"] = data_json
+                        res = query_supabase_rest(
+                            "clients",
+                            "PATCH",
+                            params=f"id=eq.{client_id}",
+                            data=payload,
+                            return_error=True
+                        )
+                    success = not (isinstance(res, dict) and res.get("error"))
+                    action = 'atualizado'
+                else:
+                    print(f"[DEBUG] Attempting Supabase INSERT client: {nome} - {cpf_cnpj_clean}")
+                    res = query_supabase_rest(
+                        "clients",
+                        "POST",
+                        data=payload,
+                        return_error=True
+                    )
+                    # Retry with JSON string if data column is TEXT
+                    if isinstance(res, dict) and res.get("error"):
+                        payload["data"] = data_json
+                        res = query_supabase_rest(
+                            "clients",
+                            "POST",
+                            data=payload,
+                            return_error=True
+                        )
+                    success = not (isinstance(res, dict) and res.get("error"))
+                    action = 'salvo'
             else:
-                # INSERT new client
-                print(f"[DEBUG] Attempting to INSERT client: {nome} - {cpf_cnpj_clean}")
-                success = query_db(
-                    "INSERT INTO clients (nome, cpf_cnpj, tipo_pessoa, created_by, data) VALUES (?, ?, ?, ?, ?)",
-                    (nome, cpf_cnpj_clean, tipo_pessoa, str(request.user_id), data_json), 
-                    commit=True
-                )
-                action = 'salvo'
+                if client_id:
+                    # UPDATE existing client
+                    print(f"[DEBUG] Attempting to UPDATE client {client_id}: {nome}")
+                    success = query_db(
+                        "UPDATE clients SET nome = ?, cpf_cnpj = ?, tipo_pessoa = ?, data = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                        (nome, cpf_cnpj_clean, tipo_pessoa, data_json, client_id), 
+                        commit=True
+                    )
+                    action = 'atualizado'
+                else:
+                    # INSERT new client
+                    print(f"[DEBUG] Attempting to INSERT client: {nome} - {cpf_cnpj_clean}")
+                    success = query_db(
+                        "INSERT INTO clients (nome, cpf_cnpj, tipo_pessoa, created_by, data) VALUES (?, ?, ?, ?, ?)",
+                        (nome, cpf_cnpj_clean, tipo_pessoa, str(request.user_id), data_json), 
+                        commit=True
+                    )
+                    action = 'salvo'
             
             print(f"[DEBUG] Database operation result: {success}")
             
@@ -765,11 +886,13 @@ def check_duplicate_client():
     """Check if CPF/CNPJ already exists"""
     try:
         cpf_cnpj = request.args.get('cpf_cnpj', '').strip()
-        tipo_pessoa = request.args.get('tipo_pessoa', 'PF')
+        tipo_pessoa = request.args.get('tipo_pessoa', 'PF').upper()
         client_id_raw = request.args.get('client_id')
         
         if not cpf_cnpj:
             return jsonify({'exists': False})
+
+        cpf_cnpj_clean = ''.join(c for c in cpf_cnpj if c.isdigit())
         
         # Extract numeric ID from client_id (may be in format "PF:123" or just "123")
         client_id = None
@@ -780,16 +903,41 @@ def check_duplicate_client():
             if match:
                 client_id = int(match.group())
         
-        # Check if exists
+        if SUPABASE_URL and SUPABASE_KEY:
+            params = [
+                "select=id,nome",
+                f"cpf_cnpj=eq.{cpf_cnpj_clean}",
+                f"tipo_pessoa=eq.{tipo_pessoa}"
+            ]
+            if client_id:
+                params.append(f"id=neq.{client_id}")
+            params.append("limit=1")
+
+            existing = query_supabase_rest("clients", "GET", params="&".join(params), return_error=True)
+            if isinstance(existing, dict) and existing.get("error"):
+                return jsonify({'exists': False, 'error': existing.get("error")})
+            if existing and isinstance(existing, list):
+                item = existing[0] if existing else None
+                if item:
+                    return jsonify({'exists': True, 'client_name': item.get('nome'), 'client_id': item.get('id')})
+            return jsonify({'exists': False})
+
+        # SQLite fallback
         if client_id:
             # Editing existing client - exclude self from check
-            existing = query_db("SELECT id, nome FROM clients WHERE cpf_cnpj = ? AND id != ?", 
-                               (cpf_cnpj, client_id), one=True)
+            existing = query_db(
+                "SELECT id, nome FROM clients WHERE cpf_cnpj = ? AND tipo_pessoa = ? AND id != ?",
+                (cpf_cnpj_clean, tipo_pessoa, client_id),
+                one=True
+            )
         else:
             # New client
-            existing = query_db("SELECT id, nome FROM clients WHERE cpf_cnpj = ?", 
-                               (cpf_cnpj,), one=True)
-        
+            existing = query_db(
+                "SELECT id, nome FROM clients WHERE cpf_cnpj = ? AND tipo_pessoa = ?",
+                (cpf_cnpj_clean, tipo_pessoa),
+                one=True
+            )
+
         if existing:
             return jsonify({'exists': True, 'client_name': existing['nome'], 'client_id': existing['id']})
         
