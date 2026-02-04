@@ -142,6 +142,31 @@ def query_db(sql, params=(), one=False, commit=False):
                     else:
                         return False
 
+                # Handle UPDATE
+                if "UPDATE" in sql.upper():
+                    where_id = None
+                    if "WHERE id =" in sql:
+                        where_id = f"id=eq.{params[-1]}"
+                    
+                    if where_id:
+                        # Parse UPDATE payload from string
+                        # e.g. "UPDATE users SET nome = ?, active = ? WHERE id = ?"
+                        import re
+                        set_part = re.search(r"SET\s+(.+?)\s+WHERE", sql, re.IGNORECASE)
+                        if set_part:
+                            cols = re.findall(r"(\w+)\s*=", set_part.group(1))
+                            payload = {}
+                            for i, col in enumerate(cols):
+                                payload[col] = params[i]
+                            
+                            res_obj = query_supabase_rest(table, 'PATCH', params=where_id, data=payload)
+                            if res_obj.get("data") is not None:
+                                return True
+                            if res_obj.get("status") in [404, "exception"]:
+                                print(f"[DB Fallback] Supabase UPDATE failed ({res_obj.get('status')}). Trying SQLite...")
+                            else:
+                                return False
+
                 # Handle SELECT COUNT
                 if "COUNT(*)" in sql:
                     where_clause = None
@@ -1384,8 +1409,10 @@ def user_ops(user_id):
             
         if not updates: return jsonify({'message': 'No data'}), 400
         
+        sql = f"UPDATE users SET {', '.join(updates)} WHERE id = ?"
         params.append(user_id)
-        query_db(f"UPDATE users SET {', '.join(updates)} WHERE id = ?", tuple(params), commit=True)
+        
+        query_db(sql, tuple(params), commit=True)
         return jsonify({'success': True})
 
 @app.route('/api/health')
