@@ -560,30 +560,6 @@ def login_internal(username, password):
         if not username or not password:
             return jsonify({'message': 'Credentials required'}), 400
 
-        # TEMPORARY HARDCODED BYPASS
-        if username == 'admin' and password == 'admin123':
-            token = jwt.encode({
-                'user_id': 1,
-                'role': 'admin',
-                'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=12)
-            }, SECRET_KEY, algorithm="HS256")
-            if isinstance(token, bytes):
-                token = token.decode('utf-8')
-
-            return jsonify({
-                'token': token,
-                'user': {
-                    'id': 1,
-                    'username': 'admin',
-                    'role': 'admin',
-                    'permissions': {
-                        "canViewAllClients": True,
-                        "obrasPermitidas": ADMIN_OBRAS,
-                        "statusPermitidos": ADMIN_STATUS
-                    }
-                }
-            })
-
         # For any other user, try database (Supabase first if configured)
         user = None
         conn = None
@@ -617,18 +593,69 @@ def login_internal(username, password):
         # If user not found and table might be empty, try to create admin once
         if not user and username == 'admin' and password == 'admin123':
             # Check specifically for 'admin' regardless of active status
-            existing_admin = query_db("SELECT * FROM users WHERE username = ?", ('admin',), one=True)
+            existing_admin = None
+            if SUPABASE_URL and SUPABASE_KEY:
+                res_admin = query_supabase_rest(
+                    'users',
+                    'GET',
+                    params="select=id,username,active,role,permissions&username=eq.admin&limit=1",
+                    return_error=True
+                )
+                if isinstance(res_admin, list) and res_admin:
+                    existing_admin = res_admin[0]
+            else:
+                existing_admin = query_db("SELECT * FROM users WHERE username = ?", ('admin',), one=True)
             
             if not existing_admin:
                 print("[DEBUG] forced creating admin user")
                 pw_hash = hash_password('admin123')
-                query_db("INSERT INTO users (username, password_hash, nome, role, active, permissions) VALUES (?, ?, ?, ?, ?, ?)",
-                        ('admin', pw_hash, 'Admin', 'admin', True, json.dumps({"canViewAllClients": True})), commit=True)
-                # Re-fetch
-                user = query_db("SELECT * FROM users WHERE username = ? AND active = ?", (username, True), one=True)
+                if SUPABASE_URL and SUPABASE_KEY:
+                    payload = {
+                        'username': 'admin',
+                        'password_hash': pw_hash,
+                        'nome': 'Admin',
+                        'role': 'admin',
+                        'active': True,
+                        'permissions': {
+                            'canViewAllClients': True,
+                            'obrasPermitidas': ADMIN_OBRAS,
+                            'statusPermitidos': ADMIN_STATUS
+                        }
+                    }
+                    res_create = query_supabase_rest('users', 'POST', data=payload, return_error=True)
+                    if isinstance(res_create, dict) and res_create.get('error'):
+                        payload['permissions'] = json.dumps(payload['permissions'], ensure_ascii=False)
+                        res_create = query_supabase_rest('users', 'POST', data=payload, return_error=True)
+                    if isinstance(res_create, dict) and res_create.get('error'):
+                        return jsonify({'message': 'Erro ao criar admin (Supabase)', 'details': res_create}), 500
+                else:
+                    query_db(
+                        "INSERT INTO users (username, password_hash, nome, role, active, permissions) VALUES (?, ?, ?, ?, ?, ?)",
+                        ('admin', pw_hash, 'Admin', 'admin', True, json.dumps({
+                            "canViewAllClients": True,
+                            "obrasPermitidas": ADMIN_OBRAS,
+                            "statusPermitidos": ADMIN_STATUS
+                        }, ensure_ascii=False)),
+                        commit=True
+                    )
             elif not existing_admin.get('active'):
                 # Reactivate admin if it exists but is inactive
-                query_db("UPDATE users SET active = ? WHERE username = ?", (True, 'admin'), commit=True)
+                if SUPABASE_URL and SUPABASE_KEY:
+                    query_supabase_rest('users', 'PATCH', params=f"id=eq.{existing_admin.get('id')}", data={'active': True}, return_error=True)
+                else:
+                    query_db("UPDATE users SET active = ? WHERE username = ?", (True, 'admin'), commit=True)
+
+            # Re-fetch (now active)
+            if SUPABASE_URL and SUPABASE_KEY:
+                res = query_supabase_rest(
+                    'users',
+                    'GET',
+                    params="select=id,username,password_hash,nome,role,permissions,active&username=eq.admin&active=eq.true&limit=1",
+                    return_error=True
+                )
+                if isinstance(res, list) and res:
+                    user = res[0]
+            else:
                 user = query_db("SELECT * FROM users WHERE username = ? AND active = ?", (username, True), one=True)
 
         if not user:
