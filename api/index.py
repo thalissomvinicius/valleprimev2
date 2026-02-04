@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify, send_file, after_this_request
 from flask_cors import CORS
 import os
 import tempfile
+from io import BytesIO
 import datetime
 import traceback
 import json
@@ -1178,16 +1179,17 @@ def generate_proposal():
 
         generate_pdf_reportlab(pdf_data, background_image_path, positions_path, output_filename=output_pdf)
 
-        @after_this_request
-        def cleanup_file(response):
+        # Ler PDF para memória e enviar (evita problema de arquivo removido no Render)
+        try:
+            with open(output_pdf, 'rb') as f:
+                pdf_bytes = f.read()
+        finally:
             try:
-                if os.path.exists(output_pdf):
-                    os.remove(output_pdf)
-            except Exception as cleanup_err:
-                print(f"[WARN] Failed to cleanup temp pdf: {cleanup_err}")
-            return response
+                os.remove(output_pdf)
+            except Exception:
+                pass
 
-        return send_file(output_pdf, mimetype='application/pdf', as_attachment=False, download_name='proposta.pdf')
+        return send_file(BytesIO(pdf_bytes), mimetype='application/pdf', as_attachment=False, download_name='proposta.pdf')
     except Exception as e:
         error_trace = traceback.format_exc()
         print(f"[ERROR] generate_proposal: {str(e)}")

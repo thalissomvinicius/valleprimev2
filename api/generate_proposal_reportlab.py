@@ -117,10 +117,17 @@ def generate_pdf_reportlab(data, background_image_path, positions_path, output_f
         if key not in positions:
             print(f"Warning: Field '{key}' not found in positions.")
             return
-
         pos = positions[key]
-        x_mm = pos['x']
-        y_mm = pos['y']
+        x_mm = pos.get('x')
+        y_mm = pos.get('y')
+        if x_mm is None or y_mm is None:
+            print(f"Warning: Position for '{key}' missing x or y.")
+            return
+        # Garantir números (JSON pode vir como int)
+        try:
+            x_mm, y_mm = float(x_mm), float(y_mm)
+        except (TypeError, ValueError):
+            return
         
         # Apply Column Alignment Override if applicable
         is_payment_col = False
