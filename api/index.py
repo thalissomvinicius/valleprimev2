@@ -97,8 +97,8 @@ def query_db(sql, params=(), one=False, commit=False):
     # Try Supabase REST API first if configured and it's a known simple query
     if SUPABASE_URL and SUPABASE_KEY:
         table = None
-        if "FROM clients" in sql or "INTO clients" in sql: table = "clients"
-        elif "FROM users" in sql or "INTO users" in sql: table = "users"
+        if "clients" in sql.lower(): table = "clients"
+        elif "users" in sql.lower(): table = "users"
         
         if table:
             try:
@@ -120,7 +120,7 @@ def query_db(sql, params=(), one=False, commit=False):
                             "nome": params[2],
                             "role": params[3],
                             "active": params[4],
-                            "permissions": params[5] if len(params) > 5 else None
+                            "permissions": json.loads(params[5]) if len(params) > 5 and isinstance(params[5], str) else (params[5] if len(params) > 5 else None)
                         }
                     res_obj = query_supabase_rest(table, 'POST', data=payload)
                     if res_obj.get("data") is not None:
@@ -156,7 +156,13 @@ def query_db(sql, params=(), one=False, commit=False):
                             cols = re.findall(r"(\w+)\s*=", set_part.group(1))
                             payload = {}
                             for i, col in enumerate(cols):
-                                payload[col] = params[i]
+                                val = params[i]
+                                if isinstance(val, str) and (val.startswith('{') or val.startswith('[')):
+                                    try:
+                                        val = json.loads(val)
+                                    except:
+                                        pass
+                                payload[col] = val
                             
                             print(f"[DEBUG] Supabase PATCH payload: {payload}, where: {where_id}")
                             res_obj = query_supabase_rest(table, 'PATCH', params=where_id, data=payload)
