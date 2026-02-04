@@ -18,8 +18,12 @@ const api = axios.create({
   timeout: 15000,
 });
 
-// Request interceptor to add token
+// Request interceptor: em *.pages.dev forçar API no Render (contorna cache/CDN com build antigo)
+const RENDER_API = 'https://valleprimev2.onrender.com';
 api.interceptors.request.use(config => {
+  if (typeof window !== 'undefined' && /\.pages\.dev$/i.test(window.location?.hostname || '') && config.url?.startsWith?.('/api')) {
+    config.baseURL = RENDER_API;
+  }
   const token = localStorage.getItem('valle_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
