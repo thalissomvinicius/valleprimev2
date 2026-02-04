@@ -144,13 +144,12 @@ def query_db(sql, params=(), one=False, commit=False):
 
                 # Handle UPDATE
                 if "UPDATE" in sql.upper():
+                    print(f"[DEBUG] query_db UPDATE detected: {sql}")
                     where_id = None
                     if "WHERE id =" in sql:
                         where_id = f"id=eq.{params[-1]}"
                     
                     if where_id:
-                        # Parse UPDATE payload from string
-                        # e.g. "UPDATE users SET nome = ?, active = ? WHERE id = ?"
                         import re
                         set_part = re.search(r"SET\s+(.+?)\s+WHERE", sql, re.IGNORECASE)
                         if set_part:
@@ -159,12 +158,15 @@ def query_db(sql, params=(), one=False, commit=False):
                             for i, col in enumerate(cols):
                                 payload[col] = params[i]
                             
+                            print(f"[DEBUG] Supabase PATCH payload: {payload}, where: {where_id}")
                             res_obj = query_supabase_rest(table, 'PATCH', params=where_id, data=payload)
+                            print(f"[DEBUG] Supabase PATCH result: {res_obj.get('status')}")
                             if res_obj.get("data") is not None:
                                 return True
                             if res_obj.get("status") in [404, "exception"]:
                                 print(f"[DB Fallback] Supabase UPDATE failed ({res_obj.get('status')}). Trying SQLite...")
                             else:
+                                print(f"[DEBUG] Supabase UPDATE returned error status {res_obj.get('status')}. Stopping.")
                                 return False
 
                 # Handle SELECT COUNT
@@ -1389,8 +1391,8 @@ def user_ops(user_id):
         return jsonify({'message': 'Forbidden'}), 403
         
     if request.method == 'DELETE':
-        query_db("DELETE FROM users WHERE id = ?", (user_id,), commit=True)
-        return jsonify({'success': True})
+        success = query_db("DELETE FROM users WHERE id = ?", (user_id,), commit=True)
+        return jsonify({'success': success})
     
     if request.method == 'PUT':
         data = request.get_json()
@@ -1412,7 +1414,9 @@ def user_ops(user_id):
         sql = f"UPDATE users SET {', '.join(updates)} WHERE id = ?"
         params.append(user_id)
         
-        query_db(sql, tuple(params), commit=True)
+        success = query_db(sql, tuple(params), commit=True)
+        if not success:
+            return jsonify({'success': False, 'message': 'Falha ao atualizar banco de dados principal. Verifique se o Supabase está configurado corretamente.'}), 500
         return jsonify({'success': True})
 
 @app.route('/api/health')

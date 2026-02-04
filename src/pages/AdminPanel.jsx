@@ -38,11 +38,20 @@ function AdminPanel() {
         setEditData({});
     };
 
-    const saveEdit = () => {
-        // Enviar os dados dentro da chave 'permissions' como o backend espera
-        updateUserPermissions(editingUser, { permissions: editData });
-        setEditingUser(null);
-        setEditData({});
+    const saveEdit = async () => {
+        try {
+            // Enviar os dados dentro da chave 'permissions' como o backend espera
+            const result = await updateUserPermissions(editingUser, { permissions: editData });
+            if (result.success) {
+                setEditingUser(null);
+                setEditData({});
+            } else {
+                alert(result.error || 'Erro ao salvar alterações.');
+            }
+        } catch (error) {
+            console.error('Save error:', error);
+            alert('Ocorreu um erro inesperado ao salvar.');
+        }
     };
 
     const toggleObra = (codigo) => {
