@@ -508,18 +508,39 @@ def login_internal(username, password):
         
         # If user not found and table might be empty, try to create admin once
         if not user and username == 'admin' and password == 'admin123':
-            cnt_res = query_db("SELECT COUNT(*) as count FROM users", one=True)
-            cnt = cnt_res['count'] if cnt_res else 0
-
-            if cnt == 0:
+            # Check specifically for 'admin' regardless of active status
+            existing_admin = query_db("SELECT * FROM users WHERE username = ?", ('admin',), one=True)
+            
+            if not existing_admin:
+                print("[DEBUG] forced creating admin user")
                 pw_hash = hash_password('admin123')
                 query_db("INSERT INTO users (username, password_hash, nome, role, active, permissions) VALUES (?, ?, ?, ?, ?, ?)",
                         ('admin', pw_hash, 'Admin', 'admin', True, json.dumps({"canViewAllClients": True})), commit=True)
                 # Re-fetch
                 user = query_db("SELECT * FROM users WHERE username = ? AND active = ?", (username, True), one=True)
+            elif not existing_admin.get('active'):
+                # Reactivate admin if it exists but is inactive
+                query_db("UPDATE users SET active = ? WHERE username = ?", (True, 'admin'), commit=True)
+                user = query_db("SELECT * FROM users WHERE username = ? AND active = ?", (username, True), one=True)
 
         if not user:
-            return jsonify({'message': 'Credenciais inválidas (Usuário não encontrado)'}), 401
+            # Debug info to help identify why it failed
+            db_status = "Unknown"
+            try:
+                # Check if it's a Supabase vs SQLite issue
+                if SUPABASE_URL and SUPABASE_KEY:
+                    db_status = "Supabase Configured"
+                else:
+                    db_status = "SQLite Only"
+                
+                # Check total user count
+                count_res = query_db("SELECT COUNT(*) as count FROM users", one=True)
+                user_count = count_res['count'] if count_res else 0
+                debug_msg = f"Usuário '{username}' não encontrado. (DB: {db_status}, Total: {user_count})"
+            except Exception as e:
+                debug_msg = f"Erro no banco: {str(e)}"
+                
+            return jsonify({'message': f'Credenciais inválidas: {debug_msg}'}), 401
             
         if not verify_password(user['password_hash'], password):
             return jsonify({'message': 'Credenciais inválidas (Senha incorreta)'}), 401
