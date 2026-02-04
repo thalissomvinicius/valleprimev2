@@ -123,7 +123,14 @@ export function AuthProvider({ children }) {
 
     const updateUserPermissions = useCallback(async (userId, data) => {
         try {
-            await updateUser(userId, data);
+            const payload = {
+                permissions: {
+                    obrasPermitidas: Array.isArray(data?.obrasPermitidas) ? data.obrasPermitidas : [],
+                    statusPermitidos: Array.isArray(data?.statusPermitidos) ? data.statusPermitidos : [],
+                    canViewAllClients: !!data?.canViewAllClients,
+                }
+            };
+            await updateUser(userId, payload);
             await loadUsers();
             return { success: true };
         } catch {

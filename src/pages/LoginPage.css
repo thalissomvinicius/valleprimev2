@@ -203,33 +203,6 @@
     gap: 24px;
 }
 
-.password-input-wrapper {
-    position: relative;
-    width: 100%;
-}
-
-.password-toggle-btn {
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: none;
-    border: none;
-    color: rgba(255, 255, 255, 0.4);
-    cursor: pointer;
-    padding: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
-    border-radius: 8px;
-}
-
-.password-toggle-btn:hover {
-    color: white;
-    background: rgba(255, 255, 255, 0.05);
-}
-
 .login-form .input-group {
     display: flex;
     flex-direction: column;

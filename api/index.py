@@ -13,6 +13,7 @@ import sys
 import requests
 import jwt
 from functools import wraps
+from urllib.parse import quote
 
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
@@ -473,33 +474,56 @@ def auth_me():
     
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-        
-        # Buscar no banco para retornar os dados reais e permissões
-        user = query_db("SELECT id, username, nome, role, permissions, active FROM users WHERE id = ?", (payload.get('user_id'),), one=True)
-        
-        if not user or not user.get('active'):
-            return jsonify({'message': 'User not found or inactive'}), 401
-            
-        perms = user.get('permissions') or {}
-        if isinstance(perms, str):
-            try: perms = json.loads(perms)
-            except: perms = {}
 
-        # Ensure admin has all permissions if role is admin
-        if user['role'] == 'admin':
-            if not perms: perms = {}
-            perms['canViewAllClients'] = True
-            perms['obrasPermitidas'] = ADMIN_OBRAS
-            perms['statusPermitidos'] = ADMIN_STATUS
+        user_id = payload.get('user_id')
+
+        # Buscar no banco e devolver dados completos
+        user = None
+        try:
+            if SUPABASE_URL and SUPABASE_KEY:
+                res = query_supabase_rest(
+                    'users',
+                    'GET',
+                    params=f"select=id,username,nome,role,permissions,active&id=eq.{user_id}&limit=1",
+                    return_error=True
+                )
+                if isinstance(res, list) and res:
+                    user = res[0]
+            else:
+                user = query_db(
+                    "SELECT id, username, nome, role, permissions, active FROM users WHERE id = ?",
+                    (user_id,),
+                    one=True
+                )
+        except Exception as e:
+            print(f"[ERROR] auth_me user fetch: {e}")
+
+        if not user or user.get('active') in [0, False, 'false', 'False']:
+            return jsonify({'message': 'Invalid token'}), 401
+
+        permissions = user.get('permissions')
+        if isinstance(permissions, str) and permissions:
+            try:
+                permissions = json.loads(permissions)
+            except Exception:
+                permissions = {}
+        elif permissions is None:
+            permissions = {}
+
+        # Ensure admin has all permissions
+        if user.get('role') == 'admin':
+            permissions = permissions or {}
+            permissions['canViewAllClients'] = True
+            permissions['obrasPermitidas'] = ADMIN_OBRAS
+            permissions['statusPermitidos'] = ADMIN_STATUS
 
         return jsonify({
             'user': {
-                'id': user['id'],
-                'username': user['username'],
-                'role': user['role'],
-                'active': user['active'],
+                'id': user.get('id'),
+                'username': user.get('username'),
                 'nome': user.get('nome'),
-                'permissions': perms
+                'role': user.get('role', payload.get('role', 'user')),
+                'permissions': permissions
             }
         })
     except jwt.ExpiredSignatureError:
@@ -516,7 +540,7 @@ def login_get():
     
     if not username or not password:
         return jsonify({'message': 'Credentials required'}), 400
-    
+
     return login_internal(username, password)
 
 @app.route('/api/auth/login', methods=['POST'])
@@ -535,9 +559,60 @@ def login_internal(username, password):
     try:
         if not username or not password:
             return jsonify({'message': 'Credentials required'}), 400
-        
-        # USE query_db for consistency and Supabase support
-        user = query_db("SELECT * FROM users WHERE username = ? AND active = ?", (username, True), one=True)
+
+        # TEMPORARY HARDCODED BYPASS
+        if username == 'admin' and password == 'admin123':
+            token = jwt.encode({
+                'user_id': 1,
+                'role': 'admin',
+                'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=12)
+            }, SECRET_KEY, algorithm="HS256")
+            if isinstance(token, bytes):
+                token = token.decode('utf-8')
+
+            return jsonify({
+                'token': token,
+                'user': {
+                    'id': 1,
+                    'username': 'admin',
+                    'role': 'admin',
+                    'permissions': {
+                        "canViewAllClients": True,
+                        "obrasPermitidas": ADMIN_OBRAS,
+                        "statusPermitidos": ADMIN_STATUS
+                    }
+                }
+            })
+
+        # For any other user, try database (Supabase first if configured)
+        user = None
+        conn = None
+        if SUPABASE_URL and SUPABASE_KEY:
+            safe_username = quote(username, safe='')
+            res = query_supabase_rest(
+                'users',
+                'GET',
+                params=(
+                    "select=id,username,password_hash,nome,role,permissions,active"
+                    f"&username=eq.{safe_username}"
+                    "&active=eq.true"
+                    "&limit=1"
+                ),
+                return_error=True
+            )
+            if isinstance(res, dict) and res.get('error'):
+                return jsonify({'message': 'Erro ao consultar usuário (Supabase)', 'details': res}), 500
+            if isinstance(res, list) and res:
+                user = res[0]
+        else:
+            conn, db_type = get_db_connection()
+            cur = conn.cursor()
+            sql = "SELECT * FROM users WHERE username = %s AND active = %s" if db_type == 'postgres' else "SELECT * FROM users WHERE username = ? AND active = ?"
+            cur.execute(sql, (username, True))
+            rv = cur.fetchone()
+            if rv:
+                col_names = [desc[0] for desc in cur.description]
+                user = dict(zip(col_names, rv))
         
         # If user not found and table might be empty, try to create admin once
         if not user and username == 'admin' and password == 'admin123':
@@ -557,57 +632,51 @@ def login_internal(username, password):
                 user = query_db("SELECT * FROM users WHERE username = ? AND active = ?", (username, True), one=True)
 
         if not user:
-            # Debug info to help identify why it failed
-            db_status = "Unknown"
+            return jsonify({'message': 'Invalid credentials'}), 401
+
+        # Verify password
+        if not verify_password(user.get('password_hash', ''), password):
+            return jsonify({'message': 'Invalid credentials'}), 401
+
+        if conn:
             try:
-                # Check if it's a Supabase vs SQLite issue
-                if SUPABASE_URL and SUPABASE_KEY:
-                    db_status = "Supabase Configured"
-                else:
-                    db_status = "SQLite Only"
-                
-                # Check total user count
-                count_res = query_db("SELECT COUNT(*) as count FROM users", one=True)
-                user_count = count_res['count'] if count_res else 0
-                debug_msg = f"Usuário '{username}' não encontrado. (DB: {db_status}, Total: {user_count})"
-            except Exception as e:
-                debug_msg = f"Erro no banco: {str(e)}"
-                
-            return jsonify({'message': f'Credenciais inválidas: {debug_msg}'}), 401
-            
-        if not verify_password(user['password_hash'], password):
-            return jsonify({'message': 'Credenciais inválidas (Senha incorreta)'}), 401
-        
+                conn.close()
+            except Exception:
+                pass
         try:
             token = jwt.encode({
-                'user_id': user['id'],
-                'role': user['role'],
+                'user_id': user.get('id'),
+                'role': user.get('role', 'user'),
                 'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=12)
             }, SECRET_KEY, algorithm="HS256")
-            if isinstance(token, bytes): token = token.decode('utf-8')
+            if isinstance(token, bytes):
+                token = token.decode('utf-8')
         except Exception as jwt_err:
             return jsonify({'message': 'JWT Encoding Error', 'error': str(jwt_err)}), 500
         
-        perms = {}
-        target_perms = user.get('permissions')
-        if target_perms:
-            try: perms = json.loads(target_perms) if isinstance(target_perms, str) else target_perms
-            except: pass
-        
-        # Ensure admin has all permissions if role is admin
-        if user['role'] == 'admin':
-            if not perms: perms = {}
-            perms['canViewAllClients'] = True
-            perms['obrasPermitidas'] = ADMIN_OBRAS
-            perms['statusPermitidos'] = ADMIN_STATUS
+        permissions = user.get('permissions')
+        if isinstance(permissions, str) and permissions:
+            try:
+                permissions = json.loads(permissions)
+            except Exception:
+                permissions = {}
+        elif permissions is None:
+            permissions = {}
 
+        # Ensure admin has all permissions
+        if user.get('role') == 'admin':
+            permissions = permissions or {}
+            permissions['canViewAllClients'] = True
+            permissions['obrasPermitidas'] = ADMIN_OBRAS
+            permissions['statusPermitidos'] = ADMIN_STATUS
         return jsonify({
             'token': token,
             'user': {
-                'id': user['id'],
+                'id': user.get('id'),
                 'username': user['username'],
-                'role': user['role'],
-                'permissions': perms
+                'nome': user.get('nome'),
+                'role': user.get('role', 'user'),
+                'permissions': permissions
             }
         })
     except Exception as e:
@@ -635,7 +704,6 @@ def fetch_consulta(numprod_psc):
     cached = _consulta_cache.get(numprod_psc)
     if cached and (now - cached['ts']) < CONSULTA_CACHE_TTL:
         return jsonify(cached['data'])
-
     try:
         # Try fetching from external API with timeout
         try:
@@ -707,9 +775,31 @@ def manage_clients():
         can_see_all = request.user_role == 'admin'
         if not can_see_all:
              # Check specific permissions
-             user = query_db("SELECT permissions FROM users WHERE id = ?", (request.user_id,), one=True)
-             perms = json.loads(user['permissions']) if user and user['permissions'] else {}
-             can_see_all = perms.get('canViewAllClients', False)
+             perms = {}
+             if SUPABASE_URL and SUPABASE_KEY:
+                 user_res = query_supabase_rest(
+                     'users',
+                     'GET',
+                     params=f"select=permissions&id=eq.{request.user_id}&limit=1",
+                     return_error=True
+                 )
+                 if isinstance(user_res, list) and user_res:
+                     perms = user_res[0].get('permissions') or {}
+                 elif isinstance(user_res, dict) and user_res.get('error'):
+                     print(f"[WARN] Could not fetch user permissions from Supabase: {user_res}")
+             else:
+                 user = query_db("SELECT permissions FROM users WHERE id = ?", (request.user_id,), one=True)
+                 perms = user.get('permissions') if user else {}
+
+             if isinstance(perms, str) and perms:
+                 try:
+                     perms = json.loads(perms)
+                 except Exception:
+                     perms = {}
+             elif perms is None:
+                 perms = {}
+
+             can_see_all = bool(perms.get('canViewAllClients', False))
         
         search_digits = ''.join(c for c in search if c.isdigit())
 
@@ -1203,8 +1293,6 @@ def _api_asset_path(*parts):
     if os.path.exists(cwd_api):
         return cwd_api
     return path
-
-
 @app.route('/api/generate_proposal', methods=['POST'])
 def generate_proposal():
     try:
@@ -1311,7 +1399,8 @@ def check_duplicate_client():
                         params.append(f"id=neq.{client_id}")
                     params.append("limit=1")
                     existing = query_supabase_rest("clients", "GET", params="&".join(params), return_error=True)
-            else:
+
+                if isinstance(existing, dict) and existing.get("error"):
                     return jsonify({'exists': False, 'error': existing.get("error")})
             if existing and isinstance(existing, list):
                 item = existing[0] if existing else None
@@ -1353,42 +1442,57 @@ def manage_users():
         return jsonify({'message': 'Forbidden'}), 403
     
     if request.method == 'GET':
-        users = query_db("SELECT * FROM users ORDER BY id")
+        if SUPABASE_URL and SUPABASE_KEY:
+            users = query_supabase_rest(
+                'users',
+                'GET',
+                params='select=id,username,nome,role,permissions,active&order=id.asc',
+                return_error=True
+            )
+            if isinstance(users, dict) and users.get('error'):
+                return jsonify({'message': 'Erro ao buscar usuários (Supabase)', 'details': users}), 500
+            users = users or []
+        else:
+            users = query_db("SELECT id, username, nome, role, permissions, active FROM users ORDER BY id")
+
         for u in users:
-             u['permissions'] = json.loads(u['permissions']) if u['permissions'] and isinstance(u['permissions'], str) else (u['permissions'] or {})
+            u['permissions'] = json.loads(u['permissions']) if u.get('permissions') else {}
         return jsonify({'users': users})
     
     if request.method == 'POST':
-        try:
-            data = request.get_json()
-            username = data.get('username', '').strip()
-            password = data.get('password')
-            nome = data.get('nome', '').strip()
-            
-            if not username or not password:
-                return jsonify({'message': 'Usuário e senha são obrigatórios'}), 400
-            
-            # Verificar se já existe
-            existing = query_db("SELECT id FROM users WHERE username = ?", (username,), one=True)
-            if existing:
-                return jsonify({'message': 'Este nome de usuário já está em uso'}), 400
-                
-            pw_hash = hash_password(password)
-            # Default permissions structure
-            default_perms = {
-                "canViewAllClients": False,
-                "obrasPermitidas": [],
-                "statusPermitidos": []
+        data = request.get_json()
+        username = data.get('username')
+        password = data.get('password')
+        if not username or not password:
+            return jsonify({'message': 'Missing fields'}), 400
+        
+        pw_hash = hash_password(password)
+
+        permissions_payload = data.get('permissions', {})
+        if SUPABASE_URL and SUPABASE_KEY:
+            payload = {
+                'username': username,
+                'password_hash': pw_hash,
+                'nome': data.get('nome'),
+                'role': 'user',
+                'active': True,
+                'permissions': permissions_payload
             }
-            perms = data.get('permissions') or default_perms
-            
-            query_db("INSERT INTO users (username, password_hash, nome, role, active, permissions) VALUES (?, ?, ?, ?, ?, ?)",
-                    (username, pw_hash, nome, 'user', True, json.dumps(perms)), commit=True)
-                    
-            return jsonify({'success': True, 'message': 'Usuário criado com sucesso'})
-        except Exception as e:
-            print(f"[ERROR] manage_users POST: {e}")
-            return jsonify({'success': False, 'message': f'Erro ao criar usuário: {str(e)}'}), 500
+            res = query_supabase_rest('users', 'POST', data=payload, return_error=True)
+            if isinstance(res, dict) and res.get('error'):
+                # Retry if permissions column is TEXT
+                payload['permissions'] = json.dumps(permissions_payload, ensure_ascii=False)
+                res = query_supabase_rest('users', 'POST', data=payload, return_error=True)
+            if isinstance(res, dict) and res.get('error'):
+                return jsonify({'success': False, 'message': 'Erro ao criar usuário (Supabase)', 'details': res}), 500
+            return jsonify({'success': True})
+
+        query_db(
+            "INSERT INTO users (username, password_hash, nome, role, active, permissions) VALUES (?, ?, ?, ?, ?, ?)",
+            (username, pw_hash, data.get('nome'), 'user', True, json.dumps(permissions_payload, ensure_ascii=False)),
+            commit=True
+        )
+        return jsonify({'success': True})
 
 @app.route('/api/users/<int:user_id>', methods=['PUT', 'DELETE'])
 @token_required
@@ -1397,12 +1501,40 @@ def user_ops(user_id):
         return jsonify({'message': 'Forbidden'}), 403
         
     if request.method == 'DELETE':
-        success = query_db("DELETE FROM users WHERE id = ?", (user_id,), commit=True)
-        return jsonify({'success': success})
+        if SUPABASE_URL and SUPABASE_KEY:
+            res = query_supabase_rest('users', 'DELETE', params=f"id=eq.{user_id}", return_error=True)
+            if isinstance(res, dict) and res.get('error'):
+                return jsonify({'success': False, 'message': 'Erro ao excluir usuário (Supabase)', 'details': res}), 500
+            return jsonify({'success': True})
+
+        query_db("DELETE FROM users WHERE id = ?", (user_id,), commit=True)
+        return jsonify({'success': True})
     
     if request.method == 'PUT':
         data = request.get_json()
         # Simple update logic
+        if SUPABASE_URL and SUPABASE_KEY:
+            payload = {}
+            if 'nome' in data:
+                payload['nome'] = data['nome']
+            if 'active' in data:
+                payload['active'] = bool(data['active'])
+            if 'permissions' in data:
+                payload['permissions'] = data['permissions']
+
+            if not payload:
+                return jsonify({'message': 'No data'}), 400
+
+            res = query_supabase_rest('users', 'PATCH', params=f"id=eq.{user_id}", data=payload, return_error=True)
+            if isinstance(res, dict) and res.get('error'):
+                # Retry if permissions column is TEXT
+                if 'permissions' in payload:
+                    payload['permissions'] = json.dumps(payload['permissions'], ensure_ascii=False)
+                    res = query_supabase_rest('users', 'PATCH', params=f"id=eq.{user_id}", data=payload, return_error=True)
+            if isinstance(res, dict) and res.get('error'):
+                return jsonify({'success': False, 'message': 'Erro ao atualizar usuário (Supabase)', 'details': res}), 500
+            return jsonify({'success': True})
+
         updates = []
         params = []
         if 'nome' in data:
@@ -1413,10 +1545,10 @@ def user_ops(user_id):
             params.append(bool(data['active']))
         if 'permissions' in data:
             updates.append("permissions = ?")
-            params.append(json.dumps(data['permissions']))
-            
-        if not updates: return jsonify({'message': 'No data'}), 400
-        
+            params.append(json.dumps(data['permissions'], ensure_ascii=False))
+
+        if not updates:
+            return jsonify({'message': 'No data'}), 400
         sql = f"UPDATE users SET {', '.join(updates)} WHERE id = ?"
         params.append(user_id)
         
