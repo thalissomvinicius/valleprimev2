@@ -46,12 +46,8 @@ export function AuthProvider({ children }) {
         const allObras = OBRAS.map(obra => obra.codigo);
         const user = {
             ...userData,
-            obrasPermitidas: (permissions.obrasPermitidas && permissions.obrasPermitidas.length > 0)
-                ? permissions.obrasPermitidas
-                : (userData.role === 'admin' ? allObras : []),
-            statusPermitidos: (permissions.statusPermitidos && permissions.statusPermitidos.length > 0)
-                ? permissions.statusPermitidos
-                : [],
+            obrasPermitidas: permissions.obrasPermitidas || (userData.role === 'admin' ? allObras : []),
+            statusPermitidos: permissions.statusPermitidos || [],
             canViewAllClients: permissions.canViewAllClients || (userData.role === 'admin'),
             aprovado: Boolean(userData.active !== false)
         };
@@ -119,8 +115,8 @@ export function AuthProvider({ children }) {
             await createUser({ username, password, nome });
             await loadUsers(); // Refresh list
             return { success: true };
-        } catch (e) {
-            const msg = e.response?.data?.message || 'Erro ao criar usuário.';
+        } catch {
+            const msg = 'Erro ao criar usuário.';
             return { success: false, error: msg };
         }
     }, []);
@@ -130,7 +126,7 @@ export function AuthProvider({ children }) {
             await updateUser(userId, data);
             await loadUsers();
             return { success: true };
-        } catch (e) {
+        } catch {
             return { success: false, error: 'Erro ao atualizar.' };
         }
     }, []);
@@ -140,7 +136,7 @@ export function AuthProvider({ children }) {
             await apiDeleteUser(userId);
             await loadUsers();
             return { success: true };
-        } catch (e) {
+        } catch {
             return { success: false, error: 'Erro ao excluir.' };
         }
     }, []);
@@ -150,7 +146,7 @@ export function AuthProvider({ children }) {
             await updateUser(userId, { active: true, aprovado: true });
             await loadUsers();
             return { success: true };
-        } catch (e) {
+        } catch {
             return { success: false, error: 'Erro ao aprovar.' };
         }
     }, []);
@@ -174,7 +170,7 @@ export function AuthProvider({ children }) {
                         loadUsers();
                     }
                 }
-            } catch (e) {
+            } catch {
                 // Token invalid
                 logout();
             } finally {

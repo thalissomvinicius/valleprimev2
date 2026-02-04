@@ -402,28 +402,20 @@ def auth_me():
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
         
-        # Para admin hardcoded, retorna dados diretamente
-        if payload.get('user_id') == 1 and payload.get('role') == 'admin':
-            return jsonify({
-                'user': {
-                    'id': 1,
-                    'username': 'admin',
-                    'role': 'admin',
-                    'permissions': {
-                        "canViewAllClients": True,
-                        "obrasPermitidas": ADMIN_OBRAS,
-                        "statusPermitidos": ADMIN_STATUS
-                    }
-                }
-            })
+        # Buscar no banco para retornar os dados reais e permissões
+        user = query_db("SELECT id, username, nome, role, permissions, active FROM users WHERE id = ?", (payload.get('user_id'),), one=True)
         
-        # Para outros usuários, buscar no banco (se necessário)
+        if not user or not user.get('active'):
+            return jsonify({'message': 'User not found or inactive'}), 401
+            
         return jsonify({
             'user': {
-                'id': payload.get('user_id'),
-                'username': 'user',
-                'role': payload.get('role', 'user'),
-                'permissions': {}
+                'id': user['id'],
+                'username': user['username'],
+                'role': user['role'],
+                'active': user['active'],
+                'nome': user.get('nome'),
+                'permissions': json.loads(user['permissions']) if user.get('permissions') else {}
             }
         })
     except jwt.ExpiredSignatureError:
@@ -1325,16 +1317,36 @@ def manage_users():
         return jsonify({'users': users})
     
     if request.method == 'POST':
-        data = request.get_json()
-        username = data.get('username')
-        password = data.get('password')
-        if not username or not password:
-            return jsonify({'message': 'Missing fields'}), 400
-        
-        pw_hash = hash_password(password)
-        query_db("INSERT INTO users (username, password_hash, nome, role, active, permissions) VALUES (?, ?, ?, ?, ?, ?)",
-                (username, pw_hash, data.get('nome'), 'user', True, json.dumps(data.get('permissions', {}))), commit=True)
-        return jsonify({'success': True})
+        try:
+            data = request.get_json()
+            username = data.get('username', '').strip()
+            password = data.get('password')
+            nome = data.get('nome', '').strip()
+            
+            if not username or not password:
+                return jsonify({'message': 'Usuário e senha são obrigatórios'}), 400
+            
+            # Verificar se já existe
+            existing = query_db("SELECT id FROM users WHERE username = ?", (username,), one=True)
+            if existing:
+                return jsonify({'message': 'Este nome de usuário já está em uso'}), 400
+                
+            pw_hash = hash_password(password)
+            # Default permissions structure
+            default_perms = {
+                "canViewAllClients": False,
+                "obrasPermitidas": [],
+                "statusPermitidos": []
+            }
+            perms = data.get('permissions') or default_perms
+            
+            query_db("INSERT INTO users (username, password_hash, nome, role, active, permissions) VALUES (?, ?, ?, ?, ?, ?)",
+                    (username, pw_hash, nome, 'user', True, json.dumps(perms)), commit=True)
+                    
+            return jsonify({'success': True, 'message': 'Usuário criado com sucesso'})
+        except Exception as e:
+            print(f"[ERROR] manage_users POST: {e}")
+            return jsonify({'success': False, 'message': f'Erro ao criar usuário: {str(e)}'}), 500
 
 @app.route('/api/users/<int:user_id>', methods=['PUT', 'DELETE'])
 @token_required

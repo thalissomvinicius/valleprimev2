@@ -39,7 +39,8 @@ function AdminPanel() {
     };
 
     const saveEdit = () => {
-        updateUserPermissions(editingUser, editData);
+        // Enviar os dados dentro da chave 'permissions' como o backend espera
+        updateUserPermissions(editingUser, { permissions: editData });
         setEditingUser(null);
         setEditData({});
     };
@@ -104,7 +105,7 @@ function AdminPanel() {
             } else {
                 setAddError(result.error || 'Erro ao cadastrar.');
             }
-        } catch (err) {
+        } catch {
             setAddError('Erro ao cadastrar usuário.');
         } finally {
             setAddSubmitting(false);
