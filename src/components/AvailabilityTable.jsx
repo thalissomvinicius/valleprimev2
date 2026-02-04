@@ -36,9 +36,39 @@ const formatCurrency = (value) => {
 
 import { ArrowUp, ArrowDown } from 'lucide-react';
 
+const SKELETON_ROWS = 10;
+
 const AvailabilityTable = ({ data, loading, onRowClick, onSort, sortConfig }) => {
     if (loading) {
-        return <div className="loading">Carregando dados...</div>;
+        return (
+            <div className="table-container">
+                <table className="data-table loading-skeleton">
+                    <thead>
+                        <tr>
+                            <th><span className="hide-mobile">Quadra</span><span className="show-mobile">QD</span></th>
+                            <th><span className="hide-mobile">Lote</span><span className="show-mobile">LT</span></th>
+                            <th>M²</th>
+                            <th><span className="hide-mobile">Valor</span><span className="show-mobile">R$</span></th>
+                            <th><span className="hide-mobile">Status</span><span className="show-mobile">ST.</span></th>
+                            <th><span className="hide-mobile">Logradouro</span><span className="show-mobile">LOG.</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {Array.from({ length: SKELETON_ROWS }).map((_, i) => (
+                            <tr key={i}>
+                                <td><span className="skeleton" /></td>
+                                <td><span className="skeleton" /></td>
+                                <td><span className="skeleton" /></td>
+                                <td><span className="skeleton" /></td>
+                                <td><span className="skeleton" /></td>
+                                <td><span className="skeleton skeleton-long" /></td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+                <p className="loading-label">Carregando lotes...</p>
+            </div>
+        );
     }
 
     if (!data || data.length === 0) {

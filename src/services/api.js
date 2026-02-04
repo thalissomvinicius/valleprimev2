@@ -96,12 +96,10 @@ export const deleteUser = async (id) => {
 export const fetchAvailability = async (obraCode = '624') => {
   try {
     const response = await api.get(`${API_BASE}/${obraCode}`);
-    if (response.data && response.data.success) {
-      return response.data.data;
-    } else {
-      console.error('API Error:', response.data);
-      throw new Error('Failed to fetch data');
-    }
+    const res = response.data;
+    if (!res) throw new Error('Resposta vazia');
+    const list = Array.isArray(res.data) ? res.data : (res.success ? res.data : []);
+    return Array.isArray(list) ? list : [];
   } catch (error) {
     console.error('Network Error:', error);
     throw error;

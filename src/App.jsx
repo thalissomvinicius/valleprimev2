@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth, OBRAS } from './context/AuthContext';
 import LoginPage from './pages/LoginPage';
@@ -34,6 +34,7 @@ function MainApp() {
   const [selectedLot, setSelectedLot] = useState(null);
   const [pendingLot, setPendingLot] = useState(null);
   const [showStatusWarning, setShowStatusWarning] = useState(false);
+  const dataCacheRef = useRef({}); // cache por obra: { [codigo]: data }
 
   // Obras que o usuário pode ver
   const allowedObras = useMemo(() => {
@@ -55,23 +56,31 @@ function MainApp() {
   }, []);
 
   useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      try {
-        const result = await fetchAvailability(selectedObra);
+    if (!selectedObra) return;
+    localStorage.setItem('selectedObra', selectedObra);
+
+    const cached = dataCacheRef.current[selectedObra];
+    if (cached && Array.isArray(cached) && cached.length >= 0) {
+      setData(cached);
+      setLoading(false);
+      setError(null);
+      // Atualizar em background (API já tem cache, tende a ser rápido)
+      fetchAvailability(selectedObra).then((result) => {
+        setData(result);
+        dataCacheRef.current[selectedObra] = result;
+      }).catch(() => {});
+      return;
+    }
+
+    setLoading(true);
+    fetchAvailability(selectedObra)
+      .then((result) => {
         setData(result);
         setError(null);
-      } catch (err) {
-        setError('Erro ao carregar dados. Por favor, tente novamente mais tarde.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (selectedObra) {
-      loadData();
-      localStorage.setItem('selectedObra', selectedObra);
-    }
+        dataCacheRef.current[selectedObra] = result;
+      })
+      .catch(() => setError('Erro ao carregar dados. Por favor, tente novamente mais tarde.'))
+      .finally(() => setLoading(false));
   }, [selectedObra]);
 
   // Parse numeric value from formatted string

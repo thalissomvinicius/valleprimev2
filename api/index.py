@@ -580,6 +580,10 @@ def login():
         if conn: conn.close()
         return jsonify({'message': 'Internal Login Error', 'error': str(e)}), 500
 
+# Cache da consulta de lotes (por código da obra, TTL em segundos)
+_consulta_cache = {}
+CONSULTA_CACHE_TTL = int(os.environ.get('CONSULTA_CACHE_TTL', 120))  # 2 min
+
 @app.route('/api/availability')
 def get_availability():
     numprod_psc = request.args.get('numprod_psc', '624')
@@ -592,13 +596,20 @@ def get_consulta(codigo):
     return fetch_consulta(codigo)
 
 def fetch_consulta(numprod_psc):
-    """Busca dados de lotes do servidor externo ou fallback local"""
+    """Busca dados de lotes do servidor externo ou fallback local (com cache)."""
+    now = datetime.datetime.utcnow().timestamp()
+    cached = _consulta_cache.get(numprod_psc)
+    if cached and (now - cached['ts']) < CONSULTA_CACHE_TTL:
+        return jsonify(cached['data'])
+
     try:
         # Try fetching from external API with timeout
         try:
             resp = requests.get(f"http://177.221.240.85:8000/api/consulta/{numprod_psc}/", timeout=8)
             if resp.status_code == 200:
-                return jsonify(resp.json())
+                data = resp.json()
+                _consulta_cache[numprod_psc] = {'ts': now, 'data': data}
+                return jsonify(data)
         except Exception:
             pass
 
@@ -607,7 +618,9 @@ def fetch_consulta(numprod_psc):
         filepath = os.path.join(BASE_DIR, filename)
         if os.path.exists(filepath):
             with open(filepath, 'r', encoding='utf-8-sig') as f:
-                return jsonify(json.load(f))
+                data = json.load(f)
+            _consulta_cache[numprod_psc] = {'ts': now, 'data': data}
+            return jsonify(data)
 
         return jsonify({"data": []})
     except Exception as e:

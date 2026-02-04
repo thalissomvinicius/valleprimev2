@@ -363,3 +363,29 @@
     /* Smaller than standard mobile header */
     opacity: 0.9;
 }
+
+/* Skeleton loading */
+.loading-skeleton .skeleton {
+    display: inline-block;
+    height: 1rem;
+    width: 60%;
+    min-width: 2rem;
+    background: linear-gradient(90deg, var(--border-color) 25%, rgba(255,255,255,0.08) 50%, var(--border-color) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-shine 1.2s ease-in-out infinite;
+    border-radius: 4px;
+    vertical-align: middle;
+}
+.loading-skeleton .skeleton-long {
+    width: 85%;
+}
+.loading-label {
+    text-align: center;
+    color: var(--text-muted, #718096);
+    font-size: 0.875rem;
+    margin-top: 0.75rem;
+}
+@keyframes skeleton-shine {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
