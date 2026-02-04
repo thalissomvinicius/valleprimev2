@@ -17,8 +17,11 @@ function LoginPage() {
         console.log('[LOGIN] Iniciando login para:', username);
 
         try {
-            // Chamada direta via fetch para garantir controle total
-            const response = await fetch(`/api/login-get?username=${encodeURIComponent(username.trim())}&password=${encodeURIComponent(password)}`, {
+            // Em *.pages.dev a API está no Render; senão usa relativo (dev ou proxy)
+            const isPagesDev = typeof window !== 'undefined' && /\.pages\.dev$/i.test(window.location?.hostname || '');
+            const apiBase = isPagesDev ? 'https://valleprimev2.onrender.com' : '';
+            const loginUrl = `${apiBase}/api/login-get?username=${encodeURIComponent(username.trim())}&password=${encodeURIComponent(password)}`;
+            const response = await fetch(loginUrl, {
                 method: 'GET',
                 headers: {
                     'Accept': 'application/json',
