@@ -1,10 +1,12 @@
 import axios from 'axios';
 
-// Em produção: use VITE_API_BASE se definido; senão fallback para a API no Render (evita depender do env no Cloudflare)
+// Em produção: use VITE_API_BASE se definido; senão fallback para a API no Render
 const ENV_API = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '');
 const isDev = import.meta.env.DEV;
 const PRODUCTION_API = 'https://valleprimev2.onrender.com';
-const API_BASE_URL = ENV_API || (isDev ? '' : PRODUCTION_API);
+// Se estiver no Cloudflare Pages (*.pages.dev), sempre usar a API no Render (evita cache/ build antigo)
+const isPagesDev = typeof window !== 'undefined' && /\.pages\.dev$/i.test(window.location?.hostname || '');
+const API_BASE_URL = ENV_API || (isPagesDev ? PRODUCTION_API : (isDev ? '' : PRODUCTION_API));
 const CLIENT_BASE = '/api/manage-clients';
 const API_BASE = '/api/consulta';
 const USERS_BASE = '/api/users';
