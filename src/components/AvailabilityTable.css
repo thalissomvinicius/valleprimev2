@@ -3,14 +3,13 @@
     padding: 0;
     margin-top: 1rem;
     border-radius: 0;
-    /* Square corners */
     box-shadow: none;
-    /* Cleaner look */
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: visible;
     margin-bottom: 3rem;
     border: none;
-    /* Remove border for full-width seamless look */
     border-top: 1px solid var(--border-color);
+    -webkit-overflow-scrolling: touch;
 }
 
 .clickable-row {
@@ -25,17 +24,28 @@
 /* Desktop Table */
 .data-table {
     width: 100%;
+    min-width: 320px;
     border-collapse: collapse;
 }
 
-.data-table thead {
-    background: var(--primary-gradient);
+/* Cabeçalho: texto sempre visível (evitar sobrescrita por outros CSS) */
+.table-container .data-table thead {
+    background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%);
 }
 
-.data-table th {
+.table-container .data-table thead th,
+.table-container .data-table thead th .header-content,
+.table-container .data-table thead th span,
+.table-container .data-table thead th svg {
+    color: #ffffff !important;
+    fill: #ffffff !important;
+    stroke: #ffffff !important;
+}
+
+.table-container .data-table th {
     padding: 1rem 1.25rem;
     text-align: left;
-    color: white;
+    color: #ffffff !important;
     font-weight: 600;
     font-size: 0.8rem;
     text-transform: uppercase;
@@ -56,8 +66,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    /* Center globally as per request */
     gap: 0.25rem;
+    color: inherit;
 }
 
 .data-table th:first-child {
@@ -205,22 +215,42 @@
     letter-spacing: 0.05em;
 }
 
-/* Mobile View Adjustments */
+/* Responsivo: cabeçalho sempre visível em qualquer tamanho de tela */
+@media (max-width: 992px) {
+    .table-container .data-table thead,
+    .table-container .data-table thead th,
+    .table-container .data-table thead th .header-content,
+    .table-container .data-table thead th span,
+    .table-container .data-table thead th svg {
+        color: #ffffff !important;
+        fill: #ffffff !important;
+        stroke: #ffffff !important;
+    }
+}
+
 @media (max-width: 768px) {
     .table-container {
         border-radius: 0;
         margin-bottom: 2rem;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
         width: 100%;
         border: 1px solid var(--border-color);
-        /* Respect container padding, do not pull to edges */
     }
 
-    .data-table th {
+    .table-container .data-table thead,
+    .table-container .data-table thead th,
+    .table-container .data-table thead th .header-content,
+    .table-container .data-table thead th span,
+    .table-container .data-table thead th svg {
+        color: #ffffff !important;
+        fill: #ffffff !important;
+        stroke: #ffffff !important;
+    }
+
+    .table-container .data-table th {
         font-size: 0.75rem;
         padding: 0.75rem 0.4rem;
         text-align: center;
+        color: #ffffff !important;
     }
 
     .data-table td {
@@ -229,13 +259,45 @@
         white-space: nowrap;
         text-align: center;
     }
+
+    /* Dentro da tabela: show-mobile visível, hide-mobile escondido */
+    .table-container .data-table .show-mobile {
+        display: inline !important;
+    }
+    .table-container .data-table .hide-mobile {
+        display: none !important;
+    }
+}
+
+@media (max-width: 600px) {
+    .table-container .data-table thead th,
+    .table-container .data-table thead th span,
+    .table-container .data-table thead th svg {
+        color: #ffffff !important;
+        fill: #ffffff !important;
+        stroke: #ffffff !important;
+    }
+    .table-container .data-table th {
+        color: #ffffff !important;
+    }
 }
 
 @media (max-width: 480px) {
-    .data-table th {
+    .table-container .data-table thead,
+    .table-container .data-table thead th,
+    .table-container .data-table thead th .header-content,
+    .table-container .data-table thead th span,
+    .table-container .data-table thead th svg {
+        color: #ffffff !important;
+        fill: #ffffff !important;
+        stroke: #ffffff !important;
+    }
+
+    .table-container .data-table th {
         font-size: 0.65rem;
         padding: 0.5rem 0.25rem;
         letter-spacing: 0.02em;
+        color: #ffffff !important;
     }
 
     .data-table td {
@@ -254,9 +316,22 @@
         height: 4px;
     }
 
-    /* Adjust Logradouro specifically for mobile if needed, or keep global left align */
     .data-table td:last-child {
         padding-left: 0.5rem;
+    }
+}
+
+/* Tablet: labels completos no cabeçalho */
+@media (min-width: 601px) and (max-width: 768px) {
+    .table-container .data-table thead th,
+    .table-container .data-table thead th span {
+        color: #ffffff !important;
+    }
+    .table-container .data-table .show-mobile {
+        display: none !important;
+    }
+    .table-container .data-table .hide-mobile {
+        display: inline !important;
     }
 }
 

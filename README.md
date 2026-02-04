@@ -51,16 +51,24 @@ O **Valle Prime DispoSystem** foi desenvolvido para solucionar um problema crít
 
 ### 🔧 Instalação e Uso Local
 
+**Pré-requisitos:** Node.js, Python 3 e `pip install -r requirements.txt` (na pasta do projeto).
+
+Abra **dois terminais** na pasta do projeto:
+
+**Terminal 1 – API (Flask na porta 5000):**
 ```bash
-# 1. Clone o repositório
-git clone https://github.com/thalissomvinicius/valleprime.git
+npm run start:api
+```
+*(Ou: `python api/index.py`)*
 
-# 2. Instale as dependências
+**Terminal 2 – Frontend (Vite na porta 5173):**
+```bash
 npm install
-
-# 3. Rode o servidor de desenvolvimento
 npm run dev
 ```
+
+Acesse **http://localhost:5173**. O frontend usa o proxy do Vite e envia as chamadas `/api` para o Flask em `localhost:5000`.  
+Login padrão (após migração do banco): **admin** / **admin123**.
 
 ---
 

@@ -3,7 +3,6 @@
         opacity: 0;
         transform: translateY(-10px);
     }
-
     to {
         opacity: 1;
         transform: translateY(0);
@@ -11,13 +10,13 @@
 }
 
 .search-bar-container {
-    background: var(--glass-bg);
+    background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    padding: 1.25rem;
+    padding: 1.5rem 1.75rem;
     border-radius: var(--border-radius);
-    box-shadow: var(--shadow-lg);
-    border: 1px solid var(--glass-border);
+    box-shadow: 0 4px 24px rgba(26, 54, 93, 0.08), 0 1px 3px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(226, 232, 240, 0.9);
     margin-top: 1rem;
     margin-bottom: 2rem;
     animation: fadeInDown 0.6s ease-out;
@@ -37,7 +36,8 @@
     min-width: 300px;
 }
 
-.input-wrapper {
+.input-wrapper,
+.status-filter-wrapper {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
@@ -45,22 +45,22 @@
 }
 
 .status-filter-wrapper {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    flex: 1;
     min-width: 200px;
 }
 
-.input-label {
+/* Labels: sempre visíveis (especificidade alta para não ser sobrescrito por outros CSS) */
+.search-bar-container .input-label,
+.search-bar-container .input-group .input-wrapper .input-label,
+.search-bar-container .status-filter-wrapper .input-label {
     display: block;
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     font-weight: 700;
-    color: var(--text-color);
+    color: #1a365d !important;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-left: 0.25rem;
-    opacity: 1;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.25rem;
+    padding-left: 0.25rem;
+    line-height: 1.2;
 }
 
 .input-with-icon {
@@ -72,7 +72,7 @@
 .input-icon {
     position: absolute;
     left: 0.85rem;
-    color: var(--text-muted);
+    color: #64748b;
     pointer-events: none;
     transition: color 0.2s ease;
     z-index: 2;
@@ -82,25 +82,26 @@
 .status-select {
     width: 100%;
     padding: 0.75rem 1rem 0.75rem 3.25rem !important;
-    /* Force the padding */
-    border: 2px solid var(--border-color);
+    border: 1px solid #e2e8f0;
     border-radius: var(--border-radius-sm);
     font-size: 0.95rem;
     font-weight: 500;
     outline: none;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    background-color: var(--card-bg);
-    color: var(--text-color);
+    transition: all 0.25s ease;
+    background-color: #ffffff;
+    color: #1a202c;
     text-align: left !important;
-    /* Ensure text starts from the left */
+}
+
+.search-input::placeholder {
+    color: #94a3b8;
 }
 
 .search-input:focus,
 .status-select:focus {
     border-color: var(--primary-color);
-    box-shadow: 0 0 15px rgba(26, 54, 93, 0.1);
-    transform: translateY(-1px);
-    background-color: #fff;
+    box-shadow: 0 0 0 3px rgba(26, 54, 93, 0.12);
+    background-color: #ffffff;
 }
 
 .input-with-icon:focus-within .input-icon {
@@ -110,28 +111,27 @@
 .status-select {
     cursor: pointer;
     appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%234a5568' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%231a365d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 1rem center;
     padding-right: 2.5rem;
 }
 
 /* ==========================================
-   MOBILE RESPONSIVE STYLES
+   MOBILE
    ========================================== */
 
 @media (max-width: 768px) {
     .search-bar-container {
-        padding: 0.75rem;
+        padding: 1rem 1.25rem;
         margin-bottom: 1rem;
         margin-top: 0.5rem;
     }
 
     .search-filters {
-        gap: 0.75rem;
+        gap: 1rem;
     }
 
-    /* Keep Quadra and Lote side-by-side on mobile */
     .input-group {
         flex-direction: row;
         width: 100%;
@@ -141,34 +141,28 @@
 
     .input-wrapper {
         min-width: 0;
-        /* Allow shrinking */
     }
 
     .status-filter-wrapper {
         min-width: 100%;
     }
 
-    .input-label {
+    .search-bar-container .input-label {
         font-size: 0.7rem;
-        margin-bottom: 0.15rem;
+        letter-spacing: 0.06em;
     }
 
-    /* Adjust icon position for smaller padding */
     .input-icon {
         width: 14px;
         height: 14px;
         left: 0.6rem;
-        top: 50%;
-        transform: translateY(-50%);
     }
 
-    /* Compact inputs */
     .search-input,
     .status-select {
         padding: 0.5rem 0.5rem 0.5rem 2rem !important;
-        font-size: 0.85rem;
-        height: 38px;
-        /* Explicit height control */
+        font-size: 0.875rem;
+        min-height: 40px;
         border-radius: 8px;
     }
 

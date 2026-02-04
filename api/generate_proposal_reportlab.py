@@ -143,9 +143,12 @@ def generate_pdf_reportlab(data, background_image_path, positions_path, output_f
         if key in cep_keys and text_to_draw.strip() != "":
             text_to_draw = format_cep(text_to_draw)
             
-        # Add R$ prefix for Valid payment values
+        # Add R$ prefix for valid payment values (remover qualquer "R$" já presente para evitar "R$ R$")
         currency_keys = column_groups["valor"] + ["valor_inicial", "valor_sinal", "sinal_bloco2_valor", "valor_total_entrada", "valor_saldo_parcelar"]
         if key in currency_keys and text_to_draw.strip() != "":
+            text_to_draw = str(text_to_draw).strip()
+            while text_to_draw.upper().startswith("R$"):
+                text_to_draw = text_to_draw[2:].strip()
             text_to_draw = f"R$ {text_to_draw}"
 
         # Initialize overrides
@@ -225,6 +228,22 @@ def generate_pdf_reportlab(data, background_image_path, positions_path, output_f
         if key in email_keys:
             text_to_draw = text_to_draw.lower()
             font_size = 8
+
+        # Logradouro: evitar overflow — reduzir fonte e/ou truncar para caber na área
+        max_logradouro_width_mm = 52  # espaço aproximado até a margem direita (A4 210mm - x ~153mm)
+        if key == "logradouro" and text_to_draw.strip():
+            max_width_pt = max_logradouro_width_mm * mm
+            while font_size >= 7 and c.stringWidth(text_to_draw, "Helvetica", font_size) > max_width_pt:
+                font_size -= 1
+            if font_size < 7:
+                font_size = 7
+            if c.stringWidth(text_to_draw, "Helvetica", font_size) > max_width_pt:
+                ellipsis = "..."
+                orig_len = len(text_to_draw)
+                while len(text_to_draw) > 3 and c.stringWidth(text_to_draw + ellipsis, "Helvetica", font_size) > max_width_pt:
+                    text_to_draw = text_to_draw[:-1].rstrip()
+                if len(text_to_draw) < orig_len:
+                    text_to_draw = text_to_draw + ellipsis
             
         c.setFont("Helvetica", font_size)
 

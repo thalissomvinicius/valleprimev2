@@ -1,8 +1,9 @@
 import axios from 'axios';
 
-const DEFAULT_RENDER_API = 'https://valleprimev2.onrender.com';
+// Em produção: use VITE_API_BASE se definido; senão use '' (chamadas relativas /api → proxy do host)
 const ENV_API = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '');
-const API_BASE_URL = ENV_API || (typeof window !== 'undefined' && window.location.hostname.includes('netlify.app') ? DEFAULT_RENDER_API : '');
+const isDev = import.meta.env.DEV;
+const API_BASE_URL = ENV_API || '';
 const CLIENT_BASE = '/api/manage-clients';
 const API_BASE = '/api/consulta';
 const USERS_BASE = '/api/users';

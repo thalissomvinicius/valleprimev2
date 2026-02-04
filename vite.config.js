@@ -5,21 +5,12 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
+    port: 5173,
     proxy: {
-      '/api/consulta': {
-        target: 'http://177.221.240.85:8000',
+      // Em desenvolvimento local, todas as chamadas /api vão para o Flask em :5000
+      '/api': {
+        target: 'http://localhost:5000',
         changeOrigin: true,
-        secure: false,
-      },
-      '/api/clients': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
-        secure: false,
-      },
-      '/generate_proposal': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
-        secure: false,
       },
     },
   },

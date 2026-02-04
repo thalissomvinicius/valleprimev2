@@ -22,9 +22,11 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'dev_secret_key_valle_prime_v2')
 ADMIN_OBRAS = ['600', '601', '602', '603', '604', '605', '610', '616', '618', '620', '621', '623', '624', '625']
 ADMIN_STATUS = ['0 - Disponível', '1 - Vendido', '2 - Reservado', '4 - Quitado', '7 - Suspenso', '8 - Fora de venda']
 
-# Database path for SQLite
+# Database path for SQLite (persistência: use SUPABASE em produção ou DB_PATH em volume persistente)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-if os.environ.get('VERCEL') == '1' or os.path.exists('/tmp'):
+if os.environ.get('DB_PATH'):
+    DB_PATH = os.environ.get('DB_PATH')
+elif os.environ.get('VERCEL') == '1' or (os.path.exists('/tmp') and not os.environ.get('SUPABASE_URL')):
     DB_PATH = '/tmp/clients.db'
 else:
     DB_PATH = os.path.join(BASE_DIR, 'clients.db')
@@ -118,7 +120,8 @@ def query_db(sql, params=(), one=False, commit=False):
                             "password_hash": params[1],
                             "nome": params[2],
                             "role": params[3],
-                            "active": params[4]
+                            "active": params[4],
+                            "permissions": params[5] if len(params) > 5 else None
                         }
                     res = query_supabase_rest(table, 'POST', data=payload)
                     return True if res is not None else False
@@ -195,7 +198,7 @@ def query_db(sql, params=(), one=False, commit=False):
                         result[key] = val.isoformat()
                 return result
             return None
-            rv = cur.fetchall()
+        rv = cur.fetchall()
         if cur.description:
             col_names = [desc[0] for desc in cur.description]
             results = []
@@ -587,22 +590,26 @@ def get_consulta(codigo):
 
 def fetch_consulta(numprod_psc):
     """Busca dados de lotes do servidor externo ou fallback local"""
-    # Try fetching from external API with timeout
     try:
-        resp = requests.get(f"http://177.221.240.85:8000/api/consulta/{numprod_psc}/", timeout=8)
-        if resp.status_code == 200:
-            return jsonify(resp.json())
-    except Exception:
-        pass
-    
-    # Fallback to local files
-    filename = f"fallback_{numprod_psc}.json"
-    filepath = os.path.join(BASE_DIR, filename)
-    if os.path.exists(filepath):
-        with open(filepath, 'r', encoding='utf-8-sig') as f:
-            return jsonify(json.load(f))
-            
-    return jsonify({"data": []})
+        # Try fetching from external API with timeout
+        try:
+            resp = requests.get(f"http://177.221.240.85:8000/api/consulta/{numprod_psc}/", timeout=8)
+            if resp.status_code == 200:
+                return jsonify(resp.json())
+        except Exception:
+            pass
+
+        # Fallback to local files
+        filename = f"fallback_{numprod_psc}.json"
+        filepath = os.path.join(BASE_DIR, filename)
+        if os.path.exists(filepath):
+            with open(filepath, 'r', encoding='utf-8-sig') as f:
+                return jsonify(json.load(f))
+
+        return jsonify({"data": []})
+    except Exception as e:
+        print(f"[ERROR] fetch_consulta {numprod_psc}: {e}")
+        return jsonify({"data": [], "error": str(e)})
 
 @app.route('/api/clients/<int:client_id>', methods=['DELETE'])
 @app.route('/api/manage-clients/<int:client_id>', methods=['DELETE'])
@@ -903,7 +910,7 @@ def manage_clients():
                         error_details = res
                     success = not (isinstance(res, dict) and res.get("error"))
                     action = 'atualizado'
-        else:
+                else:
                     print(f"[DEBUG] Attempting Supabase INSERT client: {nome} - {cpf_cnpj_clean}")
                     res = query_supabase_rest(
                         "clients",
@@ -962,17 +969,179 @@ def manage_clients():
                         'details': error_details
                     }), 500
                 return jsonify({'success': False, 'error': 'Falha ao salvar no banco de dados'}), 500
-                
-    except Exception as e:
+
+        except Exception as e:
             error_trace = traceback.format_exc()
             print(f"[ERROR] Exception saving client: {str(e)}")
             print(f"[ERROR] Traceback: {error_trace}")
             return jsonify({
-                'success': False, 
+                'success': False,
                 'error': f'Erro ao salvar cliente: {str(e)}',
                 'message': str(e),
                 'trace': error_trace if os.getenv('VERCEL') else None
             }), 500
+
+
+def _format_currency_br(value):
+    """Format number as Brazilian currency string (e.g. 1234.56 -> 1.234,56)"""
+    if value is None or (isinstance(value, (int, float)) and not (value == value)):
+        return "0,00"
+    try:
+        n = float(value) if not isinstance(value, (int, float)) else value
+        return f"{n:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    except (TypeError, ValueError):
+        return str(value) if value else "0,00"
+
+
+def _parse_currency_value(val):
+    """Parse value that can be number (19777.97) or BR string ('19.777,97'). Do NOT strip dots when it's already a number."""
+    if val is None or val == "":
+        return None
+    if isinstance(val, (int, float)):
+        return float(val)
+    s = str(val).strip()
+    if not s:
+        return None
+    # String with comma = Brazilian format (19.777,97)
+    if "," in s:
+        s = s.replace(".", "").replace(",", ".")
+    try:
+        return float(s)
+    except ValueError:
+        return None
+
+
+def _plan_type_label(num_parcelas):
+    """Retorna o rótulo do plano para o PDF (igual à lógica do frontend: Fixas, Corrigidas, Reajustáveis)."""
+    n = int(num_parcelas) if num_parcelas is not None else 1
+    if n <= 1:
+        return "À VISTA"
+    if n <= 36:
+        return "FIXA"
+    if n <= 72:
+        return "CORRIGIDA"
+    return "REAJUSTÁVEL"
+
+
+def _normalize_proposal_data(data):
+    """Build flat dict for PDF from frontend payload (lot, obraName, clientData, etc.)."""
+    flat = {}
+    # 1) Flatten nested client "data" (from API response)
+    if isinstance(data.get("data"), dict):
+        for k, v in data["data"].items():
+            if k not in flat and v is not None and v != "":
+                flat[k] = v
+    # 2) Copy all scalar values from top-level (client form + proposal fields)
+    for k, v in data.items():
+        if k in ("lot", "data"):
+            continue
+        if isinstance(v, (dict, list)):
+            continue
+        if v is not None and v != "":
+            flat[k] = v
+    # 3) Map "lot" object -> lote, quadra, area, logradouro, empreendimento, cidade, estado
+    lot = data.get("lot") or {}
+    if isinstance(lot, dict):
+        flat["lote"] = flat.get("lote") or str(lot.get("LT", ""))
+        flat["quadra"] = flat.get("quadra") or str(lot.get("QD", ""))
+        flat["area"] = flat.get("area") or str(lot.get("M2", "") or lot.get("Area", ""))
+        flat["logradouro"] = flat.get("logradouro") or str(lot.get("Logradouro", ""))
+        emp_raw = flat.get("empreendimento") or data.get("obraName") or str(lot.get("Descricao_Empreendimento", ""))
+        # Separar nome do loteamento de "CIDADE" quando vier "NOME - CIDADE" (ex: "RESIDENCIAL JARDIM DO VALLE - DOM ELISEU")
+        if emp_raw and " - " in emp_raw and not (flat.get("cidade_empreendimento") or lot.get("Cidade") or lot.get("Estado")):
+            parts = emp_raw.split(" - ", 1)
+            flat["empreendimento"] = parts[0].strip()
+            flat["cidade_empreendimento"] = parts[1].strip() if len(parts) > 1 else ""
+        else:
+            flat["empreendimento"] = emp_raw
+            flat["cidade_empreendimento"] = flat.get("cidade_empreendimento") or str(lot.get("Cidade", "") or lot.get("cidade_empreendimento", ""))
+        flat["estado_empreendimento"] = flat.get("estado_empreendimento") or str(lot.get("Estado", "") or lot.get("UF", "") or lot.get("estado_empreendimento", "") or "")
+        # Estado padrão PA quando há cidade e estado vazio (empreendimentos no Pará)
+        if flat.get("cidade_empreendimento") and not flat.get("estado_empreendimento"):
+            flat["estado_empreendimento"] = "PA"
+    # 4) valor_inicial from lotValue (pode vir número 19777.97 ou string "19.777,97")
+    lot_val = _parse_currency_value(data.get("lotValue"))
+    if lot_val is not None:
+        flat["valor_inicial"] = _format_currency_br(lot_val)
+    # 5) Saldo a parcelar: qtd, valor por parcela, periodicidade, tipo
+    remaining = _parse_currency_value(data.get("remainingBalance"))
+    n_installments = data.get("balanceInstallments")
+    try:
+        rem = float(remaining) if remaining is not None else 0
+        n_inst = int(n_installments) if n_installments else 0
+        if n_inst > 0 and rem >= 0:
+            flat["saldo_qtd_parcelas"] = str(n_inst).zfill(2)
+            flat["saldo_valor_parcela"] = flat.get("saldo_valor_parcela") or _format_currency_br(rem / n_inst)
+            flat["saldo_periodicidade"] = flat.get("saldo_periodicidade") or ("MENSAL" if n_inst > 1 else "ÚNICA")
+            flat["saldo_tipo_parcela"] = flat.get("saldo_tipo_parcela") or _plan_type_label(n_inst)
+        if rem >= 0:
+            flat["valor_saldo_parcelar"] = flat.get("valor_saldo_parcelar") or _format_currency_br(rem)
+    except (TypeError, ValueError):
+        pass
+    # 6) Data da proposta -> dia, mês por extenso em CAIXA ALTA, ano (ex: 04 de FEVEREIRO de 2026)
+    MESES = ("janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro")
+    proposta_data = data.get("proposta_data") or flat.get("proposta_data")
+    if proposta_data:
+        parts = str(proposta_data).split("T")[0].split("-")
+        if len(parts) == 3:
+            yyyy, mm, dd = parts[0], parts[1], parts[2]
+            flat["ano_proposta_final"] = yyyy
+            try:
+                nome_mes = MESES[int(mm) - 1] if 1 <= int(mm) <= 12 else str(mm)
+                flat["mes_proposta_final"] = nome_mes.upper()
+            except (ValueError, IndexError):
+                flat["mes_proposta_final"] = str(mm).upper()
+            flat["dia_proposta_final"] = dd
+        # Rodapé: CIDADE/UF do loteamento (ex.: DOM ELISEU/PA)
+        cidade_lote = flat.get("cidade_empreendimento") or flat.get("cidade_proponente") or ""
+        uf_lote = flat.get("estado_empreendimento") or ""
+        if cidade_lote and uf_lote:
+            flat["cidade_proposta_final"] = flat.get("cidade_proposta_final") or f"{cidade_lote}/{uf_lote}"
+        else:
+            flat["cidade_proposta_final"] = flat.get("cidade_proposta_final") or cidade_lote or uf_lote
+    # 7) Valor total entrada — usar apenas valor da entrada (entradaValue/valor_total_entrada), nunca sinal/comissão
+    entrada_total = _parse_currency_value(data.get("valor_total_entrada") or data.get("entradaValue"))
+    if entrada_total is None and (flat.get("entrada_qtd_parcelas") or data.get("entrada_qtd_parcelas")) and (flat.get("entrada_valor_parcela") or data.get("entrada_valor_parcela")):
+        n_e = int(data.get("entrada_qtd_parcelas") or flat.get("entrada_qtd_parcelas") or 1)
+        v_parc = _parse_currency_value(flat.get("entrada_valor_parcela") or data.get("entrada_valor_parcela"))
+        if v_parc is not None and n_e > 0:
+            entrada_total = n_e * v_parc
+    if entrada_total is not None and entrada_total > 0:
+        flat["valor_total_entrada"] = _format_currency_br(entrada_total)
+    # 7b) Se não há entrada (desativada ou zero), remover TODOS os campos de entrada + valor_total_entrada
+    entrada_enabled = data.get("entradaEnabled")
+    entrada_val = _parse_currency_value(data.get("entradaValue"))
+    entrada_val_parcela = _parse_currency_value(flat.get("entrada_valor_parcela") or data.get("entrada_valor_parcela"))
+    if entrada_enabled is False or (entrada_val is not None and entrada_val == 0) or (entrada_val_parcela is not None and entrada_val_parcela == 0):
+        for key in list(flat.keys()):
+            if key.startswith("entrada_") or key == "valor_total_entrada":
+                del flat[key]
+    else:
+        # Tipo de parcela da entrada: deixar em branco (não exibir "À VISTA"); a seção já tem "FIXA" quando aplicável
+        flat["entrada_tipo_parcela"] = ""
+    # 9) Valor sinal (comissão) – usar parse para não estourar valor
+    valor_sinal = _parse_currency_value(data.get("valor_sinal") or data.get("downPaymentTotal") or data.get("sinalOriginalTotal"))
+    if valor_sinal is not None:
+        flat["valor_sinal"] = _format_currency_br(valor_sinal)
+    # 10) Sexo: form pode enviar "sexo" (M/F) -> PDF espera sexo_masc_proponente / sexo_fem_proponente (bool)
+    sx = flat.get("sexo") or data.get("sexo")
+    if sx is not None and sx != "":
+        s = str(sx).upper()[:1]
+        flat["sexo_masc_proponente"] = s == "M"
+        flat["sexo_fem_proponente"] = s == "F"
+    sx2 = flat.get("sexo_seg") or data.get("sexo_seg")
+    if sx2 is not None and sx2 != "":
+        s2 = str(sx2).upper()[:1]
+        flat["sexo_masc_segundo"] = s2 == "M"
+        flat["sexo_fem_segundo"] = s2 == "F"
+    # 11) Se não há segundo proponente/cônjuge/procurador, limpar todos os campos *_segundo para não sair "BRASILEIRO" etc. na seção em branco
+    has_segundo = data.get("has_segundo")
+    nome_segundo = (flat.get("nome_segundo") or data.get("nome_segundo") or "").strip()
+    if not has_segundo and not nome_segundo:
+        for key in list(flat.keys()):
+            if key.endswith("_segundo"):
+                del flat[key]
+    return flat
 
 
 @app.route('/api/generate_proposal', methods=['POST'])
@@ -989,6 +1158,9 @@ def generate_proposal():
         if not os.path.exists(positions_path):
             return jsonify({'success': False, 'error': 'Arquivo posicoes_campos.json nao encontrado'}), 500
 
+        # Normalize payload so PDF gets all expected keys (empreendimento, lote, quadra, valor_inicial, saldo_*, etc.)
+        pdf_data = _normalize_proposal_data(data)
+
         # Try known background names
         possible_images = [
             os.path.join(BASE_DIR, 'PROPOSTA LIMPA.jpg'),
@@ -1004,7 +1176,7 @@ def generate_proposal():
         with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf', dir=tmp_dir) as tmp:
             output_pdf = tmp.name
 
-        generate_pdf_reportlab(data, background_image_path, positions_path, output_filename=output_pdf)
+        generate_pdf_reportlab(pdf_data, background_image_path, positions_path, output_filename=output_pdf)
 
         @after_this_request
         def cleanup_file(response):
@@ -1171,3 +1343,7 @@ try:
     print("[STARTUP] Database migration completed successfully")
 except Exception as e:
     print(f"[STARTUP] Database migration failed: {e}")
+
+if __name__ == '__main__':
+    print("[LOCAL] Iniciando API em http://localhost:5000")
+    app.run(host='0.0.0.0', port=5000, debug=True)

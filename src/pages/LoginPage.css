@@ -143,13 +143,14 @@
     gap: 20px;
 }
 
-.input-group {
+/* Escopo: só dentro do formulário de login (evita afetar SearchBar na Home) */
+.login-form .input-group {
     display: flex;
     flex-direction: column;
     gap: 8px;
 }
 
-.input-group label {
+.login-form .input-group label {
     font-size: 13px;
     font-weight: 600;
     color: rgba(255, 255, 255, 0.9);
@@ -157,7 +158,7 @@
     letter-spacing: 0.5px;
 }
 
-.input-group input {
+.login-form .input-group input {
     width: 100%;
     padding: 14px 16px;
     background: rgba(255, 255, 255, 0.1);
@@ -168,18 +169,18 @@
     transition: all 0.3s ease;
 }
 
-.input-group input::placeholder {
+.login-form .input-group input::placeholder {
     color: rgba(255, 255, 255, 0.4);
 }
 
-.input-group input:focus {
+.login-form .input-group input:focus {
     outline: none;
     border-color: #667eea;
     background: rgba(255, 255, 255, 0.15);
     box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2);
 }
 
-.input-group input:disabled {
+.login-form .input-group input:disabled {
     opacity: 0.7;
 }
 
