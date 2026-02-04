@@ -97,18 +97,14 @@ CREATE POLICY "Allow service role" ON users FOR ALL USING (true);
    - **Build command:** `npm install && npm run build`
    - **Build output directory:** `dist`
    - Se o código está numa pasta (ex.: `DISP`), em **Root directory** coloque: `DISP`
-6. (Opcional) Em **Environment variables**, não é obrigatório preencher nada se você usar o proxy no passo 7.
-7. **Antes de dar Save and Deploy:**  
-   No seu projeto, edite o arquivo **`public/_redirects`** e coloque a **URL do seu serviço no Render** (sem `https://`), por exemplo:
-   - Se a URL do Render for `https://valleprimev2-api.onrender.com`, o conteúdo do arquivo deve ser:
-
-   ```
-   /api/* https://valleprimev2-api.onrender.com/api/:splat 200
-   /* /index.html 200
-   ```
-
-   Troque `valleprimev2-api.onrender.com` pela URL real que você copiou no passo 10 da Parte B. Salve e faça commit + push no Git.
-8. Volte no Cloudflare e clique em **Save and Deploy**.
+6. **Importante – Environment variables:**  
+   O Cloudflare Pages **não** faz proxy para URLs externas (diferente do Netlify). É obrigatório definir:
+   - **Variable name:** `VITE_API_BASE`
+   - **Value:** a URL completa da sua API no Render, **com** `https://` (ex.: `https://valleprimev2.onrender.com`)
+   - **Environment:** Production (e Preview se quiser).  
+   Assim o frontend passa a chamar a API direto no Render em produção.
+7. (Opcional) O arquivo **`public/_redirects`** não é usado para proxy no Cloudflare; pode deixar como está ou removê-lo.
+8. Clique em **Save and Deploy**.
 9. Espere o build terminar. A URL do site será algo como: `https://valleprimev2.pages.dev` (ou o nome que você deu).
 
 ---

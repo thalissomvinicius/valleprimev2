@@ -1,9 +1,10 @@
 import axios from 'axios';
 
-// Em produção: use VITE_API_BASE se definido; senão use '' (chamadas relativas /api → proxy do host)
+// Em produção: use VITE_API_BASE se definido; senão fallback para a API no Render (evita depender do env no Cloudflare)
 const ENV_API = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '');
 const isDev = import.meta.env.DEV;
-const API_BASE_URL = ENV_API || '';
+const PRODUCTION_API = 'https://valleprimev2.onrender.com';
+const API_BASE_URL = ENV_API || (isDev ? '' : PRODUCTION_API);
 const CLIENT_BASE = '/api/manage-clients';
 const API_BASE = '/api/consulta';
 const USERS_BASE = '/api/users';
