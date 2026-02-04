@@ -81,21 +81,17 @@ def query_supabase_rest(table, method='GET', params=None, data=None, return_erro
         print(f"[Supabase REST] {method} {url} -> {response.status_code}")
         
         if response.status_code in [200, 201, 204, 206]:
-            if not response.text: return True
+            if not response.text: return {"data": True, "status": response.status_code}
             try:
-                return response.json()
+                return {"data": response.json(), "status": response.status_code}
             except:
-                return True
+                return {"data": True, "status": response.status_code}
         
         print(f"[Supabase REST ERROR] {response.status_code}: {response.text}")
-        if return_error:
-            return {"status": response.status_code, "error": response.text}
-        return None
+        return {"data": None, "status": response.status_code, "error": response.text}
     except Exception as e:
         print(f"[Supabase REST EXCEPTION] {e}")
-        if return_error:
-            return {"status": "exception", "error": str(e)}
-        return None
+        return {"data": None, "status": "exception", "error": str(e)}
 
 def query_db(sql, params=(), one=False, commit=False):
     # Try Supabase REST API first if configured and it's a known simple query
@@ -126,14 +122,25 @@ def query_db(sql, params=(), one=False, commit=False):
                             "active": params[4],
                             "permissions": params[5] if len(params) > 5 else None
                         }
-                    res = query_supabase_rest(table, 'POST', data=payload)
-                    return True if res is not None else False
+                    res_obj = query_supabase_rest(table, 'POST', data=payload)
+                    if res_obj.get("data") is not None:
+                        return True
+                    # Fallback to SQLite if Supabase failed with explicit table error or connection issue
+                    if res_obj.get("status") in [404, "exception"]:
+                        print(f"[DB Fallback] Supabase POST failed ({res_obj.get('status')}). Trying SQLite...")
+                    else:
+                        return False
                 
                 # Handle DELETE
                 if "DELETE FROM" in sql:
                     where_id = f"id=eq.{params[0]}"
-                    res = query_supabase_rest(table, 'DELETE', params=where_id)
-                    return True if res is not None else False
+                    res_obj = query_supabase_rest(table, 'DELETE', params=where_id)
+                    if res_obj.get("data") is not None:
+                        return True
+                    if res_obj.get("status") in [404, "exception"]:
+                        print(f"[DB Fallback] Supabase DELETE failed ({res_obj.get('status')}). Trying SQLite...")
+                    else:
+                        return False
 
                 # Handle SELECT COUNT
                 if "COUNT(*)" in sql:
@@ -147,9 +154,16 @@ def query_db(sql, params=(), one=False, commit=False):
                     # PostgREST count is a bit tricky, but we'll use a simple approach
                     # Just get the list and return length or use Prefer: count=exact if needed
                     # For now, let's get matching items
-                    res = query_supabase_rest(table, 'GET', params=where_clause)
-                    count = len(res) if isinstance(res, list) else 0
-                    return {"count": count} if one else [{"count": count}]
+                    res_obj = query_supabase_rest(table, 'GET', params=where_clause)
+                    res = res_obj.get("data")
+                    if res is not None:
+                        count = len(res) if isinstance(res, list) else 0
+                        return {"count": count} if one else [{"count": count}]
+                    
+                    if res_obj.get("status") in [404, "exception"]:
+                        print(f"[DB Fallback] Supabase COUNT failed ({res_obj.get('status')}). Trying SQLite...")
+                    else:
+                        return {"count": 0} if one else [{"count": 0}]
 
                 # Handle SELECT (ALL, specific columns, or WHERE)
                 if "SELECT" in sql.upper():
@@ -185,11 +199,17 @@ def query_db(sql, params=(), one=False, commit=False):
                     if not any(p.startswith("select=") for p in rest_params):
                         final_params = (final_params + "&" if final_params else "") + "select=*"
                         
-                    res = query_supabase_rest(table, 'GET', params=final_params)
+                    res_obj = query_supabase_rest(table, 'GET', params=final_params)
+                    res = res_obj.get("data")
+                    if res is not None:
+                        if one:
+                            return res[0] if (isinstance(res, list) and len(res) > 0) else None
+                        return res or []
                     
-                    if one:
-                        return res[0] if (isinstance(res, list) and len(res) > 0) else None
-                    return res or []
+                    if res_obj.get("status") in [404, "exception"]:
+                        print(f"[DB Fallback] Supabase SELECT failed ({res_obj.get('status')}). Trying SQLite...")
+                    else:
+                        return None if one else []
 
             except Exception as api_err:
                 print(f"[Supabase API Fallback Error] {api_err}")
