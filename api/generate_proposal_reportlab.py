@@ -57,9 +57,12 @@ def generate_pdf_reportlab(data, background_image_path, positions_path, output_f
     c = canvas.Canvas(output_filename, pagesize=A4)
     width, height = A4 # 210mm, 297mm approx (in points)
     
-    # Draw background image if available
+    # Draw background image if available (falha silenciosa se JPG/Pillow der problema)
     if background_image_path and os.path.exists(background_image_path):
-        c.drawImage(background_image_path, 0, 0, width=width, height=height)
+        try:
+            c.drawImage(background_image_path, 0, 0, width=width, height=height)
+        except Exception as img_err:
+            print(f"[WARN] Background image skip: {img_err}")
     else:
         print("[WARN] Background image not found. Generating PDF without template.")
     
