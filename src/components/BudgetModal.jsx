@@ -10,7 +10,9 @@ import { generateResidenceDeclaration } from '../utils/generateResidenceDeclarat
 
 import logo from '../assets/Valle-logo-azul.png';
 
-const API_BASE_URL = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '');
+const ENV_API = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '');
+const isPagesDev = typeof window !== 'undefined' && /\.pages\.dev$/i.test(window.location?.hostname || '');
+const API_BASE_URL = ENV_API || (isPagesDev ? 'https://valleprimev2.onrender.com' : '');
 
 const BudgetModal = ({ lot, onClose, obraName, developerName = "Vinicius Dev" }) => {
     const lotValue = parseFloat(lot.Valor_Terreno.replace(/\./g, '').replace(',', '.')) || 0;
@@ -390,14 +392,21 @@ ${sinalSection}
                 setLastConfirmedClient(clientData);
                 setShowSuccessView(true);
             } else {
-                const errData = await response.json();
+                let msg = `Erro ${response.status}`;
+                const text = await response.text();
+                try {
+                    const errData = JSON.parse(text);
+                    if (errData.error) msg = errData.error;
+                } catch (_) {
+                    if (text && text.length < 200) msg = text;
+                }
                 setGenStatus('error');
-                alert('Erro ao gerar proposta: ' + (errData.error || 'Erro desconhecido'));
+                alert('Erro ao gerar proposta: ' + msg);
             }
         } catch (error) {
             console.error(error);
             setGenStatus('error');
-            alert('Erro ao conectar com o servidor de propostas (localhost:8000). Verifique se o backend Python está rodando.');
+            alert('Erro ao conectar: ' + (error.message || 'tente novamente.'));
         } finally {
             setIsGenerating(false);
         }

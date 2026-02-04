@@ -1145,6 +1145,17 @@ def _normalize_proposal_data(data):
     return flat
 
 
+def _api_asset_path(*parts):
+    """Retorna caminho para arquivo em api/; tenta BASE_DIR e depois cwd/api (Render)."""
+    path = os.path.join(BASE_DIR, *parts)
+    if os.path.exists(path):
+        return path
+    cwd_api = os.path.join(os.getcwd(), 'api', *parts)
+    if os.path.exists(cwd_api):
+        return cwd_api
+    return path
+
+
 @app.route('/api/generate_proposal', methods=['POST'])
 def generate_proposal():
     try:
@@ -1155,21 +1166,25 @@ def generate_proposal():
         if not data:
             return jsonify({'success': False, 'error': 'Dados vazios para gerar proposta'}), 400
 
-        positions_path = os.path.join(BASE_DIR, 'posicoes_campos.json')
+        positions_path = _api_asset_path('posicoes_campos.json')
         if not os.path.exists(positions_path):
-            return jsonify({'success': False, 'error': 'Arquivo posicoes_campos.json nao encontrado'}), 500
+            return jsonify({
+                'success': False,
+                'error': 'Arquivo posicoes_campos.json nao encontrado',
+                'tried': [os.path.join(BASE_DIR, 'posicoes_campos.json'), os.path.join(os.getcwd(), 'api', 'posicoes_campos.json')]
+            }), 500
 
         # Normalize payload so PDF gets all expected keys (empreendimento, lote, quadra, valor_inicial, saldo_*, etc.)
-        pdf_data = _normalize_proposal_data(data)
+        try:
+            pdf_data = _normalize_proposal_data(data)
+        except Exception as norm_err:
+            print(f"[ERROR] _normalize_proposal_data: {norm_err}")
+            traceback.print_exc()
+            return jsonify({'success': False, 'error': f'Dados invalidos: {str(norm_err)}'}), 400
 
-        # Try known background names
-        possible_images = [
-            os.path.join(BASE_DIR, 'PROPOSTA LIMPA.jpg'),
-            os.path.join(BASE_DIR, 'PROPOSTA_LIMPA.jpg'),
-            os.path.join(BASE_DIR, 'proposta_limpa.jpg'),
-            os.path.join(BASE_DIR, 'proposta-limpa.jpg')
-        ]
-        background_image_path = next((p for p in possible_images if os.path.exists(p)), None)
+        # Try known background names (usar _api_asset_path para achar em cwd/api no Render)
+        possible_names = ['PROPOSTA LIMPA.jpg', 'PROPOSTA_LIMPA.jpg', 'proposta_limpa.jpg', 'proposta-limpa.jpg']
+        background_image_path = next((_api_asset_path(name) for name in possible_names if os.path.exists(_api_asset_path(name))), None)
         if not background_image_path:
             print("[WARN] Background image not found. Generating PDF without template.")
 

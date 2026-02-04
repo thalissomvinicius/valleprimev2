@@ -270,14 +270,17 @@ def generate_pdf_reportlab(data, background_image_path, positions_path, output_f
         else:
             c.drawString(x_pt, y_pt, text_to_draw)
 
-    # Iterate over data and draw
-    print(f"[DEBUG] Drawing {len(data)} fields. Keys: {list(data.keys())}")
+    # Iterate over data and draw (um campo com erro nao derruba o PDF)
     for key, value in data.items():
-        if key in positions:
+        if key not in positions:
+            continue
+        try:
+            # Garantir valor renderizavel (evitar tipo que quebra drawString/stringWidth)
+            if value is not None and not isinstance(value, (str, int, float, bool)):
+                value = str(value)
             draw_text(key, value)
-        else:
-            print(f"[WARN] Key '{key}' not in positions.json, skipping.")
-        
+        except Exception as field_err:
+            print(f"[WARN] Campo '{key}' ignorado: {field_err}")
     c.save()
     print(f"PDF generated: {output_filename}")
 

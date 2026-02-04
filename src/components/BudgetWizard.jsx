@@ -8,7 +8,9 @@ import { saveClient } from '../services/api';
 import { useToast } from '../context/ToastContext';
 import logo from '../assets/Valle-logo-azul.png';
 
-const API_BASE_URL = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '');
+const ENV_API = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '');
+const isPagesDev = typeof window !== 'undefined' && /\.pages\.dev$/i.test(window.location?.hostname || '');
+const API_BASE_URL = ENV_API || (isPagesDev ? 'https://valleprimev2.onrender.com' : '');
 
 const BudgetWizard = ({ lot, onClose, obraName, developerName = "Vinicius Dev" }) => {
     const { showToast } = useToast();
