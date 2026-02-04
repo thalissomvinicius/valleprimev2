@@ -394,6 +394,7 @@ ${sinalSection}
             } else {
                 let msg = `Erro ${response.status}`;
                 const text = await response.text();
+                console.error('[generate_proposal] Server response:', text);
                 try {
                     const errData = JSON.parse(text);
                     if (errData.error) msg = errData.error;
