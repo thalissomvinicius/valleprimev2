@@ -38,11 +38,13 @@ SUPABASE_KEY = os.environ.get('SUPABASE_SERVICE_ROLE_KEY') or os.environ.get('SU
 
 # PDF Engine placeholder
 generate_pdf_reportlab = None
+_pdf_import_error = None
 try:
     from generate_proposal_reportlab import generate_pdf_reportlab as _generate_pdf_reportlab
     generate_pdf_reportlab = _generate_pdf_reportlab
 except Exception as e:
-    print(f"[PDF] ReportLab not available: {e}")
+    _pdf_import_error = str(e)
+    print(f"[PDF] ReportLab not available: {_pdf_import_error}")
 
 def get_db_connection():
     # Only SQLite fallback now
@@ -1160,7 +1162,10 @@ def _api_asset_path(*parts):
 def generate_proposal():
     try:
         if not generate_pdf_reportlab:
-            return jsonify({'success': False, 'error': 'Gerador de PDF nao disponivel'}), 500
+            err_msg = 'Gerador de PDF nao disponivel'
+            if _pdf_import_error:
+                err_msg += f': {_pdf_import_error}'
+            return jsonify({'success': False, 'error': err_msg}), 500
 
         data = request.get_json(silent=True) or {}
         if not data:
