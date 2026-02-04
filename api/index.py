@@ -36,11 +36,11 @@ else:
 SUPABASE_URL = os.environ.get('SUPABASE_URL', '').rstrip('/')
 SUPABASE_KEY = os.environ.get('SUPABASE_SERVICE_ROLE_KEY') or os.environ.get('SUPABASE_ANON_KEY')
 
-# PDF Engine placeholder
+# PDF Engine placeholder (import relativo: módulo está em api/generate_proposal_reportlab.py)
 generate_pdf_reportlab = None
 _pdf_import_error = None
 try:
-    from generate_proposal_reportlab import generate_pdf_reportlab as _generate_pdf_reportlab
+    from .generate_proposal_reportlab import generate_pdf_reportlab as _generate_pdf_reportlab
     generate_pdf_reportlab = _generate_pdf_reportlab
 except Exception as e:
     _pdf_import_error = str(e)
