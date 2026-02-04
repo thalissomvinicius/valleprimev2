@@ -151,21 +151,37 @@ def query_db(sql, params=(), one=False, commit=False):
                     count = len(res) if isinstance(res, list) else 0
                     return (count,) if one else [(count,)]
 
-                # Handle SELECT ALL or WHERE
-                if "SELECT *" in sql:
+                # Handle SELECT (ALL, specific columns, or WHERE)
+                if "SELECT" in sql.upper():
                     rest_params = []
-                    if "WHERE" in sql:
-                        if "created_by =" in sql:
-                            rest_params.append(f"created_by=eq.{params[0]}")
-                        elif "id =" in sql:
-                            rest_params.append(f"id=eq.{params[0]}")
-                        elif "cpf_cnpj =" in sql:
-                            rest_params.append(f"cpf_cnpj=eq.{params[0]}")
                     
+                    # Handle WHERE clauses
+                    if "WHERE" in sql.upper():
+                        # Try to extract equality filters (very basic parser)
+                        import re
+                        # Supports ?, %s and direct values in simple cases
+                        # This is a bit naive but covers our specific needs
+                        where_match = re.search(r"WHERE\s+(.+?)(?:ORDER BY|LIMIT|$)", sql, re.IGNORECASE | re.DOTALL)
+                        if where_match:
+                            where_part = where_match.group(1)
+                            # Match patterns like "column = ?" or "column = %s"
+                            filter_matches = re.findall(r"(\w+)\s*=\s*(\?|%s)", where_part)
+                            for i, (col, placeholder) in enumerate(filter_matches):
+                                if i < len(params):
+                                    rest_params.append(f"{col}=eq.{params[i]}")
+                    
+                    # Handle ORDER BY
                     if "ORDER BY created_at DESC" in sql:
                         rest_params.append("order=created_at.desc")
+                    elif "ORDER BY id" in sql:
+                        rest_params.append("order=id.asc")
                     
-                    final_params = "&".join(rest_params) if rest_params else None
+                    final_params = "&".join(rest_params) if rest_params else ""
+                    # If we have specific columns, we could try to parse them, 
+                    # but select=* is safer for our simple Row to Dict mapping
+                    if not any(p.startswith("select=") for p in rest_params):
+                        final_params = (final_params + "&" if final_params else "") + "select=*"
+                        
                     res = query_supabase_rest(table, 'GET', params=final_params)
                     
                     if one:
@@ -473,76 +489,26 @@ def login():
         if not username or not password:
             return jsonify({'message': 'Credentials required'}), 400
         
-        # TEMPORARY HARDCODED BYPASS - allows admin login while DB issue is investigated
-        if username == 'admin' and password == 'admin123':
-            token = jwt.encode({
-                'user_id': 1,
-                'role': 'admin',
-                'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=12)
-            }, SECRET_KEY, algorithm="HS256")
-            if isinstance(token, bytes): token = token.decode('utf-8')
-            
-            return jsonify({
-                'token': token,
-                'user': {
-                    'id': 1,
-                    'username': 'admin',
-                    'role': 'admin',
-                    'permissions': {
-                        "canViewAllClients": True,
-                        "obrasPermitidas": ADMIN_OBRAS,
-                        "statusPermitidos": ADMIN_STATUS
-                    }
-                }
-            })
-        
-        # For any other user, try database
-        conn = None
-        conn, db_type = get_db_connection()
-        
-        cur = conn.cursor()
-        # Use simple string interpolation for pg8000 safely
-        sql = "SELECT * FROM users WHERE username = %s AND active = %s" if db_type == 'postgres' else "SELECT * FROM users WHERE username = ? AND active = ?"
-        cur.execute(sql, (username, True))
-        rv = cur.fetchone()
-        
-        user = None
-        if rv:
-            col_names = [desc[0] for desc in cur.description]
-            user = dict(zip(col_names, rv))
+        # USE query_db for consistency and Supabase support
+        user = query_db("SELECT * FROM users WHERE username = ? AND active = ?", (username, True), one=True)
         
         # If user not found and table might be empty, try to create admin once
         if not user and username == 'admin' and password == 'admin123':
-            # We need to re-query count using the same cursor
-            cnt_sql = "SELECT count(*) as cnt FROM users"
-            cur.execute(cnt_sql)
-            res = cur.fetchone()
-            # handle result mapping manually since we are raw
-            cnt = res[0] if res else 0
+            cnt_res = query_db("SELECT COUNT(*) as count FROM users", one=True)
+            cnt = cnt_res['count'] if cnt_res else 0
 
             if cnt == 0:
                 pw_hash = hash_password('admin123')
-                # Insert
-                ins_sql = "INSERT INTO users (username, password_hash, nome, role, active, permissions) VALUES (%s, %s, %s, %s, %s, %s)" if db_type == 'postgres' else "INSERT INTO users (username, password_hash, nome, role, active, permissions) VALUES (?, ?, ?, ?, ?, ?)"
-                cur.execute(ins_sql, ('admin', pw_hash, 'Admin', 'admin', True, json.dumps({"canViewAllClients": True})))
-                conn.commit()
-
+                query_db("INSERT INTO users (username, password_hash, nome, role, active, permissions) VALUES (?, ?, ?, ?, ?, ?)",
+                        ('admin', pw_hash, 'Admin', 'admin', True, json.dumps({"canViewAllClients": True})), commit=True)
                 # Re-fetch
-                cur.execute(sql, ('admin', True))
-                rv = cur.fetchone()
-                if rv:
-                    col_names = [desc[0] for desc in cur.description]
-                    user = dict(zip(col_names, rv))
+                user = query_db("SELECT * FROM users WHERE username = ? AND active = ?", (username, True), one=True)
 
         if not user:
-            conn.close()
-            return jsonify({'message': 'Invalid credentials (User not found)'}), 401
+            return jsonify({'message': 'Credenciais inválidas (Usuário não encontrado)'}), 401
             
         if not verify_password(user['password_hash'], password):
-            conn.close()
-            return jsonify({'message': 'Invalid credentials (Password mismatch)'}), 401
-        
-        conn.close()
+            return jsonify({'message': 'Credenciais inválidas (Senha incorreta)'}), 401
         
         try:
             token = jwt.encode({
@@ -556,7 +522,7 @@ def login():
         
         perms = {}
         if user['permissions']:
-            try: perms = json.loads(user['permissions'])
+            try: perms = json.loads(user['permissions']) if isinstance(user['permissions'], str) else user['permissions']
             except: pass
         
         return jsonify({
@@ -569,8 +535,8 @@ def login():
             }
         })
     except Exception as e:
-        if conn: conn.close()
-        return jsonify({'message': 'Internal Login Error', 'error': str(e)}), 500
+        traceback.print_exc()
+        return jsonify({'message': 'Erro interno de login', 'error': str(e)}), 500
 
 # Cache da consulta de lotes (por código da obra, TTL em segundos)
 _consulta_cache = {}
@@ -1311,9 +1277,9 @@ def manage_users():
         return jsonify({'message': 'Forbidden'}), 403
     
     if request.method == 'GET':
-        users = query_db("SELECT id, username, nome, role, permissions, active FROM users ORDER BY id")
+        users = query_db("SELECT * FROM users ORDER BY id")
         for u in users:
-             u['permissions'] = json.loads(u['permissions']) if u['permissions'] else {}
+             u['permissions'] = json.loads(u['permissions']) if u['permissions'] and isinstance(u['permissions'], str) else (u['permissions'] or {})
         return jsonify({'users': users})
     
     if request.method == 'POST':
