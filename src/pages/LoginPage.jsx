@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import logo from '../assets/Valle-logo-azul.png';
+import { Eye, EyeOff } from 'lucide-react';
 import './LoginPage.css';
 
 function LoginPage() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -49,14 +51,22 @@ function LoginPage() {
                     window.location.href = '/';
                 }, 1500);
             } else {
-                // Erro do servidor
+                // Erro do servidor - Tradução para PT-BR
                 console.log('[LOGIN] Erro:', data.message);
-                setError(data.message || 'Credenciais inválidas');
+                let msg = data.message || 'Credenciais inválidas';
+                
+                if (msg.toLowerCase().includes('invalid credentials') || msg.toLowerCase().includes('invalid username')) {
+                    msg = 'Usuário ou senha incorretos';
+                } else if (msg.toLowerCase().includes('server error')) {
+                    msg = 'Erro interno do servidor';
+                }
+                
+                setError(msg);
                 setLoading(false);
             }
         } catch (err) {
             console.error('[LOGIN] Erro de rede:', err);
-            setError('Erro de conexão. Tente novamente.');
+            setError('Erro de conexão. Verifique sua internet.');
             setLoading(false);
         }
     };
@@ -107,15 +117,26 @@ function LoginPage() {
 
                         <div className="input-group">
                             <label>Senha</label>
-                            <input
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                placeholder="Digite sua senha"
-                                autoComplete="current-password"
-                                disabled={loading}
-                                required
-                            />
+                            <div className="password-input-wrapper">
+                                <input
+                                    type={showPassword ? "text" : "password"}
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder="Digite sua senha"
+                                    autoComplete="current-password"
+                                    disabled={loading}
+                                    required
+                                />
+                                <button
+                                    type="button"
+                                    className="password-toggle-btn"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    disabled={loading}
+                                    tabIndex="-1"
+                                >
+                                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                </button>
+                            </div>
                         </div>
 
                         {error && (
@@ -140,7 +161,10 @@ function LoginPage() {
                 )}
 
                 <div className="login-footer">
-                    <p>© 2025 Valle Empreendimentos</p>
+                    <p className="whatsapp-request">
+                        Adquira seu acesso <a href="https://wa.me/559191697664" target="_blank" rel="noopener noreferrer">clicando aqui!</a>
+                    </p>
+                    <p>© 2025 Desenvolvido por Vinicius Dev</p>
                 </div>
             </div>
         </div>

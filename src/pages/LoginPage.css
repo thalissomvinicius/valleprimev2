@@ -203,6 +203,33 @@
     gap: 24px;
 }
 
+.password-input-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.password-toggle-btn {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.4);
+    cursor: pointer;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    border-radius: 8px;
+}
+
+.password-toggle-btn:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.05);
+}
+
 .login-form .input-group {
     display: flex;
     flex-direction: column;
@@ -221,6 +248,8 @@
 .login-form .input-group input {
     width: 100%;
     padding: 16px 20px;
+    padding-right: 50px;
+    /* Espaço para o ícone de senha */
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 14px;
@@ -415,6 +444,25 @@
     color: rgba(255, 255, 255, 0.4);
     margin: 0;
     letter-spacing: 0.02em;
+}
+
+.whatsapp-request {
+    margin-bottom: 12px !important;
+}
+
+.whatsapp-request a {
+    color: var(--login-accent-light);
+    text-decoration: none;
+    font-weight: 600;
+    padding-bottom: 1px;
+    border-bottom: 1px solid rgba(99, 179, 237, 0.3);
+    transition: all 0.3s ease;
+}
+
+.whatsapp-request a:hover {
+    color: white;
+    border-bottom-color: white;
+    text-shadow: 0 0 10px rgba(99, 179, 237, 0.5);
 }
 
 /* Mobile Responsivo */
