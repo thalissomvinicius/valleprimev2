@@ -149,7 +149,7 @@ def query_db(sql, params=(), one=False, commit=False):
                     # For now, let's get matching items
                     res = query_supabase_rest(table, 'GET', params=where_clause)
                     count = len(res) if isinstance(res, list) else 0
-                    return (count,) if one else [(count,)]
+                    return {"count": count} if one else [{"count": count}]
 
                 # Handle SELECT (ALL, specific columns, or WHERE)
                 if "SELECT" in sql.upper():
@@ -168,7 +168,10 @@ def query_db(sql, params=(), one=False, commit=False):
                             filter_matches = re.findall(r"(\w+)\s*=\s*(\?|%s)", where_part)
                             for i, (col, placeholder) in enumerate(filter_matches):
                                 if i < len(params):
-                                    rest_params.append(f"{col}=eq.{params[i]}")
+                                    val = params[i]
+                                    if isinstance(val, bool):
+                                        val = str(val).lower()
+                                    rest_params.append(f"{col}=eq.{val}")
                     
                     # Handle ORDER BY
                     if "ORDER BY created_at DESC" in sql:
@@ -424,6 +427,18 @@ def auth_me():
         if not user or not user.get('active'):
             return jsonify({'message': 'User not found or inactive'}), 401
             
+        perms = user.get('permissions') or {}
+        if isinstance(perms, str):
+            try: perms = json.loads(perms)
+            except: perms = {}
+
+        # Ensure admin has all permissions if role is admin
+        if user['role'] == 'admin':
+            if not perms: perms = {}
+            perms['canViewAllClients'] = True
+            perms['obrasPermitidas'] = ADMIN_OBRAS
+            perms['statusPermitidos'] = ADMIN_STATUS
+
         return jsonify({
             'user': {
                 'id': user['id'],
@@ -431,7 +446,7 @@ def auth_me():
                 'role': user['role'],
                 'active': user['active'],
                 'nome': user.get('nome'),
-                'permissions': json.loads(user['permissions']) if user.get('permissions') else {}
+                'permissions': perms
             }
         })
     except jwt.ExpiredSignatureError:
@@ -449,43 +464,22 @@ def login_get():
     if not username or not password:
         return jsonify({'message': 'Credentials required'}), 400
     
-    # TEMPORARY HARDCODED BYPASS
-    if username == 'admin' and password == 'admin123':
-        token = jwt.encode({
-            'user_id': 1,
-            'role': 'admin',
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=12)
-        }, SECRET_KEY, algorithm="HS256")
-        if isinstance(token, bytes): token = token.decode('utf-8')
-        
-        return jsonify({
-            'token': token,
-            'user': {
-                'id': 1,
-                'username': 'admin',
-                'role': 'admin',
-                'permissions': {
-                    "canViewAllClients": True,
-                    "obrasPermitidas": ADMIN_OBRAS,
-                    "statusPermitidos": ADMIN_STATUS
-                }
-            }
-        })
-    
-    return jsonify({'message': 'Invalid credentials'}), 401
-
-# ROTA ALTERNATIVA - para contornar problema de roteamento
-@app.route('/api/login', methods=['POST'])
-def login_alt():
-    return login()
+    return login_internal(username, password)
 
 @app.route('/api/auth/login', methods=['POST'])
+@app.route('/api/login', methods=['POST'])
 def login():
     try:
         data = request.get_json(silent=True) or {}
         username = data.get('username', '').strip()
         password = data.get('password', '')
-        
+        return login_internal(username, password)
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({'message': 'Erro interno de login', 'error': str(e)}), 500
+
+def login_internal(username, password):
+    try:
         if not username or not password:
             return jsonify({'message': 'Credentials required'}), 400
         
@@ -521,10 +515,18 @@ def login():
             return jsonify({'message': 'JWT Encoding Error', 'error': str(jwt_err)}), 500
         
         perms = {}
-        if user['permissions']:
-            try: perms = json.loads(user['permissions']) if isinstance(user['permissions'], str) else user['permissions']
+        target_perms = user.get('permissions')
+        if target_perms:
+            try: perms = json.loads(target_perms) if isinstance(target_perms, str) else target_perms
             except: pass
         
+        # Ensure admin has all permissions if role is admin
+        if user['role'] == 'admin':
+            if not perms: perms = {}
+            perms['canViewAllClients'] = True
+            perms['obrasPermitidas'] = ADMIN_OBRAS
+            perms['statusPermitidos'] = ADMIN_STATUS
+
         return jsonify({
             'token': token,
             'user': {
@@ -536,7 +538,7 @@ def login():
         })
     except Exception as e:
         traceback.print_exc()
-        return jsonify({'message': 'Erro interno de login', 'error': str(e)}), 500
+        return jsonify({'message': 'Erro interno no processamento de login', 'error': str(e)}), 500
 
 # Cache da consulta de lotes (por código da obra, TTL em segundos)
 _consulta_cache = {}
