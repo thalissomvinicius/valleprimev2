@@ -575,4 +575,70 @@
     .title {
         font-size: 1rem;
     }
+
+    .header-user-section {
+        gap: 0.35rem;
+    }
+
+    .btn-pdf-header,
+    .btn-logout,
+    .btn-clients-header {
+        min-width: 44px;
+        min-height: 44px;
+        padding: 0.5rem;
+    }
+
+    .obra-selector-btn {
+        min-height: 44px;
+        padding: 0.5rem;
+    }
+}
+
+@media (max-width: 360px) {
+    .header-content {
+        padding: 0.5rem 0;
+    }
+
+    .header-user-section {
+        gap: 0.25rem;
+    }
+
+    .btn-pdf-header,
+    .btn-logout,
+    .btn-clients-header {
+        min-width: 40px;
+        min-height: 40px;
+        padding: 0.4rem;
+        border-radius: 8px;
+    }
+
+    .obra-selector-btn {
+        padding: 0.35rem 0.5rem;
+        min-height: 40px;
+    }
+
+    .obra-selector-btn .obra-codigo {
+        font-size: 0.7rem;
+        padding: 0.1rem 0.35rem;
+    }
+
+    .logo {
+        height: 20px;
+    }
+
+    .system-title {
+        font-size: 0.75rem;
+    }
+
+    .lot-title {
+        font-size: 0.9rem;
+    }
+}
+
+@supports (padding-top: env(safe-area-inset-top)) {
+    .app-header {
+        padding-top: max(0.25rem, env(safe-area-inset-top));
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+    }
 }

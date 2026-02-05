@@ -162,12 +162,58 @@
     .status-select {
         padding: 0.5rem 0.5rem 0.5rem 2rem !important;
         font-size: 0.875rem;
-        min-height: 40px;
+        min-height: 44px; /* Touch target mínimo */
         border-radius: 8px;
     }
 
     .status-select {
         background-position: right 0.5rem center;
         background-size: 12px;
+    }
+}
+
+/* Smartphones pequenos */
+@media (max-width: 480px) {
+    .search-bar-container {
+        padding: 0.875rem 1rem;
+        border-radius: 10px;
+    }
+
+    .search-filters {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .input-group {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .input-wrapper,
+    .status-filter-wrapper {
+        width: 100%;
+    }
+
+    .search-input,
+    .status-select {
+        min-height: 48px; /* Touch target maior para telas pequenas */
+        font-size: 16px; /* Previne zoom no iOS */
+    }
+}
+
+/* Smartphones compactos (< 360px) */
+@media (max-width: 360px) {
+    .search-bar-container {
+        padding: 0.75rem;
+        margin: 0.5rem 0;
+    }
+
+    .search-bar-container .input-label {
+        font-size: 0.65rem;
+    }
+
+    .search-input,
+    .status-select {
+        padding: 0.5rem 0.5rem 0.5rem 2.25rem !important;
     }
 }

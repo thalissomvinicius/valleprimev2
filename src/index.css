@@ -462,3 +462,102 @@ body {
     font-size: 1.5rem;
   }
 }
+
+/* ==========================================
+   GLOBAL MOBILE OPTIMIZATIONS
+   ========================================== */
+
+/* Smartphones compactos (< 360px) */
+@media (max-width: 360px) {
+  :root {
+    --header-height: 60px;
+  }
+
+  .container {
+    padding: 0 0.5rem;
+  }
+
+  .stats-container {
+    gap: 0.5rem;
+    padding: 0 0.5rem;
+  }
+
+  .stat-card {
+    padding: 0.5rem;
+  }
+
+  .stat-value {
+    font-size: 1.1rem;
+  }
+
+  .stat-label {
+    font-size: 0.65rem;
+  }
+}
+
+/* ==========================================
+   SAFE AREA INSETS (Notch, Barra de navegação)
+   ========================================== */
+@supports (padding-top: env(safe-area-inset-top)) {
+  .app {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .loading-screen {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* ==========================================
+   TOUCH TARGETS GLOBAIS (Acessibilidade)
+   ========================================== */
+button,
+a,
+input[type="submit"],
+input[type="button"],
+.clickable {
+  min-height: 44px;
+}
+
+@media (max-width: 768px) {
+  button,
+  a.btn,
+  input[type="submit"],
+  input[type="button"] {
+    min-height: 44px;
+  }
+}
+
+/* ==========================================
+   PREVENIR ZOOM NO iOS EM INPUTS
+   ========================================== */
+@media (max-width: 768px) {
+  input[type="text"],
+  input[type="password"],
+  input[type="email"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="search"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* ==========================================
+   SCROLL SUAVE GLOBAL
+   ========================================== */
+html {
+  scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Melhorar performance de scroll em mobile */
+.table-container,
+.modal-content,
+.obra-dropdown {
+  -webkit-overflow-scrolling: touch;
+}

@@ -395,3 +395,88 @@
     0% { background-position: 200% 0; }
     100% { background-position: -200% 0; }
 }
+
+/* ==========================================
+   SMARTPHONES COMPACTOS (< 360px)
+   ========================================== */
+@media (max-width: 360px) {
+    .table-container {
+        margin: 0 -0.5rem;
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+    }
+
+    .table-container .data-table th {
+        font-size: 0.6rem;
+        padding: 0.4rem 0.15rem;
+        letter-spacing: 0;
+    }
+
+    .data-table td {
+        font-size: 0.7rem;
+        padding: 0.4rem 0.15rem;
+    }
+
+    .status-badge {
+        padding: 0.15rem 0.35rem;
+        font-size: 0.55rem;
+        gap: 0.15rem;
+        border-radius: 4px;
+    }
+
+    .status-badge::before {
+        width: 4px;
+        height: 4px;
+    }
+
+    /* Esconder coluna Logradouro em telas muito pequenas */
+    .data-table th:last-child,
+    .data-table td:last-child {
+        display: none;
+    }
+
+    /* Ajustar coluna de valor */
+    .data-table th:nth-child(4),
+    .data-table td:nth-child(4) {
+        padding-left: 0.25rem;
+    }
+}
+
+/* ==========================================
+   TOUCH TARGETS & ACESSIBILIDADE
+   ========================================== */
+.clickable-row {
+    min-height: 48px; /* Touch target mínimo recomendado */
+}
+
+@media (max-width: 768px) {
+    .clickable-row {
+        min-height: 52px;
+    }
+}
+
+/* ==========================================
+   SCROLL SUAVE HORIZONTAL
+   ========================================== */
+@media (max-width: 480px) {
+    .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth;
+        scrollbar-width: thin;
+    }
+
+    .table-container::-webkit-scrollbar {
+        height: 4px;
+    }
+
+    .table-container::-webkit-scrollbar-thumb {
+        background: var(--primary-light);
+        border-radius: 2px;
+    }
+
+    .data-table {
+        min-width: 500px;
+    }
+}
