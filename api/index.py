@@ -776,24 +776,31 @@ def fetch_consulta(numprod_psc):
                 payload["Data_Atualizacao"] = formatted
         return payload
 
-    # Try fetching from external API with timeout
+    # Try fetching from external API with timeout (cache-buster to avoid stale data)
     try:
-        resp = requests.get(f"http://177.221.240.85:8000/api/consulta/{numprod_psc}/", timeout=8)
+        import time
+        resp = requests.get(
+            f"http://177.221.240.85:8000/api/consulta/{numprod_psc}/",
+            params={"t": int(time.time())},
+            timeout=10
+        )
         if resp.status_code == 200:
             payload = enrich_payload(resp.json())
             return jsonify(payload)
-    except:
-        pass
+    except Exception as ext_err:
+        print(f"[consulta] external fetch failed: {ext_err}")
     
-    # Fallback to local files
-    filename = f"fallback_{numprod_psc}.json"
-    filepath = os.path.join(BASE_DIR, filename)
-    if os.path.exists(filepath):
-        with open(filepath, 'r', encoding='utf-8-sig') as f:
-            payload = enrich_payload(json.load(f))
-            return jsonify(payload)
-            
-    return jsonify({"data": []})
+    # If external fails, avoid stale fallback unless explicitly allowed
+    allow_fallback = os.environ.get('ALLOW_FALLBACK_CONSULTA', 'false').lower() == 'true'
+    if allow_fallback:
+        filename = f"fallback_{numprod_psc}.json"
+        filepath = os.path.join(BASE_DIR, filename)
+        if os.path.exists(filepath):
+            with open(filepath, 'r', encoding='utf-8-sig') as f:
+                payload = enrich_payload(json.load(f))
+                return jsonify(payload)
+    
+    return jsonify({"success": False, "data": [], "error": "Consulta indisponível"}), 503
 
 @app.route('/api/clients', methods=['GET', 'POST'])
 @app.route('/api/manage-clients', methods=['GET', 'POST'])
