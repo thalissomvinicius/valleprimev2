@@ -12,6 +12,14 @@ import requests
 import jwt
 from functools import wraps
 
+# Importar gerador de PDF
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+try:
+    from generate_proposal_reportlab import generate_pdf_reportlab
+except ImportError as e:
+    print(f"[WARN] Could not import generate_pdf_reportlab: {e}")
+    generate_pdf_reportlab = None
+
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
@@ -827,6 +835,41 @@ def manage_clients():
             }), 500
 
 
+@app.route('/api/clients/<int:client_id>', methods=['DELETE'])
+@app.route('/api/manage-clients/<int:client_id>', methods=['DELETE'])
+@token_required
+def delete_client(client_id):
+    """Delete a client by ID"""
+    try:
+        print(f"[DEBUG] Deleting client {client_id} by user {request.user_id}")
+        
+        # Check permissions - only admin or the user who created the client can delete
+        can_delete_any = request.user_role == 'admin'
+        if not can_delete_any:
+            user = query_db("SELECT permissions FROM users WHERE id = ?", (request.user_id,), one=True)
+            perms = json.loads(user['permissions']) if user and user['permissions'] else {}
+            can_delete_any = perms.get('canViewAllClients', False)
+        
+        if can_delete_any:
+            # Admin can delete any client
+            result = query_db("DELETE FROM clients WHERE id = ?", (client_id,), commit=True)
+        else:
+            # Regular user can only delete their own clients
+            result = query_db("DELETE FROM clients WHERE id = ? AND created_by = ?", 
+                            (client_id, str(request.user_id)), commit=True)
+        
+        if result:
+            return jsonify({'success': True, 'message': 'Cliente excluído com sucesso'})
+        else:
+            return jsonify({'success': False, 'error': 'Cliente não encontrado ou sem permissão'}), 404
+            
+    except Exception as e:
+        print(f"[ERROR] delete_client: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @app.route('/api/clients/check-duplicate', methods=['GET'])
 @app.route('/api/manage-clients/check-duplicate', methods=['GET'])
 @token_required
@@ -924,6 +967,46 @@ def user_ops(user_id):
         params.append(user_id)
         query_db(f"UPDATE users SET {', '.join(updates)} WHERE id = ?", tuple(params), commit=True)
         return jsonify({'success': True})
+
+@app.route('/api/generate_proposal', methods=['POST'])
+def generate_proposal():
+    """Generate PDF proposal from client and lot data"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        print(f"[DEBUG] Generating proposal with data keys: {list(data.keys())}")
+        
+        # Check if PDF generator is available
+        if not generate_pdf_reportlab:
+            return jsonify({'error': 'PDF generator not available'}), 500
+        
+        # Define paths
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        positions_path = os.path.join(base_dir, 'posicoes_campos.json')
+        background_path = os.path.join(base_dir, 'proposta_template.png')
+        output_path = os.path.join(base_dir, 'proposta_output.pdf')
+        
+        # Generate PDF
+        generate_pdf_reportlab(data, background_path, positions_path, output_path)
+        
+        # Check if file was created
+        if not os.path.exists(output_path):
+            return jsonify({'error': 'Failed to generate PDF'}), 500
+        
+        # Return the PDF file
+        return send_file(
+            output_path,
+            mimetype='application/pdf',
+            as_attachment=False,
+            download_name='proposta.pdf'
+        )
+        
+    except Exception as e:
+        print(f"[ERROR] generate_proposal: {str(e)}")
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/health')
 def health_check():
