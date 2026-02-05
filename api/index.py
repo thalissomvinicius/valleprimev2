@@ -729,11 +729,59 @@ def get_consulta(codigo):
 
 def fetch_consulta(numprod_psc):
     """Busca dados de lotes do servidor externo ou fallback local"""
+    def enrich_payload(payload):
+        """Guarantee Data_Atualizacao exists at root and items for frontend footer."""
+        if not payload:
+            return payload or {"data": []}
+        def parse_date_str(val):
+            if not val:
+                return None
+            try:
+                parts = str(val).split('/')
+                if len(parts) == 3:
+                    d, m, y = [int(p) for p in parts]
+                    return datetime.date(y, m, d)
+                # fallback ISO
+                return datetime.date.fromisoformat(str(val))
+            except Exception:
+                return None
+
+        last_update = None
+        data_list = payload.get("data") if isinstance(payload, dict) and isinstance(payload.get("data"), list) else None
+        # start with root date if present
+        if isinstance(payload, dict):
+            last_update = parse_date_str(payload.get("Data_Atualizacao"))
+
+        # compute max date across items
+        if data_list:
+            for item in data_list:
+                if not isinstance(item, dict):
+                    continue
+                d = parse_date_str(item.get("Data_Atualizacao"))
+                if d and (last_update is None or d > last_update):
+                    last_update = d
+
+        # If still none, try first item's date
+        if last_update is None and data_list and isinstance(data_list[0], dict):
+            last_update = parse_date_str(data_list[0].get("Data_Atualizacao"))
+
+        # propagate back to items and root in DD/MM/YYYY
+        if last_update:
+            formatted = last_update.strftime('%d/%m/%Y')
+            if data_list:
+                for item in data_list:
+                    if isinstance(item, dict) and not item.get("Data_Atualizacao"):
+                        item["Data_Atualizacao"] = formatted
+            if isinstance(payload, dict):
+                payload["Data_Atualizacao"] = formatted
+        return payload
+
     # Try fetching from external API with timeout
     try:
         resp = requests.get(f"http://177.221.240.85:8000/api/consulta/{numprod_psc}/", timeout=8)
         if resp.status_code == 200:
-            return jsonify(resp.json())
+            payload = enrich_payload(resp.json())
+            return jsonify(payload)
     except:
         pass
     
@@ -742,7 +790,8 @@ def fetch_consulta(numprod_psc):
     filepath = os.path.join(BASE_DIR, filename)
     if os.path.exists(filepath):
         with open(filepath, 'r', encoding='utf-8-sig') as f:
-            return jsonify(json.load(f))
+            payload = enrich_payload(json.load(f))
+            return jsonify(payload)
             
     return jsonify({"data": []})
 

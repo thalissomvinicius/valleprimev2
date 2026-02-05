@@ -162,6 +162,34 @@ function MainApp() {
     return result;
   }, [data, searchTerms, sortConfig]);
 
+  // Helper para obter a data mais recente
+  const computeLastUpdate = () => {
+    const direct = data?.lastUpdate || (data[0] && data[0].Data_Atualizacao);
+    if (!Array.isArray(data)) return direct || null;
+    const parseDate = (str) => {
+      if (!str) return null;
+      const parts = str.split('/');
+      if (parts.length === 3) {
+        const [dd, mm, yyyy] = parts.map(p => parseInt(p, 10));
+        if (!isNaN(dd) && !isNaN(mm) && !isNaN(yyyy)) {
+          return new Date(yyyy, mm - 1, dd);
+        }
+      }
+      const dt = new Date(str);
+      return isNaN(dt) ? null : dt;
+    };
+    let latest = direct ? parseDate(direct) : null;
+    data.forEach(item => {
+      const dt = parseDate(item?.Data_Atualizacao);
+      if (dt && (!latest || dt > latest)) latest = dt;
+    });
+    if (!latest) return null;
+    const dd = String(latest.getDate()).padStart(2, '0');
+    const mm = String(latest.getMonth() + 1).padStart(2, '0');
+    const yyyy = latest.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  };
+
   const handleLotClick = (lot) => {
     if (lot.Status_Terreno.includes('0 - Disponível')) {
       setSelectedLot(lot);
@@ -490,17 +518,15 @@ function MainApp() {
         fontSize: '0.85rem'
       }}>
         <p style={{ marginBottom: '0.5rem' }}>Desenvolvido por <strong>Vinicius Dev</strong> (v1.1)</p>
-        {data && (
-          (() => {
-            const lastUpdate = data.lastUpdate || (data[0] && data[0].Data_Atualizacao);
-            if (!lastUpdate) return null;
-            return (
-              <p style={{ fontSize: '0.75rem', opacity: 0.8 }}>
-                Última atualização: {lastUpdate}
-              </p>
-            );
-          })()
-        )}
+        {(() => {
+          const lastUpdate = computeLastUpdate();
+          if (!lastUpdate) return null;
+          return (
+            <p style={{ fontSize: '0.75rem', opacity: 0.8 }}>
+              Última atualização: {lastUpdate}
+            </p>
+          );
+        })()}
       </footer>
 
       {selectedLot && (
