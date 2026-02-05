@@ -490,8 +490,16 @@ function MainApp() {
         fontSize: '0.85rem'
       }}>
         <p style={{ marginBottom: '0.5rem' }}>Desenvolvido por <strong>Vinicius Dev</strong> (v1.1)</p>
-        {data.length > 0 && data[0].Data_Atualizacao && (
-          <p style={{ fontSize: '0.75rem', opacity: 0.8 }}>Última atualização: {data[0].Data_Atualizacao}</p>
+        {data && (
+          (() => {
+            const lastUpdate = data.lastUpdate || (data[0] && data[0].Data_Atualizacao);
+            if (!lastUpdate) return null;
+            return (
+              <p style={{ fontSize: '0.75rem', opacity: 0.8 }}>
+                Última atualização: {lastUpdate}
+              </p>
+            );
+          })()
         )}
       </footer>
 
