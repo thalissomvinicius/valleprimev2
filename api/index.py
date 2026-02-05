@@ -82,8 +82,9 @@ def query_db(sql, params=(), one=False, commit=False):
     # Try Supabase REST API first if configured and it's a known simple query
     if SUPABASE_URL and SUPABASE_KEY:
         table = None
-        if "FROM clients" in sql or "INTO clients" in sql: table = "clients"
-        elif "FROM users" in sql or "INTO users" in sql: table = "users"
+        sql_lower = sql.lower()
+        if "clients" in sql_lower: table = "clients"
+        elif "users" in sql_lower: table = "users"
         
         if table:
             try:

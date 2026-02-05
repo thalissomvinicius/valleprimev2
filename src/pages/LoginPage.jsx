@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import logo from '../assets/Valle-logo-azul.png';
 import { Eye, EyeOff } from 'lucide-react';
@@ -12,6 +12,7 @@ function LoginPage() {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
     const [loading, setLoading] = useState(false);
+    const isLoggingIn = useRef(false); // Controla se está no fluxo de login
 
     const { login, isAuthenticated } = useAuth();
     const navigate = useNavigate();
@@ -19,16 +20,17 @@ function LoginPage() {
 
     useEffect(() => {
         // Só redireciona automaticamente se já estava autenticado ao carregar a página
-        // Não redireciona durante o fluxo de login (quando success está ativo)
-        if (isAuthenticated && !success && !loading) {
+        // Não redireciona durante o fluxo de login ativo
+        if (isAuthenticated && !isLoggingIn.current) {
             navigate('/', { replace: true });
         }
-    }, [isAuthenticated, navigate, success, loading]);
+    }, [isAuthenticated, navigate]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
         setLoading(true);
+        isLoggingIn.current = true; // Marca que estamos no fluxo de login
 
         try {
             const result = await login(username, password);
@@ -38,13 +40,16 @@ function LoginPage() {
 
                 const redirectTo = location.state?.from?.pathname || '/';
                 setTimeout(() => {
+                    isLoggingIn.current = false;
                     navigate(redirectTo, { replace: true });
                 }, 1500);
             } else {
+                isLoggingIn.current = false;
                 setError(result?.error || 'Credenciais inválidas');
                 setLoading(false);
             }
         } catch (err) {
+            isLoggingIn.current = false;
             setError('Erro de conexão. Tente novamente.');
             setLoading(false);
         }
