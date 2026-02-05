@@ -117,7 +117,6 @@ function ClientListPage() {
             const dataToSave = {
                 ...submissionData,
                 created_by: currentUser?.id,
-                // Include client_id if editing an existing client
                 client_id: editingClient?.id || null
             };
 
@@ -141,7 +140,13 @@ function ClientListPage() {
             }
         } catch (err) {
             console.error('Error saving client:', err);
-            alert('Erro ao salvar cliente. Verifique o console.');
+            // Show detailed server error
+            const serverError = err.response?.data?.error || err.response?.data?.message;
+            const serverTrace = err.response?.data?.trace;
+            if (serverTrace) {
+                console.error('Server Traceback:', serverTrace);
+            }
+            alert('Erro ao salvar cliente: ' + (serverError || err.message || 'Erro desconhecido'));
         }
     };
 
@@ -278,14 +283,14 @@ function ClientListPage() {
                                             </div>
                                         </td>
                                         <td className="cpf-cell">{formatCpfCnpj(client.cpf_cnpj)}</td>
-                                        <td>{formatPhone(client.data.fone1_ddd_proponente, client.data.fone1_numero_proponente)}</td>
+                                        <td>{formatPhone(client.data?.fone1_ddd_proponente, client.data?.fone1_numero_proponente)}</td>
                                         <td>
-                                            {client.data.cidade_proponente && client.data.uf_endereco_proponente
+                                            {client.data?.cidade_proponente && client.data?.uf_endereco_proponente
                                                 ? `${client.data.cidade_proponente} - ${client.data.uf_endereco_proponente}`
                                                 : '-'}
                                         </td>
                                         <td className="date-cell">
-                                            {new Date(client.updated_at).toLocaleDateString('pt-BR')}
+                                            {client.updated_at ? new Date(client.updated_at).toLocaleDateString('pt-BR') : '-'}
                                         </td>
                                         <td className="actions-cell">
                                             <div className="action-buttons-group">

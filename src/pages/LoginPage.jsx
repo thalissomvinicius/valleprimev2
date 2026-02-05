@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import logo from '../assets/Valle-logo-azul.png';
 import { Eye, EyeOff } from 'lucide-react';
 import './LoginPage.css';
+import { useAuth } from '../context/AuthContext';
 
 function LoginPage() {
     const [username, setUsername] = useState('');
@@ -11,62 +13,37 @@ function LoginPage() {
     const [success, setSuccess] = useState(false);
     const [loading, setLoading] = useState(false);
 
+    const { login, isAuthenticated } = useAuth();
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            navigate('/', { replace: true });
+        }
+    }, [isAuthenticated, navigate]);
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
         setLoading(true);
 
-        console.log('[LOGIN] Iniciando login para:', username);
-
         try {
-            // Em *.pages.dev a API está no Render; senão usa relativo (dev ou proxy)
-            const isPagesDev = typeof window !== 'undefined' && /\.pages\.dev$/i.test(window.location?.hostname || '');
-            const apiBase = isPagesDev ? 'https://valleprimev2.onrender.com' : '';
-            const loginUrl = `${apiBase}/api/login-get?username=${encodeURIComponent(username.trim())}&password=${encodeURIComponent(password)}`;
-            const response = await fetch(loginUrl, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json',
-                }
-            });
-
-            console.log('[LOGIN] Response status:', response.status);
-
-            const data = await response.json();
-            console.log('[LOGIN] Response data:', data);
-
-            if (response.ok && data.token) {
-                // Sucesso! Salvar token e mostrar animação
-                console.log('[LOGIN] Token recebido, salvando no localStorage');
-                localStorage.setItem('valle_token', data.token);
-
-                // Mostrar sucesso
+            const result = await login(username, password);
+            if (result?.success) {
                 setSuccess(true);
                 setLoading(false);
 
-                // Aguardar animação e redirecionar
-                console.log('[LOGIN] Redirecionando para home em 1.5s...');
+                const redirectTo = location.state?.from?.pathname || '/';
                 setTimeout(() => {
-                    // Usando window.location para garantir redirecionamento
-                    window.location.href = '/';
+                    navigate(redirectTo, { replace: true });
                 }, 1500);
             } else {
-                // Erro do servidor - Tradução para PT-BR
-                console.log('[LOGIN] Erro:', data.message);
-                let msg = data.message || 'Credenciais inválidas';
-                
-                if (msg.toLowerCase().includes('invalid credentials') || msg.toLowerCase().includes('invalid username')) {
-                    msg = 'Usuário ou senha incorretos';
-                } else if (msg.toLowerCase().includes('server error')) {
-                    msg = 'Erro interno do servidor';
-                }
-                
-                setError(msg);
+                setError(result?.error || 'Credenciais inválidas');
                 setLoading(false);
             }
         } catch (err) {
-            console.error('[LOGIN] Erro de rede:', err);
-            setError('Erro de conexão. Verifique sua internet.');
+            setError('Erro de conexão. Tente novamente.');
             setLoading(false);
         }
     };

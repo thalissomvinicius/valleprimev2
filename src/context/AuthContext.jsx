@@ -40,6 +40,9 @@ export function AuthProvider({ children }) {
     const [currentUser, setCurrentUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
+    const isAuthenticated = Boolean(currentUser);
+    const isAdmin = currentUser?.role === 'admin';
+
     const processUser = (userData) => {
         // Flatten permissions for easy access in frontend
         const permissions = userData.permissions || {};
@@ -195,6 +198,8 @@ export function AuthProvider({ children }) {
             isAuthenticated: !!currentUser,
             isAdmin: currentUser?.role === 'admin',
             loading,
+            isAuthenticated,
+            isAdmin,
             login,
             logout,
             addUser,
