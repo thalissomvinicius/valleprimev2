@@ -223,15 +223,14 @@
     font-weight: 600;
 }
 
-.cpf-cell {
+.clients-table td.cpf-cell {
     font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
     color: #64748b;
     font-size: 0.88rem;
     letter-spacing: 0.02em;
-    background: #f8fafc;
-    padding: 6px 10px !important;
-    border-radius: 8px;
-    display: inline-block;
+    text-align: left;
+    vertical-align: middle;
+    width: 180px;
 }
 
 .date-cell {
@@ -591,6 +590,8 @@
     .clients-table td.cpf-cell {
         width: 35%;
         font-size: 0.7rem;
+        text-align: left;
+        vertical-align: middle;
     }
 
     /* Actions Column specific */
