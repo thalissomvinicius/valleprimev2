@@ -100,7 +100,12 @@ export const fetchAvailability = async (obraCode = '624') => {
     const res = response.data;
     if (!res) throw new Error('Resposta vazia');
     const list = Array.isArray(res.data) ? res.data : (res.success ? res.data : []);
-    return Array.isArray(list) ? list : [];
+    const normalized = Array.isArray(list) ? list : [];
+    const lastUpdate = res.Data_Atualizacao || (normalized[0] && normalized[0].Data_Atualizacao);
+    if (lastUpdate) {
+      normalized.lastUpdate = lastUpdate; // attach metadata to array object
+    }
+    return normalized;
   } catch (error) {
     console.error('Network Error:', error);
     throw error;
