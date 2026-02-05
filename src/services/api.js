@@ -96,7 +96,9 @@ export const deleteUser = async (id) => {
 
 export const fetchAvailability = async (obraCode = '624') => {
   try {
-    const response = await api.get(`${API_BASE}/${obraCode}`);
+    const response = await api.get(`${API_BASE}/${obraCode}`, {
+      params: { t: Date.now() } // cache-buster para evitar dados antigos
+    });
     const res = response.data;
     if (!res) throw new Error('Resposta vazia');
     const list = Array.isArray(res.data) ? res.data : (res.success ? res.data : []);
