@@ -195,8 +195,6 @@ export function AuthProvider({ children }) {
         <AuthContext.Provider value={{
             users,
             currentUser,
-            isAuthenticated: !!currentUser,
-            isAdmin: currentUser?.role === 'admin',
             loading,
             isAuthenticated,
             isAdmin,

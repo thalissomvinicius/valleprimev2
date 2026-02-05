@@ -417,26 +417,82 @@ def login_get():
     if not username or not password:
         return jsonify({'message': 'Credentials required'}), 400
     
-    # TEMPORARY HARDCODED BYPASS
-    if username == 'admin' and password == 'admin123':
+    # Try database lookup (same logic as POST /api/auth/login)
+    conn = None
+    try:
+        conn, db_type = get_db_connection()
+        cur = conn.cursor()
+        sql = "SELECT * FROM users WHERE username = %s AND active = %s" if db_type == 'postgres' else "SELECT * FROM users WHERE username = ? AND active = ?"
+        cur.execute(sql, (username, True))
+        rv = cur.fetchone()
+        
+        user = None
+        if rv:
+            col_names = [desc[0] for desc in cur.description]
+            user = dict(zip(col_names, rv))
+        
+        # If user not found and table might be empty, try to create admin once
+        if not user and username == 'admin' and password == 'admin123':
+            cnt_sql = "SELECT count(*) as cnt FROM users"
+            cur.execute(cnt_sql)
+            res = cur.fetchone()
+            cnt = res[0] if res else 0
+            
+            if cnt == 0:
+                pw_hash = hash_password('admin123')
+                ins_sql = "INSERT INTO users (username, password_hash, nome, role, active, permissions) VALUES (%s, %s, %s, %s, %s, %s)" if db_type == 'postgres' else "INSERT INTO users (username, password_hash, nome, role, active, permissions) VALUES (?, ?, ?, ?, ?, ?)"
+                cur.execute(ins_sql, ('admin', pw_hash, 'Admin', 'admin', True, json.dumps({"canViewAllClients": True})))
+                conn.commit()
+                
+                cur.execute(sql, ('admin', True))
+                rv = cur.fetchone()
+                if rv:
+                    col_names = [desc[0] for desc in cur.description]
+                    user = dict(zip(col_names, rv))
+        
+        if not user:
+            if conn: conn.close()
+            return jsonify({'message': 'Invalid credentials'}), 401
+        
+        if not verify_password(user['password_hash'], password):
+            if conn: conn.close()
+            return jsonify({'message': 'Invalid credentials'}), 401
+        
+        if conn: conn.close()
+        
+        # Generate token
         token = jwt.encode({
-            'user_id': 1,
-            'role': 'admin',
+            'user_id': user['id'],
+            'role': user['role'],
             'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=12)
         }, SECRET_KEY, algorithm="HS256")
         if isinstance(token, bytes): token = token.decode('utf-8')
         
+        # Parse permissions
+        perms = {}
+        if user.get('permissions'):
+            try:
+                perms = json.loads(user['permissions']) if isinstance(user['permissions'], str) else user['permissions']
+            except:
+                pass
+        
         return jsonify({
             'token': token,
             'user': {
-                'id': 1,
-                'username': 'admin',
-                'role': 'admin',
-                'permissions': {"canViewAllClients": True}
+                'id': user['id'],
+                'username': user['username'],
+                'nome': user.get('nome'),
+                'role': user['role'],
+                'permissions': perms
             }
         })
-    
-    return jsonify({'message': 'Invalid credentials'}), 401
+    except Exception as e:
+        if conn:
+            try: conn.close()
+            except: pass
+        print(f"[LOGIN-GET ERROR] {e}")
+        traceback.print_exc()
+        return jsonify({'message': 'Internal error', 'error': str(e)}), 500
 
 # ROTA ALTERNATIVA - para contornar problema de roteamento
 @app.route('/api/login', methods=['POST'])
