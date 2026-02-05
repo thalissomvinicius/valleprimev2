@@ -104,10 +104,35 @@ def query_db(sql, params=(), one=False, commit=False):
                             "password_hash": params[1],
                             "nome": params[2],
                             "role": params[3],
-                            "active": params[4]
+                            "active": params[4],
+                            "permissions": json.loads(params[5]) if len(params) > 5 and isinstance(params[5], str) else (params[5] if len(params) > 5 else {})
                         }
                     res = query_supabase_rest(table, 'POST', data=payload)
                     return True if res is not None else False
+                
+                # Handle UPDATE
+                if "UPDATE" in sql.upper() and "SET" in sql.upper():
+                    # Parse: UPDATE table SET col1=?, col2=? WHERE id=?
+                    import re
+                    set_match = re.search(r"SET\s+(.+?)\s+WHERE", sql, re.IGNORECASE)
+                    if set_match and "id = ?" in sql.lower():
+                        set_part = set_match.group(1)
+                        cols = re.findall(r"(\w+)\s*=\s*\?", set_part)
+                        payload = {}
+                        for i, col in enumerate(cols):
+                            if i < len(params) - 1:  # last param is id
+                                val = params[i]
+                                if isinstance(val, str) and (val.startswith('{') or val.startswith('[')):
+                                    try:
+                                        val = json.loads(val)
+                                    except:
+                                        pass
+                                payload[col] = val
+                        user_id = params[-1]
+                        where_clause = f"id=eq.{user_id}"
+                        print(f"[SUPABASE UPDATE] table={table}, payload={payload}, where={where_clause}")
+                        res = query_supabase_rest(table, 'PATCH', params=where_clause, data=payload)
+                        return True if res is not None else False
                 
                 # Handle DELETE
                 if "DELETE FROM" in sql:
@@ -131,9 +156,17 @@ def query_db(sql, params=(), one=False, commit=False):
                     count = len(res) if isinstance(res, list) else 0
                     return (count,) if one else [(count,)]
 
-                # Handle SELECT ALL or WHERE
-                if "SELECT *" in sql:
+                # Handle SELECT (all columns or specific columns)
+                if "SELECT" in sql.upper() and "FROM" in sql.upper():
                     rest_params = []
+                    
+                    # Extract columns if not SELECT *
+                    import re
+                    col_match = re.search(r"SELECT\s+(.+?)\s+FROM", sql, re.IGNORECASE)
+                    if col_match and col_match.group(1).strip() != '*':
+                        cols = col_match.group(1).strip()
+                        rest_params.append(f"select={cols}")
+                    
                     if "WHERE" in sql:
                         if "created_by =" in sql:
                             rest_params.append(f"created_by=eq.{params[0]}")
@@ -141,9 +174,13 @@ def query_db(sql, params=(), one=False, commit=False):
                             rest_params.append(f"id=eq.{params[0]}")
                         elif "cpf_cnpj =" in sql:
                             rest_params.append(f"cpf_cnpj=eq.{params[0]}")
+                        elif "username =" in sql:
+                            rest_params.append(f"username=eq.{params[0]}")
                     
                     if "ORDER BY created_at DESC" in sql:
                         rest_params.append("order=created_at.desc")
+                    elif "ORDER BY id" in sql:
+                        rest_params.append("order=id.asc")
                     
                     final_params = "&".join(rest_params) if rest_params else None
                     res = query_supabase_rest(table, 'GET', params=final_params)

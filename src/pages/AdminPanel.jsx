@@ -40,8 +40,8 @@ function AdminPanel() {
 
     const saveEdit = async () => {
         try {
-            // Enviar os dados dentro da chave 'permissions' como o backend espera
-            const result = await updateUserPermissions(editingUser, { permissions: editData });
+            // updateUserPermissions já faz o wrapper { permissions: ... } internamente
+            const result = await updateUserPermissions(editingUser, editData);
             if (result.success) {
                 setEditingUser(null);
                 setEditData({});

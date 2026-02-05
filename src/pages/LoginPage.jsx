@@ -18,10 +18,12 @@ function LoginPage() {
     const location = useLocation();
 
     useEffect(() => {
-        if (isAuthenticated) {
+        // Só redireciona automaticamente se já estava autenticado ao carregar a página
+        // Não redireciona durante o fluxo de login (quando success está ativo)
+        if (isAuthenticated && !success && !loading) {
             navigate('/', { replace: true });
         }
-    }, [isAuthenticated, navigate]);
+    }, [isAuthenticated, navigate, success, loading]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
