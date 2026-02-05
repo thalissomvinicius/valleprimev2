@@ -7,7 +7,7 @@ import SearchBar from './components/SearchBar';
 import AvailabilityTable from './components/AvailabilityTable';
 import AdminPanel from './pages/AdminPanel';
 import { fetchAvailability } from './services/api';
-import { Building2, LogOut, ChevronDown, FileDown, CheckCircle, Shield } from 'lucide-react';
+import { Building2, LogOut, ChevronDown, FileDown, CheckCircle, Shield, Lock, MessageCircle } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import logo from './assets/Valle-logo-azul.png';
@@ -328,6 +328,47 @@ function MainApp() {
   };
 
   const currentObraInfo = OBRAS.find(o => o.codigo === selectedObra);
+
+  // Se usuário não tem permissão em nenhuma obra
+  if (allowedObras.length === 0) {
+    return (
+      <div className="app">
+        <Header title="Valle Prime">
+          <div className="header-user-section">
+            <button className="btn-logout" onClick={logout} title="Sair">
+              <LogOut size={18} />
+              <span className="hide-mobile">Sair</span>
+            </button>
+          </div>
+        </Header>
+        
+        <div className="no-permission-container">
+          <div className="no-permission-card">
+            <div className="no-permission-icon">
+              <Lock size={64} />
+            </div>
+            <h2>Acesso Restrito</h2>
+            <p>Você ainda não possui permissão para acessar nenhum loteamento.</p>
+            <p className="no-permission-subtitle">Entre em contato com o administrador do sistema para solicitar acesso.</p>
+            
+            <div className="no-permission-contact">
+              <a 
+                href="https://wa.me/559191697664" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="btn-whatsapp-contact"
+              >
+                <MessageCircle size={20} />
+                Falar com Vinicius Dev
+              </a>
+            </div>
+            
+            <p className="no-permission-footer">© 2025 Desenvolvido por Vinicius Dev</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="app">

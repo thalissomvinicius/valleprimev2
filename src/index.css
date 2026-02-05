@@ -338,3 +338,127 @@ body {
     margin-left: 0;
   }
 }
+
+/* ========================
+   No Permission Screen
+   ======================== */
+.no-permission-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - var(--header-height));
+  padding: 2rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+}
+
+.no-permission-card {
+  background: white;
+  border-radius: 24px;
+  padding: 3rem 2.5rem;
+  max-width: 480px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.no-permission-icon {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 1.5rem;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #d97706;
+  box-shadow: 0 10px 30px rgba(217, 119, 6, 0.2);
+}
+
+.no-permission-card h2 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1a365d;
+  margin: 0 0 1rem;
+}
+
+.no-permission-card p {
+  font-size: 1rem;
+  color: #4a5568;
+  margin: 0 0 0.5rem;
+  line-height: 1.6;
+}
+
+.no-permission-subtitle {
+  font-size: 0.9rem !important;
+  color: #718096 !important;
+  margin-bottom: 2rem !important;
+}
+
+.no-permission-contact {
+  margin: 2rem 0;
+}
+
+.btn-whatsapp-contact {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 2rem;
+  background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+  color: white;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1rem;
+  border-radius: 14px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 8px 20px rgba(37, 211, 102, 0.35);
+}
+
+.btn-whatsapp-contact:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 12px 28px rgba(37, 211, 102, 0.45);
+}
+
+.btn-whatsapp-contact:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.no-permission-footer {
+  font-size: 0.8rem !important;
+  color: #a0aec0 !important;
+  margin-top: 2rem !important;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+@media (max-width: 480px) {
+  .no-permission-card {
+    padding: 2rem 1.5rem;
+    border-radius: 20px;
+  }
+  
+  .no-permission-icon {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .no-permission-icon svg {
+    width: 48px;
+    height: 48px;
+  }
+  
+  .no-permission-card h2 {
+    font-size: 1.5rem;
+  }
+}
