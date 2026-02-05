@@ -58,14 +58,15 @@ def query_supabase_rest(table, method='GET', params=None, data=None):
     }
     
     try:
+        timeout_seconds = 5
         if method == 'GET':
-            response = requests.get(url, headers=headers, timeout=10)
+            response = requests.get(url, headers=headers, timeout=timeout_seconds)
         elif method == 'POST':
-            response = requests.post(url, headers=headers, json=data, timeout=10)
+            response = requests.post(url, headers=headers, json=data, timeout=timeout_seconds)
         elif method == 'PATCH':
-            response = requests.patch(url, headers=headers, json=data, timeout=10)
+            response = requests.patch(url, headers=headers, json=data, timeout=timeout_seconds)
         elif method == 'DELETE':
-            response = requests.delete(url, headers=headers, timeout=10)
+            response = requests.delete(url, headers=headers, timeout=timeout_seconds)
         
         # Log response for debug
         print(f"[Supabase REST] {method} {url} -> {response.status_code}")
@@ -80,6 +81,7 @@ def query_supabase_rest(table, method='GET', params=None, data=None):
         print(f"[Supabase REST ERROR] {response.status_code}: {response.text}")
         return None
     except Exception as e:
+        # Fail fast so we can fallback to SQLite without hanging the request
         print(f"[Supabase REST EXCEPTION] {e}")
         return None
 
