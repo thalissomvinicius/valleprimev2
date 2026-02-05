@@ -168,15 +168,19 @@ def query_db(sql, params=(), one=False, commit=False):
                         cols = col_match.group(1).strip()
                         rest_params.append(f"select={cols}")
                     
-                    if "WHERE" in sql:
-                        if "created_by =" in sql:
-                            rest_params.append(f"created_by=eq.{params[0]}")
-                        elif "id =" in sql:
-                            rest_params.append(f"id=eq.{params[0]}")
-                        elif "cpf_cnpj =" in sql:
-                            rest_params.append(f"cpf_cnpj=eq.{params[0]}")
-                        elif "username =" in sql:
-                            rest_params.append(f"username=eq.{params[0]}")
+                    # Parse WHERE clause with multiple conditions
+                    if "WHERE" in sql.upper():
+                        where_match = re.search(r"WHERE\s+(.+?)(?:ORDER BY|LIMIT|$)", sql, re.IGNORECASE | re.DOTALL)
+                        if where_match:
+                            where_part = where_match.group(1).strip()
+                            # Find all column = ? patterns
+                            conditions = re.findall(r"(\w+)\s*=\s*\?", where_part)
+                            for i, col in enumerate(conditions):
+                                if i < len(params):
+                                    val = params[i]
+                                    if isinstance(val, bool):
+                                        val = str(val).lower()
+                                    rest_params.append(f"{col}=eq.{val}")
                     
                     if "ORDER BY created_at DESC" in sql:
                         rest_params.append("order=created_at.desc")
@@ -184,6 +188,7 @@ def query_db(sql, params=(), one=False, commit=False):
                         rest_params.append("order=id.asc")
                     
                     final_params = "&".join(rest_params) if rest_params else None
+                    print(f"[SUPABASE SELECT] table={table}, params={final_params}")
                     res = query_supabase_rest(table, 'GET', params=final_params)
                     
                     if one:
@@ -740,17 +745,23 @@ def fetch_consulta(numprod_psc):
 def manage_clients():
     if request.method == 'GET':
         print(f"[DEBUG] GET Clients for user_id: {request.user_id}, role: {request.user_role}")
+        
+        # Get type filter (pf or pj)
+        client_type = request.args.get('type', 'pf').upper()  # 'PF' or 'PJ'
+        print(f"[DEBUG] Filtering by tipo_pessoa: {client_type}")
+        
         can_see_all = request.user_role == 'admin'
         if not can_see_all:
              # Check specific permissions
              user = query_db("SELECT permissions FROM users WHERE id = ?", (request.user_id,), one=True)
              perms = json.loads(user['permissions']) if user and user['permissions'] else {}
              can_see_all = perms.get('canViewAllClients', False)
-             
+        
+        # Filter by tipo_pessoa AND optionally by created_by
         if can_see_all:
-            clients = query_db("SELECT * FROM clients ORDER BY created_at DESC")
+            clients = query_db("SELECT * FROM clients WHERE tipo_pessoa = ? ORDER BY created_at DESC", (client_type,))
         else:
-            clients = query_db("SELECT * FROM clients WHERE created_by = ? ORDER BY created_at DESC", (str(request.user_id),))
+            clients = query_db("SELECT * FROM clients WHERE tipo_pessoa = ? AND created_by = ? ORDER BY created_at DESC", (client_type, str(request.user_id)))
         
         print(f"[DEBUG] Found {len(clients) if clients else 0} clients")
         # Normalize response for frontend
