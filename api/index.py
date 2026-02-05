@@ -36,9 +36,6 @@ else:
 SUPABASE_URL = os.environ.get('SUPABASE_URL', '').rstrip('/')
 SUPABASE_KEY = os.environ.get('SUPABASE_SERVICE_ROLE_KEY') or os.environ.get('SUPABASE_ANON_KEY')
 
-# PDF Engine placeholder
-generate_pdf_reportlab = None
-
 def get_db_connection():
     # Only SQLite fallback now
     conn = sqlite3.connect(DB_PATH)
