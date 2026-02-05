@@ -96,10 +96,8 @@ export const deleteUser = async (id) => {
 
 export const fetchAvailability = async (obraCode = '624') => {
   try {
-    // For availability, always hit the original external API directly to avoid stale caches
-    const externalBase = 'http://177.221.240.85:8000';
-    const url = `${externalBase}${API_BASE}/${obraCode}/`;
-    const response = await axios.get(url, { params: { t: Date.now() } });
+    // Use backend proxy (HTTPS) to avoid mixed content issues
+    const response = await api.get(`${API_BASE}/${obraCode}`, { params: { t: Date.now() } });
     const res = response.data;
     if (!res) throw new Error('Resposta vazia');
     const list = Array.isArray(res.data) ? res.data : (res.success ? res.data : []);
