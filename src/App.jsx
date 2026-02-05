@@ -59,19 +59,6 @@ function MainApp() {
     if (!selectedObra) return;
     localStorage.setItem('selectedObra', selectedObra);
 
-    const cached = dataCacheRef.current[selectedObra];
-    if (cached && Array.isArray(cached) && cached.length >= 0) {
-      setData(cached);
-      setLoading(false);
-      setError(null);
-      // Atualizar em background (API já tem cache, tende a ser rápido)
-      fetchAvailability(selectedObra).then((result) => {
-        setData(result);
-        dataCacheRef.current[selectedObra] = result;
-      }).catch(() => {});
-      return;
-    }
-
     setLoading(true);
     fetchAvailability(selectedObra)
       .then((result) => {
