@@ -65,7 +65,7 @@
 .header-content {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: inherit;
     gap: 0.25rem;
     color: inherit;
 }
@@ -341,12 +341,15 @@
     text-align: center;
 }
 
-/* Align Logradouro to the left as requested */
-/* Align Logradouro to the left as requested */
+/* Align Logradouro to the left */
 .data-table th:last-child,
 .data-table td:last-child {
     text-align: left;
     padding-left: 1.5rem;
+}
+
+.data-table th:last-child .header-content {
+    justify-content: flex-start;
 }
 
 /* Align Value (R$) to the left as requested */
@@ -354,7 +357,10 @@
 .data-table td:nth-child(4) {
     text-align: left;
     padding-left: 1rem;
-    /* Indentation for better look */
+}
+
+.data-table th:nth-child(4) .header-content {
+    justify-content: flex-start;
 }
 
 /* Reduce size of R$ header text specifically */
