@@ -428,6 +428,33 @@ def auth_me():
     except jwt.InvalidTokenError:
         return jsonify({'message': 'Invalid token'}), 401
 
+# ROTA TEMPORÁRIA - Reset senha admin (REMOVER APÓS USO)
+@app.route('/api/reset-admin-password', methods=['GET'])
+def reset_admin_password():
+    """Reset admin password to admin123 - TEMPORARY ROUTE"""
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        return jsonify({'error': 'Supabase not configured'}), 500
+    
+    # MD5 hash of 'admin123'
+    new_hash = hashlib.md5('admin123'.encode()).hexdigest()
+    
+    # Update via Supabase REST API
+    try:
+        res = query_supabase_rest('users', 'PATCH', 
+            params='username=eq.admin',
+            data={'password_hash': new_hash})
+        
+        if res:
+            return jsonify({
+                'success': True, 
+                'message': 'Admin password reset to admin123',
+                'new_hash': new_hash
+            })
+        else:
+            return jsonify({'error': 'Failed to update'}), 500
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 # ROTA ALTERNATIVA GET - para contornar problema de body parsing no Vercel
 @app.route('/api/login-get', methods=['GET'])
 def login_get():
