@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { debounce } from 'lodash';
 import ClientSelectionModal from './ClientSelectionModal';
 import { X, FileText, CheckCircle, Building2, User, Users, MapPin, Contact, Briefcase, ChevronRight, ChevronLeft, Trash2, Search, AlertCircle } from 'lucide-react';
 import { deleteClient, checkDuplicate } from '../services/api';
-import { useToast } from '../context/ToastContext';
-import { maskCPF, maskCNPJ, maskPhone, maskCEP, maskDDD, maskPhoneNumber, unmask } from '../utils/masks';
-import { validateCPF, validateCNPJ, validateEmail, validatePhone } from '../utils/validators';
+import { useToast } from '../context/toastContextValue';
+import { maskCPF, maskCNPJ, maskCEP, maskDDD, maskPhoneNumber, unmask } from '../utils/masks';
+import { validateCNPJ, validateEmail } from '../utils/validators';
 import { generateResidenceDeclaration } from '../utils/generateResidenceDeclaration';
 import './ClientFormModal.css';
 
@@ -120,6 +120,23 @@ const ClientFormModal = ({ onClose, onConfirm, onDelete, initialData = null, cli
     const [cidadesEndereco, setCidadesEndereco] = useState([]);
     const [cidadesEnderecoSeg, setCidadesEnderecoSeg] = useState([]);
 
+    const fetchEstados = useCallback(async () => {
+        try {
+            const response = await fetch('https://servicodados.ibge.gov.br/api/v1/localidades/estados?ordenacao=nome');
+            const data = await response.json();
+            setEstados(data.map(uf => ({ sigla: uf.sigla, nome: uf.nome })));
+        } catch (error) { console.error("Erro ao buscar estados:", error); }
+    }, []);
+
+    const fetchCidades = useCallback(async (uf, setCidadesFn) => {
+        if (!uf) return;
+        try {
+            const response = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`);
+            const data = await response.json();
+            setCidadesFn(data.map(c => c.nome.toUpperCase()).sort());
+        } catch (error) { console.error("Erro ao buscar cidades:", error); }
+    }, []);
+
     useEffect(() => {
         document.body.style.overflow = 'hidden';
         fetchEstados();
@@ -130,24 +147,7 @@ const ClientFormModal = ({ onClose, onConfirm, onDelete, initialData = null, cli
             if (initialData.uf_endereco_segundo) fetchCidades(initialData.uf_endereco_segundo, setCidadesEnderecoSeg);
         }
         return () => { document.body.style.overflow = 'unset'; };
-    }, []);
-
-    const fetchEstados = async () => {
-        try {
-            const response = await fetch('https://servicodados.ibge.gov.br/api/v1/localidades/estados?ordenacao=nome');
-            const data = await response.json();
-            setEstados(data.map(uf => ({ sigla: uf.sigla, nome: uf.nome })));
-        } catch (error) { console.error("Erro ao buscar estados:", error); }
-    };
-
-    const fetchCidades = async (uf, setCidadesFn) => {
-        if (!uf) return;
-        try {
-            const response = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`);
-            const data = await response.json();
-            setCidadesFn(data.map(c => c.nome.toUpperCase()).sort());
-        } catch (error) { console.error("Erro ao buscar cidades:", error); }
-    };
+    }, [fetchEstados, fetchCidades, initialData]);
 
     const handleUFChange = (e, fieldName, setCidadesFn) => {
         const uf = e.target.value;
@@ -241,8 +241,7 @@ const ClientFormModal = ({ onClose, onConfirm, onDelete, initialData = null, cli
     };
 
     // Verificação de duplicatas (debounced)
-    const checkDuplicateCPF = useCallback(
-        debounce(async (cpfCnpj, fieldName, personType) => {
+    const checkDuplicateCPF = useMemo(() => debounce(async (cpfCnpj, fieldName, personType) => {
             try {
                 // checkDuplicate(cpf, tipo, clientId) - ordem correta dos parâmetros
                 const result = await checkDuplicate(cpfCnpj, personType, clientId);
@@ -270,9 +269,13 @@ const ClientFormModal = ({ onClose, onConfirm, onDelete, initialData = null, cli
             } catch (error) {
                 console.error('Error checking duplicate:', error);
             }
-        }, 800),
-        [clientId]
-    );
+        }, 800), [clientId]);
+
+    useEffect(() => {
+        return () => {
+            checkDuplicateCPF.cancel?.();
+        };
+    }, [checkDuplicateCPF]);
 
     // Handler para CPF/CNPJ com máscara e validação
     const handleCPFCNPJChange = (e, fieldName, tipo) => {
@@ -310,7 +313,7 @@ const ClientFormModal = ({ onClose, onConfirm, onDelete, initialData = null, cli
     };
 
     // Handler para telefone com máscara
-    const handlePhoneChange = (e, dddField, numberField) => {
+    const handlePhoneChange = (e, dddField) => {
         const { name, value } = e.target;
 
         if (name === dddField) {
@@ -569,9 +572,9 @@ const ClientFormModal = ({ onClose, onConfirm, onDelete, initialData = null, cli
                         <option key={suggestion} value={suggestion} />
                     ))}
                 </datalist>
-                <div className="form-group"><label>Telefone Principal</label><div className="flex-row"><input type="text" name="fone1_ddd_proponente" value={formData.fone1_ddd_proponente} onChange={(e) => handlePhoneChange(e, 'fone1_ddd_proponente', 'fone1_numero_proponente')} style={{ width: '50px' }} placeholder="DDD" maxLength="2" /><input type="text" name="fone1_numero_proponente" value={formData.fone1_numero_proponente} onChange={(e) => handlePhoneChange(e, 'fone1_ddd_proponente', 'fone1_numero_proponente')} style={{ flex: 1 }} placeholder="NÚMERO" maxLength="10" /></div></div>
-                <div className="form-group"><label>Telefone 02</label><div className="flex-row"><input type="text" name="fone2_ddd_proponente" value={formData.fone2_ddd_proponente} onChange={(e) => handlePhoneChange(e, 'fone2_ddd_proponente', 'fone2_numero_proponente')} style={{ width: '50px' }} placeholder="DDD" maxLength="2" /><input type="text" name="fone2_numero_proponente" value={formData.fone2_numero_proponente} onChange={(e) => handlePhoneChange(e, 'fone2_ddd_proponente', 'fone2_numero_proponente')} style={{ flex: 1 }} placeholder="NÚMERO" maxLength="10" /></div></div>
-                <div className="form-group"><label>Telefone Comercial</label><div className="flex-row"><input type="text" name="fone_comercial_ddd_proponente" value={formData.fone_comercial_ddd_proponente} onChange={(e) => handlePhoneChange(e, 'fone_comercial_ddd_proponente', 'fone_comercial_numero_proponente')} style={{ width: '50px' }} placeholder="DDD" maxLength="2" /><input type="text" name="fone_comercial_numero_proponente" value={formData.fone_comercial_numero_proponente} onChange={(e) => handlePhoneChange(e, 'fone_comercial_ddd_proponente', 'fone_comercial_numero_proponente')} style={{ flex: 1 }} placeholder="NÚMERO" maxLength="10" /></div></div>
+                <div className="form-group"><label>Telefone Principal</label><div className="flex-row"><input type="text" name="fone1_ddd_proponente" value={formData.fone1_ddd_proponente} onChange={(e) => handlePhoneChange(e, 'fone1_ddd_proponente')} style={{ width: '50px' }} placeholder="DDD" maxLength="2" /><input type="text" name="fone1_numero_proponente" value={formData.fone1_numero_proponente} onChange={(e) => handlePhoneChange(e, 'fone1_ddd_proponente')} style={{ flex: 1 }} placeholder="NÚMERO" maxLength="10" /></div></div>
+                <div className="form-group"><label>Telefone 02</label><div className="flex-row"><input type="text" name="fone2_ddd_proponente" value={formData.fone2_ddd_proponente} onChange={(e) => handlePhoneChange(e, 'fone2_ddd_proponente')} style={{ width: '50px' }} placeholder="DDD" maxLength="2" /><input type="text" name="fone2_numero_proponente" value={formData.fone2_numero_proponente} onChange={(e) => handlePhoneChange(e, 'fone2_ddd_proponente')} style={{ flex: 1 }} placeholder="NÚMERO" maxLength="10" /></div></div>
+                <div className="form-group"><label>Telefone Comercial</label><div className="flex-row"><input type="text" name="fone_comercial_ddd_proponente" value={formData.fone_comercial_ddd_proponente} onChange={(e) => handlePhoneChange(e, 'fone_comercial_ddd_proponente')} style={{ width: '50px' }} placeholder="DDD" maxLength="2" /><input type="text" name="fone_comercial_numero_proponente" value={formData.fone_comercial_numero_proponente} onChange={(e) => handlePhoneChange(e, 'fone_comercial_ddd_proponente')} style={{ flex: 1 }} placeholder="NÚMERO" maxLength="10" /></div></div>
             </div>
             <div className="form-group-checkbox" style={{ marginTop: '1.5rem' }}><label className="checkbox-label"><input type="checkbox" name="has_referencia_titular" checked={formData.has_referencia_titular} onChange={handleChange} /><strong>Adicionar Referência Pessoal?</strong></label></div>
             {formData.has_referencia_titular && (
@@ -720,9 +723,9 @@ const ClientFormModal = ({ onClose, onConfirm, onDelete, initialData = null, cli
                                 <option key={suggestion} value={suggestion} />
                             ))}
                         </datalist>
-                        <div className="form-group"><label>Telefone Principal</label><div className="flex-row"><input type="text" name="fone1_ddd_segundo" value={formData.fone1_ddd_segundo} onChange={(e) => handlePhoneChange(e, 'fone1_ddd_segundo', 'fone1_numero_segundo')} style={{ width: '50px' }} placeholder="DDD" maxLength="2" /><input type="text" name="fone1_numero_segundo" value={formData.fone1_numero_segundo} onChange={(e) => handlePhoneChange(e, 'fone1_ddd_segundo', 'fone1_numero_segundo')} style={{ flex: 1 }} placeholder="NÚMERO" maxLength="10" /></div></div>
-                        <div className="form-group"><label>Telefone 02</label><div className="flex-row"><input type="text" name="fone2_ddd_segundo" value={formData.fone2_ddd_segundo} onChange={(e) => handlePhoneChange(e, 'fone2_ddd_segundo', 'fone2_numero_segundo')} style={{ width: '50px' }} maxLength="2" /><input type="text" name="fone2_numero_segundo" value={formData.fone2_numero_segundo} onChange={(e) => handlePhoneChange(e, 'fone2_ddd_segundo', 'fone2_numero_segundo')} style={{ flex: 1 }} maxLength="10" /></div></div>
-                        <div className="form-group"><label>Telefone Comercial</label><div className="flex-row"><input type="text" name="fone_comercial_ddd_segundo" value={formData.fone_comercial_ddd_segundo} onChange={(e) => handlePhoneChange(e, 'fone_comercial_ddd_segundo', 'fone_comercial_numero_segundo')} style={{ width: '50px' }} maxLength="2" /><input type="text" name="fone_comercial_numero_segundo" value={formData.fone_comercial_numero_segundo} onChange={(e) => handlePhoneChange(e, 'fone_comercial_ddd_segundo', 'fone_comercial_numero_segundo')} style={{ flex: 1 }} maxLength="10" /></div></div>
+                        <div className="form-group"><label>Telefone Principal</label><div className="flex-row"><input type="text" name="fone1_ddd_segundo" value={formData.fone1_ddd_segundo} onChange={(e) => handlePhoneChange(e, 'fone1_ddd_segundo')} style={{ width: '50px' }} placeholder="DDD" maxLength="2" /><input type="text" name="fone1_numero_segundo" value={formData.fone1_numero_segundo} onChange={(e) => handlePhoneChange(e, 'fone1_ddd_segundo')} style={{ flex: 1 }} placeholder="NÚMERO" maxLength="10" /></div></div>
+                        <div className="form-group"><label>Telefone 02</label><div className="flex-row"><input type="text" name="fone2_ddd_segundo" value={formData.fone2_ddd_segundo} onChange={(e) => handlePhoneChange(e, 'fone2_ddd_segundo')} style={{ width: '50px' }} maxLength="2" /><input type="text" name="fone2_numero_segundo" value={formData.fone2_numero_segundo} onChange={(e) => handlePhoneChange(e, 'fone2_ddd_segundo')} style={{ flex: 1 }} maxLength="10" /></div></div>
+                        <div className="form-group"><label>Telefone Comercial</label><div className="flex-row"><input type="text" name="fone_comercial_ddd_segundo" value={formData.fone_comercial_ddd_segundo} onChange={(e) => handlePhoneChange(e, 'fone_comercial_ddd_segundo')} style={{ width: '50px' }} maxLength="2" /><input type="text" name="fone_comercial_numero_segundo" value={formData.fone_comercial_numero_segundo} onChange={(e) => handlePhoneChange(e, 'fone_comercial_ddd_segundo')} style={{ flex: 1 }} maxLength="10" /></div></div>
                     </div>
 
                     <div className="form-section-title" style={{ marginTop: '1.5rem' }}><MapPin size={16} /> Endereço Residencial</div>

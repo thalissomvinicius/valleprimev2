@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { X, Search, UserPlus, Users, Edit2, Trash2, User, Building2 } from 'lucide-react';
 import { getClients, deleteClient } from '../services/api';
 import './ClientSelectionModal.css';
@@ -21,7 +21,7 @@ const ClientSelectionModal = ({ onSelectClient, onNewClient, onClose }) => {
         };
     }, []);
 
-    const loadClients = async (search = '', pageNum = 1, append = false) => {
+    const loadClients = useCallback(async (search = '', pageNum = 1, append = false) => {
         if (pageNum === 1) setLoading(true);
         else setLoadingMore(true);
 
@@ -37,13 +37,13 @@ const ClientSelectionModal = ({ onSelectClient, onNewClient, onClose }) => {
             } else {
                 setError('Erro ao carregar clientes');
             }
-        } catch (err) {
+        } catch {
             setError('Erro ao carregar clientes');
         } finally {
             setLoading(false);
             setLoadingMore(false);
         }
-    };
+    }, [clientTab]);
 
     // Debounce search
     useEffect(() => {
@@ -57,7 +57,7 @@ const ClientSelectionModal = ({ onSelectClient, onNewClient, onClose }) => {
     useEffect(() => {
         setPage(1);
         loadClients(debouncedSearch, 1, false);
-    }, [debouncedSearch, clientTab]);
+    }, [debouncedSearch, clientTab, loadClients]);
 
     const handleLoadMore = (e) => {
         e.stopPropagation();
@@ -92,7 +92,7 @@ const ClientSelectionModal = ({ onSelectClient, onNewClient, onClose }) => {
             } else {
                 alert('Erro ao excluir cliente: ' + (result.error || 'Erro desconhecido'));
             }
-        } catch (err) {
+        } catch {
             alert('Erro ao excluir cliente');
         }
     };
@@ -111,13 +111,6 @@ const ClientSelectionModal = ({ onSelectClient, onNewClient, onClose }) => {
     const formatPhone = (ddd, number) => {
         if (!number) return '-';
         return ddd ? `(${ddd}) ${number}` : number;
-    };
-
-    // Filter clients by type based on CPF/CNPJ length
-    const getClientType = (cpfCnpj) => {
-        if (!cpfCnpj) return 'pf';
-        const digits = cpfCnpj.replace(/\D/g, '');
-        return digits.length === 14 ? 'pj' : 'pf';
     };
 
     // Server-side filtering, no local filter needed

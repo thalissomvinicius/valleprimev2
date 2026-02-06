@@ -748,11 +748,9 @@ def fetch_consulta(numprod_psc):
 
         last_update = None
         data_list = payload.get("data") if isinstance(payload, dict) and isinstance(payload.get("data"), list) else None
-        # start with root date if present
         if isinstance(payload, dict):
             last_update = parse_date_str(payload.get("Data_Atualizacao"))
 
-        # compute max date across items
         if data_list:
             for item in data_list:
                 if not isinstance(item, dict):
@@ -761,11 +759,9 @@ def fetch_consulta(numprod_psc):
                 if d and (last_update is None or d > last_update):
                     last_update = d
 
-        # If still none, try first item's date
         if last_update is None and data_list and isinstance(data_list[0], dict):
             last_update = parse_date_str(data_list[0].get("Data_Atualizacao"))
 
-        # propagate back to items and root in DD/MM/YYYY
         if last_update:
             formatted = last_update.strftime('%d/%m/%Y')
             if data_list:
@@ -776,31 +772,72 @@ def fetch_consulta(numprod_psc):
                 payload["Data_Atualizacao"] = formatted
         return payload
 
-    # Try fetching from external API with timeout (cache-buster to avoid stale data)
+    external_error = None
     try:
         import time
-        resp = requests.get(
-            f"http://177.221.240.85:8000/api/consulta/{numprod_psc}/",
-            params={"t": int(time.time())},
-            timeout=10
-        )
-        if resp.status_code == 200:
-            payload = enrich_payload(resp.json())
-            return jsonify(payload)
-    except Exception as ext_err:
-        print(f"[consulta] external fetch failed: {ext_err}")
-    
-    # If external fails, avoid stale fallback unless explicitly allowed
-    allow_fallback = os.environ.get('ALLOW_FALLBACK_CONSULTA', 'false').lower() == 'true'
-    if allow_fallback:
-        filename = f"fallback_{numprod_psc}.json"
-        filepath = os.path.join(BASE_DIR, filename)
-        if os.path.exists(filepath):
-            with open(filepath, 'r', encoding='utf-8-sig') as f:
-                payload = enrich_payload(json.load(f))
+        for attempt in range(2):
+            try:
+                resp = requests.get(
+                    f"http://177.221.240.85:8000/api/consulta/{numprod_psc}/",
+                    params={"t": int(time.time())},
+                    timeout=(3, 10)
+                )
+                if resp.status_code == 200:
+                    payload = enrich_payload(resp.json())
+                    return jsonify(payload)
+                external_error = f"HTTP {resp.status_code}"
+            except Exception as ext_err:
+                external_error = str(ext_err)
+            time.sleep(0.6 * (attempt + 1))
+
+        allow_fallback = os.environ.get('ALLOW_FALLBACK_CONSULTA', 'false').lower() == 'true'
+        if allow_fallback:
+            filename = f"fallback_{numprod_psc}.json"
+            filepath = os.path.join(BASE_DIR, filename)
+            if os.path.exists(filepath):
+                with open(filepath, 'r', encoding='utf-8-sig') as f:
+                    payload = enrich_payload(json.load(f))
+                if isinstance(payload, dict):
+                    payload["_cached"] = True
+                    payload["_external_error"] = external_error
                 return jsonify(payload)
-    
-    return jsonify({"success": False, "data": [], "error": "Consulta indisponível"}), 503
+
+        return jsonify({
+            "success": False,
+            "data": [],
+            "error": "Consulta indisponível.",
+            "external_error": external_error
+        })
+    except Exception as e:
+        print(f"[ERROR] fetch_consulta {numprod_psc}: {e}")
+        return jsonify({"success": False, "data": [], "error": str(e)})
+
+@app.route('/api/clients/<int:client_id>', methods=['DELETE'])
+@app.route('/api/manage-clients/<int:client_id>', methods=['DELETE'])
+@token_required
+def delete_client(client_id):
+    """Delete a specific client by ID"""
+    try:
+        print(f"[DEBUG] DELETE Client {client_id} by user {request.user_id}")
+        
+        # Check if user can delete this client
+        can_delete = request.user_role == 'admin'
+        if not can_delete:
+            # Check if user owns this client
+            client = query_db("SELECT created_by FROM clients WHERE id = ?", (client_id,), one=True)
+            if client and str(client.get('created_by')) == str(request.user_id):
+                can_delete = True
+        
+        if not can_delete:
+            return jsonify({'success': False, 'error': 'Sem permissão para excluir este cliente'}), 403
+        
+        # Delete the client
+        query_db("DELETE FROM clients WHERE id = ?", (client_id,), commit=True)
+        
+        return jsonify({'success': True, 'message': 'Cliente excluído com sucesso'})
+    except Exception as e:
+        print(f"[ERROR] Delete client: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/clients', methods=['GET', 'POST'])
 @app.route('/api/manage-clients', methods=['GET', 'POST'])

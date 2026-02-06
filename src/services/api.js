@@ -19,6 +19,32 @@ const api = axios.create({
   timeout: 15000,
 });
 
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+const shouldRetry = (error) => {
+  const status = error?.response?.status;
+  if (status && [502, 503, 504].includes(status)) return true;
+  if (error?.code === 'ECONNABORTED') return true;
+  if (error?.message?.toLowerCase?.().includes('timeout')) return true;
+  if (!error?.response && error?.request) return true;
+  return false;
+};
+
+const requestWithRetry = async (fn, { retries = 2, baseDelay = 800 } = {}) => {
+  let lastError;
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      if (attempt === retries || !shouldRetry(error)) throw error;
+      const delay = baseDelay * (attempt + 1);
+      await sleep(delay);
+    }
+  }
+  throw lastError;
+};
+
 // Request interceptor: em *.pages.dev usar URL absoluta para o Render (garante que a requisição vá ao backend)
 const RENDER_API = 'https://valleprimev2.onrender.com';
 api.interceptors.request.use(config => {
@@ -53,18 +79,18 @@ const parseJsonResponse = (payload) => {
   }
   try {
     return JSON.parse(trimmed);
-  } catch (e) {
+  } catch {
     throw new Error('Resposta inválida do servidor.');
   }
 };
 
 export const authLogin = async (username, password) => {
-  // Usando GET com query params para contornar problema de body parsing
-  const response = await api.get('/api/login-get', {
+  const response = await requestWithRetry(() => api.get('/api/login-get', {
     params: { username, password },
     responseType: 'text',
-    transformResponse: [data => data]
-  });
+    transformResponse: [data => data],
+    timeout: 30000
+  }), { retries: 2, baseDelay: 1000 });
   return parseJsonResponse(response.data);
 };
 
@@ -96,8 +122,10 @@ export const deleteUser = async (id) => {
 
 export const fetchAvailability = async (obraCode = '624') => {
   try {
-    // Use backend proxy (HTTPS) to avoid mixed content issues
-    const response = await api.get(`${API_BASE}/${obraCode}`, { params: { t: Date.now() } });
+    const response = await requestWithRetry(() => api.get(`${API_BASE}/${obraCode}`, {
+      params: { t: Date.now() },
+      timeout: 20000
+    }), { retries: 2, baseDelay: 800 });
     const res = response.data;
     if (!res) throw new Error('Resposta vazia');
     const list = Array.isArray(res.data) ? res.data : (res.success ? res.data : []);
@@ -109,6 +137,13 @@ export const fetchAvailability = async (obraCode = '624') => {
     return normalized;
   } catch (error) {
     console.error('Network Error:', error);
+    const status = error?.response?.status;
+    if (status === 503) {
+      throw new Error('Consulta indisponível no servidor. Tente novamente em instantes.');
+    }
+    if (error?.code === 'ECONNABORTED' || error?.message?.toLowerCase?.().includes('timeout')) {
+      throw new Error('Tempo de resposta excedido. Tente novamente.');
+    }
     throw error;
   }
 };
@@ -167,5 +202,3 @@ export const checkDuplicate = async (cpf, tipo = 'PF', clientId = null) => {
     return { exists: false };
   }
 }
-
-

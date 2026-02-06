@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { useAuth, OBRAS } from './context/AuthContext';
+import { useAuth } from './context/authContextValue';
+import { OBRAS } from './context/authConstants';
 import LoginPage from './pages/LoginPage';
 import Header from './components/Header';
 import SearchBar from './components/SearchBar';
@@ -66,7 +67,7 @@ function MainApp() {
         setError(null);
         dataCacheRef.current[selectedObra] = result;
       })
-      .catch(() => setError('Erro ao carregar dados. Por favor, tente novamente mais tarde.'))
+      .catch((err) => setError(err?.message || 'Erro ao carregar dados. Por favor, tente novamente mais tarde.'))
       .finally(() => setLoading(false));
   }, [selectedObra]);
 
@@ -310,7 +311,7 @@ function MainApp() {
           // Logradouro (Index 4) centered as requested
           4: { halign: 'center' }
         },
-        didDrawPage: (data) => {
+        didDrawPage: () => {
           // Footer
           const pageHeight = doc.internal.pageSize.height;
           doc.setFontSize(8);

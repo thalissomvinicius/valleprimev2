@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Users, Search, Edit2, Trash2, UserPlus,
@@ -6,7 +6,7 @@ import {
     Calendar, Mail, Phone, MapPin, Building2, User
 } from 'lucide-react';
 import { getClients, deleteClient, saveClient } from '../services/api';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/authContextValue';
 import ClientFormModal from '../components/ClientFormModal';
 import Header from '../components/Header';
 import './ClientListPage.css';
@@ -25,10 +25,9 @@ function ClientListPage() {
     const [editingClient, setEditingClient] = useState(null);
     const [deleteConfirm, setDeleteConfirm] = useState(null);
     const [showForm, setShowForm] = useState(false);
-    const [isNewClient, setIsNewClient] = useState(false);
     const [clientTab, setClientTab] = useState('pf');
 
-    const loadClients = async (search = '', pageNum = 1, append = false) => {
+    const loadClients = useCallback(async (search = '', pageNum = 1, append = false) => {
         if (pageNum === 1) setLoading(true);
         else setLoadingMore(true);
 
@@ -63,7 +62,7 @@ function ClientListPage() {
             setLoading(false);
             setLoadingMore(false);
         }
-    };
+    }, [clientTab, currentUser]);
 
     // Debounce search term
     useEffect(() => {
@@ -79,7 +78,7 @@ function ClientListPage() {
             setPage(1);
             loadClients(debouncedSearch, 1, false);
         }
-    }, [debouncedSearch, clientTab, currentUser]); // Reload if user changes
+    }, [debouncedSearch, clientTab, currentUser, loadClients]);
 
     const handleLoadMore = () => {
         const nextPage = page + 1;
@@ -94,20 +93,18 @@ function ClientListPage() {
                 setClients(prev => prev.filter(c => c.id !== id));
                 setDeleteConfirm(null);
             }
-        } catch (err) {
+        } catch {
             alert('Erro ao excluir cliente.');
         }
     };
 
     const handleEdit = (client) => {
         setEditingClient(client);
-        setIsNewClient(false);
         setShowForm(true);
     };
 
     const handleNewClient = () => {
         setEditingClient(null);
-        setIsNewClient(true);
         setShowForm(true);
     };
 
@@ -157,7 +154,7 @@ function ClientListPage() {
             setEditingClient(null);
             loadClients(debouncedSearch, 1, false);
             setPage(1);
-        } catch (err) {
+        } catch {
             alert('Erro ao excluir cliente.');
         }
     }
@@ -355,7 +352,6 @@ function ClientListPage() {
                     onClose={() => {
                         setShowForm(false);
                         setEditingClient(null);
-                        setIsNewClient(false);
                     }}
                     onConfirm={handleFormSuccess}
                     onDelete={handleModalDelete}

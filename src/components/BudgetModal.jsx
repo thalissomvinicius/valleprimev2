@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { X, Send, Calculator, FileText, ClipboardCopy, CheckCircle, Loader2, AlertCircle, Plus, Trash2, Calendar, MapPin } from 'lucide-react';
-import { OBRAS } from '../context/AuthContext';
+import { OBRAS } from '../context/authConstants';
 import './BudgetModal.css';
 import ClientFormModal from './ClientFormModal';
 import ClientSelectionModal from './ClientSelectionModal';
 import BudgetWizard from './BudgetWizard';
 import { saveClient } from '../services/api';
-import { generateResidenceDeclaration } from '../utils/generateResidenceDeclaration';
 
 import logo from '../assets/Valle-logo-azul.png';
 
@@ -14,10 +13,10 @@ const ENV_API = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '');
 const isPagesDev = typeof window !== 'undefined' && /\.pages\.dev$/i.test(window.location?.hostname || '');
 const API_BASE_URL = ENV_API || (isPagesDev ? 'https://valleprimev2.onrender.com' : '');
 
-const BudgetModal = ({ lot, onClose, obraName, developerName = "Vinicius Dev" }) => {
+const BudgetModal = ({ lot, onClose, obraName }) => {
     const lotValue = parseFloat(lot.Valor_Terreno.replace(/\./g, '').replace(',', '.')) || 0;
 
-    const [downPaymentPercent, setDownPaymentPercent] = useState(5);
+    const downPaymentPercent = 5;
     const [balanceInstallments, setBalanceInstallments] = useState(200);
     const [copied, setCopied] = useState(false);
 
@@ -29,12 +28,10 @@ const BudgetModal = ({ lot, onClose, obraName, developerName = "Vinicius Dev" })
     const [showClientSelection, setShowClientSelection] = useState(false);
     const [selectedClientData, setSelectedClientData] = useState(null);
     const [showSuccessView, setShowSuccessView] = useState(false);
-    const [lastConfirmedClient, setLastConfirmedClient] = useState(null);
 
     // NEW: Entrada (Fixed amount paid upfront, separate from sinal)
     const [entradaEnabled, setEntradaEnabled] = useState(false);
     const [entradaValue, setEntradaValue] = useState(0);
-    const [entradaInputValue, setEntradaInputValue] = useState('');
     const [entradaQtdParcelas, setEntradaQtdParcelas] = useState(1);
     const [entradaFirstDate, setEntradaFirstDate] = useState(new Date().toISOString().split('T')[0]);
 
@@ -54,7 +51,6 @@ const BudgetModal = ({ lot, onClose, obraName, developerName = "Vinicius Dev" })
     // Signal discount (now in R$ fixed value)
     const [sinalDiscountEnabled, setSinalDiscountEnabled] = useState(false);
     const [sinalDiscountValue, setSinalDiscountValue] = useState(0);
-    const [sinalDiscountInputValue, setSinalDiscountInputValue] = useState('');
     const [skipSinalEnabled, setSkipSinalEnabled] = useState(false);
     const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
 
@@ -86,11 +82,17 @@ const BudgetModal = ({ lot, onClose, obraName, developerName = "Vinicius Dev" })
     const effectiveBalanceInstallmentValue = safeInstallments > 0 ? effectiveRemainingBalance / safeInstallments : 0;
 
     // Auto-calculate first sinal line value when total changes
-    React.useEffect(() => {
-        if (sinalLines.length === 1 && !skipSinalEnabled) {
-            setSinalLines([{ qtd: sinalLines[0].qtd, value: sinalDiscountedTotal }]);
-            setSinalInputValues([formatCurrencyInput(sinalDiscountedTotal)]);
-        }
+    useEffect(() => {
+        if (skipSinalEnabled) return;
+        setSinalLines(prev => {
+            if (prev.length !== 1) return prev;
+            const qtd = prev[0]?.qtd ?? 1;
+            const formatted = sinalDiscountedTotal
+                ? parseFloat(sinalDiscountedTotal).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                : '';
+            setSinalInputValues([formatted]);
+            return [{ qtd, value: sinalDiscountedTotal }];
+        });
     }, [sinalDiscountedTotal, skipSinalEnabled]);
 
     // Calculate total of custom sinal lines
@@ -189,7 +191,7 @@ const BudgetModal = ({ lot, onClose, obraName, developerName = "Vinicius Dev" })
             entradaSection = `\n💵 *Entrada:* ${formatCurrency(entradaAmount)} (À Vista)`;
         }
 
-        const sinalSection = sinalLines.map((line, idx) => {
+        const sinalSection = sinalLines.map((line) => {
             const lVal = parseFloat(line.value) || 0;
             const lQtd = parseInt(line.qtd) || 1;
             const lineValue = lVal / lQtd;
@@ -224,7 +226,7 @@ ${sinalSection}
             await navigator.clipboard.writeText(getMessage());
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
-        } catch (err) {
+        } catch {
             const textArea = document.createElement('textarea');
             textArea.value = getMessage();
             document.body.appendChild(textArea);
@@ -389,7 +391,6 @@ ${sinalSection}
                 const url = window.URL.createObjectURL(blob);
                 window.open(url, '_blank');
                 setGenStatus('success');
-                setLastConfirmedClient(clientData);
                 setShowSuccessView(true);
             } else {
                 let msg = `Erro ${response.status}`;
@@ -398,7 +399,7 @@ ${sinalSection}
                 try {
                     const errData = JSON.parse(text);
                     if (errData.error) msg = errData.error;
-                } catch (_) {
+                } catch {
                     if (text && text.length < 200) msg = text;
                 }
                 setGenStatus('error');
@@ -411,40 +412,6 @@ ${sinalSection}
         } finally {
             setIsGenerating(false);
         }
-    };
-
-    const handleGenerateResidencePDF = () => {
-        if (!lastConfirmedClient) return;
-
-        // Map backend/form fields to utility fields
-        const mappedData = {
-            p1: {
-                nome: lastConfirmedClient.nome_proponente,
-                cpf: lastConfirmedClient.cpf_cnpj_proponente,
-                rg: lastConfirmedClient.rg_proponente,
-                orgao: lastConfirmedClient.orgao_emissor_proponente,
-                endereco: `${lastConfirmedClient.endereco_residencial_proponente}, ${lastConfirmedClient.numero_endereco_proponente}`,
-                bairro: lastConfirmedClient.bairro_proponente,
-                cep: lastConfirmedClient.cep_proponente,
-                cidade: lastConfirmedClient.cidade_proponente,
-                uf: lastConfirmedClient.uf_endereco_proponente,
-            },
-            p2: lastConfirmedClient.has_segundo ? {
-                nome: lastConfirmedClient.nome_segundo,
-                cpf: lastConfirmedClient.cpf_cnpj_segundo,
-                rg: lastConfirmedClient.rg_segundo,
-                orgao: lastConfirmedClient.orgao_emissor_segundo,
-                endereco: `${lastConfirmedClient.endereco_residencial_segundo || lastConfirmedClient.endereco_residencial_proponente}, ${lastConfirmedClient.numero_endereco_segundo || lastConfirmedClient.numero_endereco_proponente}`,
-                bairro: lastConfirmedClient.bairro_segundo || lastConfirmedClient.bairro_proponente,
-                cep: lastConfirmedClient.cep_segundo || lastConfirmedClient.cep_proponente,
-                cidade: lastConfirmedClient.cidade_segundo || lastConfirmedClient.cidade_proponente,
-                uf: lastConfirmedClient.uf_endereco_segundo || lastConfirmedClient.uf_endereco_proponente,
-            } : null,
-            lote: lot.LT,
-            quadra: lot.QD
-        };
-
-        generateResidenceDeclaration(mappedData);
     };
 
     return (

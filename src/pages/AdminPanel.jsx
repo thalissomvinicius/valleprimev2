@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth, OBRAS, STATUS_LOTES } from '../context/AuthContext';
+import { useAuth } from '../context/authContextValue';
+import { OBRAS, STATUS_LOTES } from '../context/authConstants';
 import {
     Users, Settings, LogOut, Check, Edit2, Trash2, Shield,
     Building2, Eye, ChevronDown, ChevronUp, Save, XCircle, UserPlus, Home

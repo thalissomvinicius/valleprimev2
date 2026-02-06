@@ -1,4 +1,5 @@
 import React from 'react';
+import { ArrowUp, ArrowDown } from 'lucide-react';
 import './AvailabilityTable.css';
 
 const getStatusClass = (status) => {
@@ -34,9 +35,24 @@ const formatCurrency = (value) => {
     });
 };
 
-import { ArrowUp, ArrowDown } from 'lucide-react';
-
 const SKELETON_ROWS = 10;
+
+const SortableHeader = ({ label, mobileLabel, sortKey, onSort, sortConfig }) => {
+    const renderSortIcon = (key) => {
+        if (!sortConfig || sortConfig.key !== key) return null;
+        return sortConfig.direction === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />;
+    };
+
+    return (
+        <th onClick={() => onSort(sortKey)} className="sortable-header">
+            <div className="header-content">
+                <span className="hide-mobile">{label}</span>
+                <span className="show-mobile">{mobileLabel}</span>
+                {renderSortIcon(sortKey)}
+            </div>
+        </th>
+    );
+};
 
 const AvailabilityTable = ({ data, loading, onRowClick, onSort, sortConfig }) => {
     if (loading) {
@@ -75,30 +91,15 @@ const AvailabilityTable = ({ data, loading, onRowClick, onSort, sortConfig }) =>
         return <div className="no-results">Nenhum lote encontrado.</div>;
     }
 
-    const renderSortIcon = (key) => {
-        if (!sortConfig || sortConfig.key !== key) return null;
-        return sortConfig.direction === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />;
-    };
-
-    const SortableHeader = ({ label, mobileLabel, sortKey }) => (
-        <th onClick={() => onSort(sortKey)} className="sortable-header">
-            <div className="header-content">
-                <span className="hide-mobile">{label}</span>
-                <span className="show-mobile">{mobileLabel}</span>
-                {renderSortIcon(sortKey)}
-            </div>
-        </th>
-    );
-
     return (
         <div className="table-container">
             <table className="data-table">
                 <thead>
                     <tr>
-                        <SortableHeader label="Quadra" mobileLabel="QD" sortKey="QD" />
-                        <SortableHeader label="Lote" mobileLabel="LT" sortKey="LT" />
-                        <SortableHeader label="M²" mobileLabel="M²" sortKey="M2" />
-                        <SortableHeader label="Valor" mobileLabel="R$" sortKey="Valor_Terreno" />
+                        <SortableHeader label="Quadra" mobileLabel="QD" sortKey="QD" onSort={onSort} sortConfig={sortConfig} />
+                        <SortableHeader label="Lote" mobileLabel="LT" sortKey="LT" onSort={onSort} sortConfig={sortConfig} />
+                        <SortableHeader label="M²" mobileLabel="M²" sortKey="M2" onSort={onSort} sortConfig={sortConfig} />
+                        <SortableHeader label="Valor" mobileLabel="R$" sortKey="Valor_Terreno" onSort={onSort} sortConfig={sortConfig} />
                         <th><span className="hide-mobile">Status</span><span className="show-mobile">ST.</span></th>
                         <th><span className="hide-mobile">Logradouro</span><span className="show-mobile">LOG.</span></th>
                     </tr>

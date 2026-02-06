@@ -1,35 +1,7 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { authLogin, authMe, getUsers, createUser, updateUser, deleteUser as apiDeleteUser } from '../services/api';
-
-// Lista de obras disponíveis
-export const OBRAS = [
-    { codigo: '600', descricao: 'RESIDENCIAL JARDIM DO VALLE - DOM ELISEU', cidade: 'Dom Eliseu', uf: 'PA' },
-    { codigo: '601', descricao: 'RESIDENCIAL JARDIM AMERICA - CAPANEMA', cidade: 'Capanema', uf: 'PA' },
-    { codigo: '602', descricao: 'RESIDENCIAL SALLES JARDIM - CASTANHAL', cidade: 'Castanhal', uf: 'PA' },
-    { codigo: '603', descricao: 'RESIDENCIAL JARDIM CASTANHAL - CASTANHAL', cidade: 'Castanhal', uf: 'PA' },
-    { codigo: '604', descricao: 'RESIDENCIAL IPITINGA - TOMÉ-AÇU', cidade: 'Tomé-Açu', uf: 'PA' },
-    { codigo: '605', descricao: 'RESIDENCIAL VALLE DO IPITINGA - TOMÉ-AÇU', cidade: 'Tomé-Açu', uf: 'PA' },
-    { codigo: '610', descricao: 'RESIDENCIAL JARDIM DO VALLE - TAILANDIA', cidade: 'Tailândia', uf: 'PA' },
-    { codigo: '616', descricao: 'RESIDENCIAL JARDIM DO VALLE - BARCARENA', cidade: 'Barcarena', uf: 'PA' },
-    { codigo: '618', descricao: 'RESIDENCIAL JARDIM DO VALLE II - TAILANDIA', cidade: 'Tailândia', uf: 'PA' },
-    { codigo: '620', descricao: 'RESIDENCIAL JARDIM VALLE DO URAIM - PARAGOMINAS', cidade: 'Paragominas', uf: 'PA' },
-    { codigo: '621', descricao: 'RESIDENCIAL PARQUE DO VALLE - RONDON', cidade: 'Rondon do Pará', uf: 'PA' },
-    { codigo: '623', descricao: 'RESIDENCIAL JARDIM CASTANHAL III - CASTANHAL', cidade: 'Castanhal', uf: 'PA' },
-    { codigo: '624', descricao: 'RESIDENCIAL VALLE DO IPITINGA II - TOMÉ-AÇU', cidade: 'Tomé-Açu', uf: 'PA' },
-    { codigo: '625', descricao: 'RESIDENCIAL VALLE DO IPÊS - TOMÉ AÇU', cidade: 'Tomé-Açu', uf: 'PA' },
-];
-
-// Status de lotes disponíveis
-export const STATUS_LOTES = [
-    { value: '0 - Disponível', label: 'Disponível', color: 'success' },
-    { value: '1 - Vendido', label: 'Vendido', color: 'danger' },
-    { value: '2 - Reservado', label: 'Reservado', color: 'warning' },
-    { value: '4 - Quitado', label: 'Quitado', color: 'info' },
-    { value: '7 - Suspenso', label: 'Suspenso', color: 'secondary' },
-    { value: '8 - Fora de venda', label: 'Fora de venda', color: 'secondary' },
-];
-
-const AuthContext = createContext(null);
+import { AuthContext } from './authContextValue';
+import { OBRAS } from './authConstants';
 
 const STORAGE_KEYS = {
     TOKEN: 'valle_token',
@@ -43,7 +15,7 @@ export function AuthProvider({ children }) {
     const isAuthenticated = Boolean(currentUser);
     const isAdmin = currentUser?.role === 'admin';
 
-    const processUser = (userData) => {
+    const processUser = useCallback((userData) => {
         // Flatten permissions for easy access in frontend
         const permissions = userData.permissions || {};
         const allObras = OBRAS.map(obra => obra.codigo);
@@ -55,9 +27,9 @@ export function AuthProvider({ children }) {
             aprovado: Boolean(userData.active !== false)
         };
         return user;
-    }
+    }, []);
 
-    const loadUsers = async () => {
+    const loadUsers = useCallback(async () => {
         try {
             const result = await getUsers();
             if (result.users) {
@@ -73,7 +45,7 @@ export function AuthProvider({ children }) {
         } catch (e) {
             console.error("Failed to load users", e);
         }
-    };
+    }, []);
 
     const login = useCallback(async (username, password) => {
         const trimmed = (username || '').trim();
@@ -101,10 +73,17 @@ export function AuthProvider({ children }) {
             }
         } catch (e) {
             console.error('[DEBUG] Login error:', e);
-            const msg = e.response?.data?.message || 'Erro ao validar login.';
+            const rawMsg = e?.response?.data?.message || e?.message;
+            let msg = rawMsg || 'Erro ao validar login.';
+            const normalized = String(msg).toLowerCase();
+            if (e?.code === 'ECONNABORTED' || normalized.includes('timeout')) {
+                msg = 'Tempo de resposta excedido. Tente novamente.';
+            } else if (e?.response?.status === 503) {
+                msg = 'Servidor indisponível no momento. Tente novamente.';
+            }
             return { success: false, error: msg };
         }
-    }, []);
+    }, [processUser, loadUsers]);
 
     const logout = useCallback(() => {
         setCurrentUser(null);
@@ -122,7 +101,7 @@ export function AuthProvider({ children }) {
             const msg = 'Erro ao criar usuário.';
             return { success: false, error: msg };
         }
-    }, []);
+    }, [loadUsers]);
 
     const updateUserPermissions = useCallback(async (userId, data) => {
         try {
@@ -139,7 +118,7 @@ export function AuthProvider({ children }) {
         } catch {
             return { success: false, error: 'Erro ao atualizar.' };
         }
-    }, []);
+    }, [loadUsers]);
 
     const deleteUser = useCallback(async (userId) => {
         try {
@@ -149,7 +128,7 @@ export function AuthProvider({ children }) {
         } catch {
             return { success: false, error: 'Erro ao excluir.' };
         }
-    }, []);
+    }, [loadUsers]);
 
     const approveUser = useCallback(async (userId) => {
         try {
@@ -159,7 +138,7 @@ export function AuthProvider({ children }) {
         } catch {
             return { success: false, error: 'Erro ao aprovar.' };
         }
-    }, []);
+    }, [loadUsers]);
 
     // Initial load
     useEffect(() => {
@@ -189,7 +168,7 @@ export function AuthProvider({ children }) {
         }
         init();
         return () => { cancelled = true; };
-    }, []);
+    }, [processUser, loadUsers, logout]);
 
     return (
         <AuthContext.Provider value={{
@@ -208,8 +187,4 @@ export function AuthProvider({ children }) {
             {children}
         </AuthContext.Provider>
     );
-}
-
-export function useAuth() {
-    return useContext(AuthContext);
 }

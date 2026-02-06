@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { X, ChevronLeft, ChevronRight, Check, Send, ClipboardCopy, Calendar, Plus, Trash2, CheckCircle, MapPin, Maximize, Layers, Info } from 'lucide-react';
-import { OBRAS } from '../context/AuthContext';
+import { OBRAS } from '../context/authConstants';
 import './BudgetWizard.css';
 import ClientFormModal from './ClientFormModal';
 import ClientSelectionModal from './ClientSelectionModal';
 import { saveClient } from '../services/api';
-import { useToast } from '../context/ToastContext';
+import { useToast } from '../context/toastContextValue';
 import logo from '../assets/Valle-logo-azul.png';
 
 const ENV_API = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '');
 const isPagesDev = typeof window !== 'undefined' && /\.pages\.dev$/i.test(window.location?.hostname || '');
 const API_BASE_URL = ENV_API || (isPagesDev ? 'https://valleprimev2.onrender.com' : '');
 
-const BudgetWizard = ({ lot, onClose, obraName, developerName = "Vinicius Dev" }) => {
+const BudgetWizard = ({ lot, onClose, obraName }) => {
     const { showToast } = useToast();
     const lotValue = parseFloat(lot.Valor_Terreno.replace(/\./g, '').replace(',', '.')) || 0;
 
@@ -84,12 +84,14 @@ const BudgetWizard = ({ lot, onClose, obraName, developerName = "Vinicius Dev" }
 
     // Auto-calculate first sinal line value
     useEffect(() => {
-        if (formData.sinalLines.length === 1 && !formData.skipSinalEnabled) {
-            setFormData(prev => ({
+        if (formData.skipSinalEnabled) return;
+        setFormData(prev => {
+            if (prev.sinalLines.length !== 1) return prev;
+            return {
                 ...prev,
                 sinalLines: [{ qtd: prev.sinalLines[0].qtd, value: sinalDiscountedTotal }]
-            }));
-        }
+            };
+        });
     }, [sinalDiscountedTotal, formData.skipSinalEnabled]);
 
     // Helper functions
@@ -107,8 +109,6 @@ const BudgetWizard = ({ lot, onClose, obraName, developerName = "Vinicius Dev" }
 
     // Navigation
     // Navigation
-    const totalSteps = 4;
-
     const canProceed = () => {
         switch (currentStep) {
             case 1: // Lot info + Entrada
@@ -250,7 +250,7 @@ ${sinalSection}
             } else {
                 throw new Error('Clipboard API unavailable');
             }
-        } catch (err) {
+        } catch {
             // Fallback for mobile/non-secure contexts
             const textArea = document.createElement('textarea');
             textArea.value = text;
@@ -453,12 +453,9 @@ ${sinalSection}
                     entradaAmount={entradaAmount}
                     effectiveRemainingBalance={effectiveRemainingBalance}
                     effectiveBalanceInstallmentValue={effectiveBalanceInstallmentValue}
-                    getPlanType={getPlanType}
                     handleCopyMessage={handleCopyMessage}
                     handleWhatsAppShare={handleWhatsAppShare}
-                    handleOpenClientForm={handleOpenClientForm}
                     copied={copied}
-                    isGenerating={isGenerating}
                 />;
             default:
                 return null;
@@ -934,7 +931,7 @@ const Step4Saldo = ({ formData, updateFormData, formatCurrency, effectiveRemaini
 const Step5Summary = ({
     lot, obraName, formData, updateFormData, formatCurrency, lotValue, totalWithDiscount,
     downPaymentTotal, entradaAmount, effectiveRemainingBalance, effectiveBalanceInstallmentValue,
-    getPlanType, handleCopyMessage, handleWhatsAppShare, handleOpenClientForm, copied, isGenerating
+    handleCopyMessage, handleWhatsAppShare, copied
 }) => {
     const subdivisionName = obraName || lot.Descricao_Empreendimento || 'VALLE';
     const currentObra = OBRAS.find(o => o.descricao === subdivisionName || o.codigo === lot.Obra);
