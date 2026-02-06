@@ -750,6 +750,25 @@ def get_consulta(codigo):
     """Rota alternativa para compatibilidade com frontend"""
     return fetch_consulta(codigo)
 
+@app.route('/api/consulta/push/<codigo>', methods=['POST'])
+def push_consulta(codigo):
+    expected = os.environ.get('CONSULTA_PUSH_KEY', '')
+    provided = request.headers.get('X-Consulta-Push-Key', '')
+    if not expected or provided != expected:
+        return jsonify({"success": False, "error": "Forbidden"}), 403
+
+    payload = request.get_json(silent=True)
+    if payload is None:
+        return jsonify({"success": False, "error": "Invalid JSON"}), 400
+
+    fallback_path = os.path.join(os.path.dirname(__file__), f'fallback_{codigo}.json')
+    try:
+        with open(fallback_path, 'w', encoding='utf-8') as f:
+            json.dump(payload, f, ensure_ascii=False)
+        return jsonify({"success": True, "codigo": str(codigo)})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
 def fetch_consulta(numprod_psc):
     """Busca dados de lotes do servidor externo"""
     def enrich_payload(payload):
@@ -830,8 +849,7 @@ def fetch_consulta(numprod_psc):
             time.sleep(0.6 * (attempt + 1))
         
         fallback_path = os.path.join(os.path.dirname(__file__), f'fallback_{numprod_psc}.json')
-        fallback_diag = {"path": fallback_path, "exists": os.path.exists(fallback_path)}
-        if fallback_diag["exists"]:
+        if os.path.exists(fallback_path):
             try:
                 with open(fallback_path, 'r', encoding='utf-8-sig') as f:
                     data = json.load(f)
@@ -841,14 +859,13 @@ def fetch_consulta(numprod_psc):
                     payload["_cached"] = True
                     payload["_error"] = str(last_error)
                 return jsonify(payload)
-            except Exception as fallback_err:
-                fallback_diag["read_error"] = str(fallback_err)
+            except Exception:
+                pass
 
         return jsonify({
             "success": False,
             "data": [],
-            "error": f"Consulta indisponível. {last_error}",
-            "_fallback": fallback_diag
+            "error": f"Consulta indisponível. {last_error}"
         }), 503
     except Exception as e:
         print(f"[ERROR] fetch_consulta {numprod_psc}: {e}")
