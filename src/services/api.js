@@ -130,6 +130,9 @@ export const fetchAvailability = async (obraCode = '624') => {
     if (!res) throw new Error('Resposta vazia');
     const list = Array.isArray(res.data) ? res.data : (res.success ? res.data : []);
     const normalized = Array.isArray(list) ? list : [];
+    if (res?.success === false && normalized.length === 0) {
+      throw new Error(res?.error || 'Consulta indisponível no servidor.');
+    }
     const lastUpdate = res.Data_Atualizacao || (normalized[0] && normalized[0].Data_Atualizacao);
     if (lastUpdate) {
       normalized.lastUpdate = lastUpdate; // attach metadata to array object

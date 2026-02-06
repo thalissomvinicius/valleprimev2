@@ -809,19 +809,17 @@ def fetch_consulta(numprod_psc):
                     cached_payload["success"] = True
             return jsonify(cached_payload)
 
-        allow_fallback = os.environ.get('ALLOW_FALLBACK_CONSULTA', 'false').lower() == 'true'
-        if allow_fallback:
-            filename = f"fallback_{numprod_psc}.json"
-            filepath = os.path.join(BASE_DIR, filename)
-            if os.path.exists(filepath):
-                with open(filepath, 'r', encoding='utf-8-sig') as f:
-                    payload = enrich_payload(json.load(f))
-                if isinstance(payload, dict):
-                    payload["_cached"] = True
-                    payload["_external_error"] = external_error
-                    if payload.get("success") is None:
-                        payload["success"] = True
-                return jsonify(payload)
+        filename = f"fallback_{numprod_psc}.json"
+        filepath = os.path.join(BASE_DIR, filename)
+        if os.path.exists(filepath):
+            with open(filepath, 'r', encoding='utf-8-sig') as f:
+                payload = enrich_payload(json.load(f))
+            if isinstance(payload, dict):
+                payload["_cached"] = True
+                payload["_external_error"] = external_error
+                if payload.get("success") is None:
+                    payload["success"] = True
+            return jsonify(payload)
 
         return jsonify({
             "success": False,
