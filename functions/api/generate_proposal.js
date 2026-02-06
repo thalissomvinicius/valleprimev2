@@ -1,16 +1,24 @@
-export async function onRequestOptions() {
-  return new Response(null, {
-    status: 204,
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST,OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
-      "Access-Control-Max-Age": "86400",
-    },
-  });
-}
+export async function onRequest({ request, env }) {
+  if (request.method === "OPTIONS") {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST,OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        "Access-Control-Max-Age": "86400",
+      },
+    });
+  }
+  if (request.method !== "POST") {
+    return new Response(null, {
+      status: 405,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+      },
+    });
+  }
 
-export async function onRequestPost({ request, env }) {
   const upstreamBase = (env?.PDF_UPSTREAM_BASE || "https://valleprimev2.onrender.com").replace(/\/$/, "");
   const upstreamUrl = `${upstreamBase}/api/generate_proposal`;
 
@@ -63,4 +71,3 @@ export async function onRequestPost({ request, env }) {
     },
   });
 }
-
