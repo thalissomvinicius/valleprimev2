@@ -829,25 +829,26 @@ def fetch_consulta(numprod_psc):
                 last_error = str(e)
             time.sleep(0.6 * (attempt + 1))
         
-        try:
-            fallback_path = os.path.join(os.path.dirname(__file__), f'fallback_{numprod_psc}.json')
-            if os.path.exists(fallback_path):
-                print(f"[WARN] API externa falhou ({last_error}). Usando fallback local: {fallback_path}")
+        fallback_path = os.path.join(os.path.dirname(__file__), f'fallback_{numprod_psc}.json')
+        fallback_diag = {"path": fallback_path, "exists": os.path.exists(fallback_path)}
+        if fallback_diag["exists"]:
+            try:
                 with open(fallback_path, 'r', encoding='utf-8-sig') as f:
                     data = json.load(f)
-                    payload = enrich_payload(data)
-                    if isinstance(payload, dict):
-                        payload["success"] = True
-                        payload["_cached"] = True
-                        payload["_error"] = str(last_error)
-                    return jsonify(payload)
-        except Exception as fallback_err:
-            print(f"[ERROR] Falha ao ler fallback: {fallback_err}")
+                payload = enrich_payload(data)
+                if isinstance(payload, dict):
+                    payload["success"] = True
+                    payload["_cached"] = True
+                    payload["_error"] = str(last_error)
+                return jsonify(payload)
+            except Exception as fallback_err:
+                fallback_diag["read_error"] = str(fallback_err)
 
         return jsonify({
             "success": False,
             "data": [],
-            "error": f"Consulta indisponível. {last_error}"
+            "error": f"Consulta indisponível. {last_error}",
+            "_fallback": fallback_diag
         }), 503
     except Exception as e:
         print(f"[ERROR] fetch_consulta {numprod_psc}: {e}")
