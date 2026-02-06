@@ -55,3 +55,5 @@ temp_proposal.pdf
 backend/
 *.bat
 *.ps1
+
+consulta-proxy/
