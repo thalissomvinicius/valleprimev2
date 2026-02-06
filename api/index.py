@@ -1109,8 +1109,19 @@ def generate_proposal():
         # Define paths
         base_dir = os.path.dirname(os.path.abspath(__file__))
         positions_path = os.path.join(base_dir, 'posicoes_campos.json')
-        background_path = os.path.join(base_dir, 'proposta_template.png')
-        output_path = os.path.join(base_dir, 'proposta_output.pdf')
+        template_candidates = [
+            os.path.join(base_dir, 'proposta_template.png'),
+            os.path.join(base_dir, 'PROPOSTA LIMPA.jpg'),
+            os.path.join(base_dir, 'PROPOSTA_LIMPA.jpg'),
+            os.path.join(base_dir, 'proposta_template.jpg'),
+            os.path.join(base_dir, 'proposta_template.jpeg'),
+        ]
+        background_path = next((p for p in template_candidates if os.path.exists(p)), None)
+        if not background_path:
+            return jsonify({'error': f'Template de proposta não encontrado. Procurado em: {template_candidates}'}), 500
+
+        tmp_dir = '/tmp' if os.path.isdir('/tmp') else base_dir
+        output_path = os.path.join(tmp_dir, 'proposta_output.pdf')
         
         # Generate PDF
         generate_pdf_reportlab(data, background_path, positions_path, output_path)
