@@ -774,23 +774,31 @@ def fetch_consulta(numprod_psc):
 
     try:
         import time
-        connect_timeout = float(os.environ.get('CONSULTA_CONNECT_TIMEOUT', '8'))
-        read_timeout = float(os.environ.get('CONSULTA_READ_TIMEOUT', '15'))
-        resp = requests.get(
-            f"http://177.221.240.85:8000/api/consulta/{numprod_psc}/",
-            params={"t": int(time.time())},
-            timeout=(connect_timeout, read_timeout)
-        )
-        if resp.status_code == 200:
-            payload = enrich_payload(resp.json())
-            if isinstance(payload, dict) and payload.get("success") is None:
-                payload["success"] = True
-            return jsonify(payload)
+        connect_timeout = float(os.environ.get('CONSULTA_CONNECT_TIMEOUT', '12'))
+        read_timeout = float(os.environ.get('CONSULTA_READ_TIMEOUT', '20'))
+        retries = int(os.environ.get('CONSULTA_RETRIES', '1'))
+        last_error = None
+        for attempt in range(retries + 1):
+            try:
+                resp = requests.get(
+                    f"http://177.221.240.85:8000/api/consulta/{numprod_psc}/",
+                    params={"t": int(time.time())},
+                    timeout=(connect_timeout, read_timeout)
+                )
+                if resp.status_code == 200:
+                    payload = enrich_payload(resp.json())
+                    if isinstance(payload, dict) and payload.get("success") is None:
+                        payload["success"] = True
+                    return jsonify(payload)
+                last_error = f"HTTP {resp.status_code}"
+            except Exception as e:
+                last_error = str(e)
+            time.sleep(0.6 * (attempt + 1))
         return jsonify({
             "success": False,
             "data": [],
-            "error": f"Consulta indisponível. HTTP {resp.status_code}"
-        }), resp.status_code
+            "error": f"Consulta indisponível. {last_error}"
+        }), 503
     except Exception as e:
         print(f"[ERROR] fetch_consulta {numprod_psc}: {e}")
         return jsonify({"success": False, "data": [], "error": str(e)})
