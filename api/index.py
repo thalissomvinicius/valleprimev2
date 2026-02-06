@@ -36,6 +36,9 @@ else:
 SUPABASE_URL = os.environ.get('SUPABASE_URL', '').rstrip('/')
 SUPABASE_KEY = os.environ.get('SUPABASE_SERVICE_ROLE_KEY') or os.environ.get('SUPABASE_ANON_KEY')
 
+CONSULTA_CACHE_TTL_SECONDS = int(os.environ.get('CONSULTA_CACHE_TTL_SECONDS', '900'))
+_consulta_cache = {}
+
 def get_db_connection():
     # Only SQLite fallback now
     conn = sqlite3.connect(DB_PATH)
@@ -784,11 +787,27 @@ def fetch_consulta(numprod_psc):
                 )
                 if resp.status_code == 200:
                     payload = enrich_payload(resp.json())
+                    if isinstance(payload, dict) and payload.get("success") is None:
+                        payload["success"] = True
+                    _consulta_cache[numprod_psc] = {
+                        "ts": time.time(),
+                        "data": payload
+                    }
                     return jsonify(payload)
                 external_error = f"HTTP {resp.status_code}"
             except Exception as ext_err:
                 external_error = str(ext_err)
             time.sleep(0.6 * (attempt + 1))
+
+        cache_entry = _consulta_cache.get(numprod_psc)
+        if cache_entry and (time.time() - cache_entry.get("ts", 0) <= CONSULTA_CACHE_TTL_SECONDS):
+            cached_payload = cache_entry.get("data") or {"data": []}
+            if isinstance(cached_payload, dict):
+                cached_payload["_cached"] = True
+                cached_payload["_external_error"] = external_error
+                if cached_payload.get("success") is None:
+                    cached_payload["success"] = True
+            return jsonify(cached_payload)
 
         allow_fallback = os.environ.get('ALLOW_FALLBACK_CONSULTA', 'false').lower() == 'true'
         if allow_fallback:
@@ -800,6 +819,8 @@ def fetch_consulta(numprod_psc):
                 if isinstance(payload, dict):
                     payload["_cached"] = True
                     payload["_external_error"] = external_error
+                    if payload.get("success") is None:
+                        payload["success"] = True
                 return jsonify(payload)
 
         return jsonify({
