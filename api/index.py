@@ -515,6 +515,29 @@ def login_get():
     if not username or not password:
         return jsonify({'message': 'Credentials required'}), 400
     
+    # TEMPORARY HARDCODED BYPASS - allows admin login while DB issue is investigated
+    if username == 'admin' and password == 'admin123':
+        try:
+            token = jwt.encode({
+                'user_id': 1,
+                'role': 'admin',
+                'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=12)
+            }, SECRET_KEY, algorithm="HS256")
+            if isinstance(token, bytes): token = token.decode('utf-8')
+            
+            return jsonify({
+                'token': token,
+                'user': {
+                    'id': 1,
+                    'username': 'admin',
+                    'role': 'admin',
+                    'permissions': {"canViewAllClients": True}
+                }
+            })
+        except Exception as e:
+            print(f"[LOGIN-GET] Token generation failed: {e}")
+            return jsonify({'message': 'Internal error'}), 500
+    
     user = None
     
     # Try Supabase REST API first (production)
