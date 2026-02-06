@@ -1105,6 +1105,122 @@ def generate_proposal():
         # Check if PDF generator is available
         if not generate_pdf_reportlab:
             return jsonify({'error': 'PDF generator not available'}), 500
+
+        def pick_first(*values):
+            for v in values:
+                if v is None:
+                    continue
+                if isinstance(v, (int, float)):
+                    return v
+                s = str(v).strip()
+                if s != "":
+                    return v
+            return ""
+
+        def to_brl(value):
+            if value is None:
+                return ""
+            if isinstance(value, bool):
+                return ""
+            if isinstance(value, (int, float)):
+                s = f"{value:,.2f}"
+                return s.replace(",", "X").replace(".", ",").replace("X", ".")
+            s = str(value).strip()
+            if s == "":
+                return ""
+            s = s.replace("R$", "").strip()
+            return s
+
+        lot = data.get("lot") if isinstance(data.get("lot"), dict) else {}
+        obra_code = str(lot.get("Obra") or "").strip()
+        obra_map = {
+            "600": {"cidade": "Dom Eliseu", "uf": "PA", "descricao": "RESIDENCIAL JARDIM DO VALLE - DOM ELISEU"},
+            "601": {"cidade": "Capanema", "uf": "PA", "descricao": "RESIDENCIAL JARDIM AMERICA - CAPANEMA"},
+            "602": {"cidade": "Castanhal", "uf": "PA", "descricao": "RESIDENCIAL SALLES JARDIM - CASTANHAL"},
+            "603": {"cidade": "Castanhal", "uf": "PA", "descricao": "RESIDENCIAL JARDIM CASTANHAL - CASTANHAL"},
+            "604": {"cidade": "Tomé-Açu", "uf": "PA", "descricao": "RESIDENCIAL IPITINGA - TOMÉ-AÇU"},
+            "605": {"cidade": "Tomé-Açu", "uf": "PA", "descricao": "RESIDENCIAL VALLE DO IPITINGA - TOMÉ-AÇU"},
+            "610": {"cidade": "Tailândia", "uf": "PA", "descricao": "RESIDENCIAL JARDIM DO VALLE - TAILANDIA"},
+            "616": {"cidade": "Barcarena", "uf": "PA", "descricao": "RESIDENCIAL JARDIM DO VALLE - BARCARENA"},
+            "618": {"cidade": "Tailândia", "uf": "PA", "descricao": "RESIDENCIAL JARDIM DO VALLE II - TAILANDIA"},
+            "620": {"cidade": "Paragominas", "uf": "PA", "descricao": "RESIDENCIAL JARDIM VALLE DO URAIM - PARAGOMINAS"},
+            "621": {"cidade": "Rondon do Pará", "uf": "PA", "descricao": "RESIDENCIAL PARQUE DO VALLE - RONDON"},
+            "623": {"cidade": "Castanhal", "uf": "PA", "descricao": "RESIDENCIAL JARDIM CASTANHAL III - CASTANHAL"},
+            "624": {"cidade": "Tomé-Açu", "uf": "PA", "descricao": "RESIDENCIAL VALLE DO IPITINGA II - TOMÉ-AÇU"},
+            "625": {"cidade": "Tomé-Açu", "uf": "PA", "descricao": "RESIDENCIAL VALLE DO IPÊS - TOMÉ AÇU"},
+        }
+        obra_info = obra_map.get(obra_code) or {}
+
+        pdf_data = dict(data)
+
+        pdf_data["empreendimento"] = pick_first(
+            data.get("empreendimento"),
+            data.get("obraName"),
+            lot.get("Descricao_Empreendimento"),
+            obra_info.get("descricao"),
+            "VALLE",
+        )
+        pdf_data["cidade_empreendimento"] = pick_first(
+            data.get("cidade_empreendimento"),
+            data.get("cidadeEmpreendimento"),
+            obra_info.get("cidade"),
+        )
+        pdf_data["estado_empreendimento"] = pick_first(
+            data.get("estado_empreendimento"),
+            data.get("ufEmpreendimento"),
+            obra_info.get("uf"),
+        )
+        pdf_data["lote"] = pick_first(data.get("lote"), lot.get("LT"))
+        pdf_data["quadra"] = pick_first(data.get("quadra"), lot.get("QD"))
+        pdf_data["area"] = pick_first(data.get("area"), lot.get("M2"))
+        pdf_data["logradouro"] = pick_first(data.get("logradouro"), lot.get("Logradouro"))
+
+        pdf_data["valor_inicial"] = to_brl(pick_first(data.get("valor_inicial"), data.get("lotValue"), lot.get("Valor_Terreno")))
+        pdf_data["valor_sinal"] = to_brl(pick_first(data.get("valor_sinal"), data.get("downPaymentTotal")))
+        pdf_data["valor_total_entrada"] = to_brl(pick_first(data.get("valor_total_entrada"), data.get("entradaValue")))
+        pdf_data["valor_saldo_parcelar"] = to_brl(pick_first(data.get("valor_saldo_parcelar"), data.get("remainingBalance")))
+
+        cidade_final = pick_first(data.get("cidade_proposta_final"), pdf_data.get("cidade_empreendimento"))
+        if not cidade_final:
+            obra_name = str(pick_first(data.get("obraName"), obra_info.get("descricao"))).strip()
+            if " - " in obra_name:
+                cidade_final = obra_name.split(" - ")[-1].strip()
+        pdf_data["cidade_proposta_final"] = cidade_final
+
+        proposta_data = str(pick_first(data.get("proposta_data"), data.get("propostaDate"))).strip()
+        if proposta_data and len(proposta_data) >= 10 and proposta_data[4] == "-" and proposta_data[7] == "-":
+            ano, mes, dia = proposta_data[:10].split("-")
+            pdf_data["dia_proposta_final"] = dia
+            pdf_data["mes_proposta_final"] = mes
+            pdf_data["ano_proposta_final"] = ano
+
+        entrada_enabled = bool(data.get("entradaEnabled"))
+        try:
+            entrada_value_num = float(data.get("entradaValue") or 0)
+        except Exception:
+            entrada_value_num = 0.0
+        if (not entrada_enabled) or entrada_value_num <= 0:
+            for k in list(pdf_data.keys()):
+                if isinstance(k, str) and k.startswith("entrada_"):
+                    pdf_data[k] = ""
+            pdf_data["valor_total_entrada"] = ""
+
+        skip_sinal = bool(data.get("skipSinal"))
+        if skip_sinal:
+            for k in list(pdf_data.keys()):
+                if isinstance(k, str) and k.startswith("sinal_"):
+                    pdf_data[k] = ""
+            pdf_data["valor_sinal"] = ""
+
+        try:
+            remaining_balance_num = float(data.get("remainingBalance") or 0)
+        except Exception:
+            remaining_balance_num = 0.0
+        if remaining_balance_num <= 0:
+            for k in list(pdf_data.keys()):
+                if isinstance(k, str) and k.startswith("saldo_"):
+                    pdf_data[k] = ""
+            pdf_data["valor_saldo_parcelar"] = ""
         
         # Define paths
         base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -1124,7 +1240,7 @@ def generate_proposal():
         output_path = os.path.join(tmp_dir, 'proposta_output.pdf')
         
         # Generate PDF
-        generate_pdf_reportlab(data, background_path, positions_path, output_path)
+        generate_pdf_reportlab(pdf_data, background_path, positions_path, output_path)
         
         # Check if file was created
         if not os.path.exists(output_path):
