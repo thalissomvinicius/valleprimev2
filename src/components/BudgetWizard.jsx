@@ -381,7 +381,7 @@ ${sinalSection}
         };
 
         try {
-            const proposalUrl = API_BASE_URL ? `${API_BASE_URL}/api/generate_proposal` : '/api/generate_proposal';
+      const proposalUrl = '/api/generate_proposal';
             const response = await fetch(proposalUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
