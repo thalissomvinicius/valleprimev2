@@ -10,6 +10,7 @@ export async function onRequest({ request, env }) {
       },
     });
   }
+
   if (request.method !== "POST") {
     return new Response(null, {
       status: 405,
@@ -71,3 +72,4 @@ export async function onRequest({ request, env }) {
     },
   });
 }
+
