@@ -59,16 +59,26 @@ function MainApp() {
   useEffect(() => {
     if (!selectedObra) return;
     localStorage.setItem('selectedObra', selectedObra);
+    let cancelled = false;
 
-    setLoading(true);
-    fetchAvailability(selectedObra)
-      .then((result) => {
+    const loadAvailability = async () => {
+      setLoading(true);
+      try {
+        const result = await fetchAvailability(selectedObra);
+        if (cancelled) return;
         setData(result);
         setError(null);
         dataCacheRef.current[selectedObra] = result;
-      })
-      .catch((err) => setError(err?.message || 'Erro ao carregar dados. Por favor, tente novamente mais tarde.'))
-      .finally(() => setLoading(false));
+      } catch (err) {
+        if (cancelled) return;
+        setError(err?.message || 'Erro ao carregar dados. Por favor, tente novamente mais tarde.');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    loadAvailability();
+    return () => { cancelled = true; };
   }, [selectedObra]);
 
   // Parse numeric value from formatted string
