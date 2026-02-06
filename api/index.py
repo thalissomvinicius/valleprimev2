@@ -801,11 +801,23 @@ def fetch_consulta(numprod_psc):
         read_timeout = float(os.environ.get('CONSULTA_READ_TIMEOUT', '20'))
         retries = int(os.environ.get('CONSULTA_RETRIES', '1'))
         last_error = None
+        
+        # Headers para simular navegador real e evitar bloqueio por WAF/Firewall
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'application/json, text/javascript, */*; q=0.01',
+            'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+            'Referer': 'http://177.221.240.85:8000/',
+            'Origin': 'http://177.221.240.85:8000',
+            'Connection': 'keep-alive'
+        }
+
         for attempt in range(retries + 1):
             try:
                 resp = requests.get(
                     f"http://177.221.240.85:8000/api/consulta/{numprod_psc}/",
                     params={"t": int(time.time())},
+                    headers=headers,
                     timeout=(connect_timeout, read_timeout)
                 )
                 if resp.status_code == 200:
