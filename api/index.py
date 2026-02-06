@@ -774,10 +774,12 @@ def fetch_consulta(numprod_psc):
 
     try:
         import time
+        connect_timeout = float(os.environ.get('CONSULTA_CONNECT_TIMEOUT', '8'))
+        read_timeout = float(os.environ.get('CONSULTA_READ_TIMEOUT', '15'))
         resp = requests.get(
             f"http://177.221.240.85:8000/api/consulta/{numprod_psc}/",
             params={"t": int(time.time())},
-            timeout=(3, 12)
+            timeout=(connect_timeout, read_timeout)
         )
         if resp.status_code == 200:
             payload = enrich_payload(resp.json())
