@@ -802,7 +802,6 @@ def fetch_consulta(numprod_psc):
         retries = int(os.environ.get('CONSULTA_RETRIES', '1'))
         last_error = None
         
-        # Headers para simular navegador real e evitar bloqueio por WAF/Firewall
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'Accept': 'application/json, text/javascript, */*; q=0.01',
@@ -830,14 +829,12 @@ def fetch_consulta(numprod_psc):
                 last_error = str(e)
             time.sleep(0.6 * (attempt + 1))
         
-        # Fallback para arquivo local se a API externa falhar
         try:
             fallback_path = os.path.join(os.path.dirname(__file__), f'fallback_{numprod_psc}.json')
             if os.path.exists(fallback_path):
                 print(f"[WARN] API externa falhou ({last_error}). Usando fallback local: {fallback_path}")
-                with open(fallback_path, 'r', encoding='utf-8') as f:
+                with open(fallback_path, 'r', encoding='utf-8-sig') as f:
                     data = json.load(f)
-                    # Tenta enriquecer dados do fallback também
                     payload = enrich_payload(data)
                     if isinstance(payload, dict):
                         payload["success"] = True

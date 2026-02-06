@@ -122,8 +122,6 @@ export const deleteUser = async (id) => {
 
 export const fetchAvailability = async (obraCode = '624') => {
   try {
-    // Timeout aumentado para 60s para permitir que o backend tente a API externa
-    // e faça fallback local se necessário, sem que o frontend aborte antes.
     const response = await requestWithRetry(() => api.get(`${API_BASE}/${obraCode}`, {
       params: { t: Date.now() },
       timeout: 60000
