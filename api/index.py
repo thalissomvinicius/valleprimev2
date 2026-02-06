@@ -1153,23 +1153,35 @@ def generate_proposal():
 
         pdf_data = dict(data)
 
+        def split_obra_name(name):
+            s = str(name or "").strip()
+            if " - " in s:
+                left, right = s.split(" - ", 1)
+                return left.strip(), right.strip()
+            return s, ""
+
+        obra_name_raw = pick_first(data.get("obraName"), obra_info.get("descricao"))
+        obra_name_only, obra_city_from_name = split_obra_name(obra_name_raw)
+
         pdf_data["empreendimento"] = pick_first(
             data.get("empreendimento"),
-            data.get("obraName"),
+            obra_name_only,
             lot.get("Descricao_Empreendimento"),
-            obra_info.get("descricao"),
+            obra_name_raw,
             "VALLE",
         )
-        pdf_data["cidade_empreendimento"] = pick_first(
+        pdf_data["cidade_empreendimento"] = str(pick_first(
             data.get("cidade_empreendimento"),
             data.get("cidadeEmpreendimento"),
             obra_info.get("cidade"),
-        )
-        pdf_data["estado_empreendimento"] = pick_first(
+            obra_city_from_name,
+        )).upper().strip()
+        pdf_data["estado_empreendimento"] = str(pick_first(
             data.get("estado_empreendimento"),
             data.get("ufEmpreendimento"),
             obra_info.get("uf"),
-        )
+            "PA",
+        )).upper().strip()
         pdf_data["lote"] = pick_first(data.get("lote"), lot.get("LT"))
         pdf_data["quadra"] = pick_first(data.get("quadra"), lot.get("QD"))
         pdf_data["area"] = pick_first(data.get("area"), lot.get("M2"))
@@ -1180,12 +1192,14 @@ def generate_proposal():
         pdf_data["valor_total_entrada"] = to_brl(pick_first(data.get("valor_total_entrada"), data.get("entradaValue")))
         pdf_data["valor_saldo_parcelar"] = to_brl(pick_first(data.get("valor_saldo_parcelar"), data.get("remainingBalance")))
 
-        cidade_final = pick_first(data.get("cidade_proposta_final"), pdf_data.get("cidade_empreendimento"))
+        cidade_final = str(pick_first(data.get("cidade_proposta_final"), pdf_data.get("cidade_empreendimento"))).strip()
+        uf_final = str(pick_first(data.get("uf_proposta_final"), pdf_data.get("estado_empreendimento"), obra_info.get("uf"), "PA")).strip().upper()
         if not cidade_final:
             obra_name = str(pick_first(data.get("obraName"), obra_info.get("descricao"))).strip()
             if " - " in obra_name:
                 cidade_final = obra_name.split(" - ")[-1].strip()
-        pdf_data["cidade_proposta_final"] = cidade_final
+        cidade_final = str(cidade_final).upper().strip()
+        pdf_data["cidade_proposta_final"] = f"{cidade_final}/{uf_final}" if cidade_final and uf_final else cidade_final
 
         proposta_data = str(pick_first(data.get("proposta_data"), data.get("propostaDate"))).strip()
         if proposta_data and len(proposta_data) >= 10 and proposta_data[4] == "-" and proposta_data[7] == "-":
@@ -1211,6 +1225,30 @@ def generate_proposal():
                 if isinstance(k, str) and k.startswith("sinal_"):
                     pdf_data[k] = ""
             pdf_data["valor_sinal"] = ""
+
+        try:
+            balance_installments_num = int(data.get("balanceInstallments") or 0)
+        except Exception:
+            balance_installments_num = 0
+        if balance_installments_num > 0:
+            if not str(pdf_data.get("saldo_qtd_parcelas") or "").strip():
+                pdf_data["saldo_qtd_parcelas"] = str(balance_installments_num).zfill(2)
+            if not str(pdf_data.get("saldo_valor_parcela") or "").strip():
+                try:
+                    saldo_val = float(data.get("remainingBalance") or 0)
+                except Exception:
+                    saldo_val = 0.0
+                parcela = (saldo_val / balance_installments_num) if balance_installments_num else 0.0
+                pdf_data["saldo_valor_parcela"] = to_brl(parcela) if parcela > 0 else ""
+            if not str(pdf_data.get("saldo_periodicidade") or "").strip():
+                pdf_data["saldo_periodicidade"] = "MENSAL" if balance_installments_num > 1 else "ÚNICA"
+            if not str(pdf_data.get("saldo_tipo_parcela") or "").strip():
+                if balance_installments_num <= 36:
+                    pdf_data["saldo_tipo_parcela"] = "FIXA"
+                elif balance_installments_num <= 72:
+                    pdf_data["saldo_tipo_parcela"] = "CORRIGIDA"
+                else:
+                    pdf_data["saldo_tipo_parcela"] = "REAJUSTÁVEL"
 
         try:
             remaining_balance_num = float(data.get("remainingBalance") or 0)
