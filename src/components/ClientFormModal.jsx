@@ -449,6 +449,23 @@ const ClientFormModal = ({ onClose, onConfirm, onDelete, initialData = null, cli
                 salvar_vinculo_segundo: isConjuge
             };
 
+            const shouldClearSecond = !submissionData.has_segundo || submissionData.tipo_segundo === 'none';
+            if (shouldClearSecond) {
+                for (const key of Object.keys(submissionData)) {
+                    if (key === 'tipo_segundo' || key === 'has_segundo') continue;
+                    if (key.endsWith('_segundo') || key.includes('_segundo')) {
+                        submissionData[key] = typeof submissionData[key] === 'boolean' ? false : '';
+                    }
+                }
+                submissionData.has_segundo = false;
+                submissionData.tipo_segundo = 'none';
+                submissionData.tipo_conjuge = false;
+                submissionData.tipo_segundo_proponente = false;
+                submissionData.tipo_procurador = false;
+                submissionData.tipo_pessoa_segundo = null;
+                submissionData.salvar_vinculo_segundo = false;
+            }
+
             await onConfirm(submissionData);
             showToast(clientId ? 'Cliente atualizado com sucesso!' : 'Cliente salvo com sucesso!', 'success');
         } catch (error) {

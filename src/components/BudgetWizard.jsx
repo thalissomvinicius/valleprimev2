@@ -537,6 +537,7 @@ ${sinalSection}
             {showClientSelection && (
                 <ClientSelectionModal
                     onClose={() => setShowClientSelection(false)}
+                    onBack={() => setShowClientSelection(false)}
                     onSelectClient={handleSelectClient}
                     onNewClient={handleNewClient}
                 />

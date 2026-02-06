@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, Search, UserPlus, Users, Edit2, Trash2, User, Building2 } from 'lucide-react';
+import { X, Search, UserPlus, Users, Edit2, Trash2, User, Building2, ChevronLeft } from 'lucide-react';
 import { getClients, deleteClient } from '../services/api';
 import './ClientSelectionModal.css';
 
-const ClientSelectionModal = ({ onSelectClient, onNewClient, onClose }) => {
+const ClientSelectionModal = ({ onSelectClient, onNewClient, onClose, onBack }) => {
     const [clients, setClients] = useState([]);
     const [loading, setLoading] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
@@ -120,9 +120,15 @@ const ClientSelectionModal = ({ onSelectClient, onNewClient, onClose }) => {
         <div className="modal-overlay" onClick={onClose}>
             <div className="client-selection-modal" onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
-                    <div className="modal-title">
-                        <Users size={24} />
-                        <h2>Selecionar Cliente</h2>
+                    <div className="modal-header-left">
+                        <button className="back-btn" onClick={onBack || onClose} type="button">
+                            <ChevronLeft size={20} />
+                            Voltar
+                        </button>
+                        <div className="modal-title">
+                            <Users size={24} />
+                            <h2>Selecionar Cliente</h2>
+                        </div>
                     </div>
                     <button className="close-btn" onClick={onClose}>
                         <X size={24} />

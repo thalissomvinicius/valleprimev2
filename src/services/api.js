@@ -197,7 +197,14 @@ export const getClients = async ({ search = '', page = 1, limit = 50, type = '',
 
 export const saveClient = async (clientData) => {
   try {
-    const response = await api.post(CLIENT_BASE, clientData);
+    const clientId = clientData?.client_id || clientData?.id || null;
+    const payload = { ...(clientData || {}) };
+    if (payload.client_id) delete payload.client_id;
+    if (payload.id) delete payload.id;
+
+    const response = clientId
+      ? await api.put(`${CLIENT_BASE}/${clientId}`, payload)
+      : await api.post(CLIENT_BASE, payload);
     return response.data; // Response should be { success: true } or { error: ... }
   } catch (error) {
     const details = error?.response?.data;

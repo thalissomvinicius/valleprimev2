@@ -49,6 +49,33 @@
     border-bottom: 1px solid #e2e8f0;
 }
 
+.modal-header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    min-width: 0;
+}
+
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: none;
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    color: var(--text-secondary);
+    padding: 0.5rem 0.75rem;
+    border-radius: 10px;
+    transition: all 0.2s;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.back-btn:hover {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
 .modal-title {
     display: flex;
     align-items: center;
@@ -193,8 +220,10 @@
 /* Table Styles */
 .clients-table-container {
     overflow-x: auto;
+    overflow-y: auto;
     border-radius: 12px;
     border: 1px solid var(--border-color);
+    max-height: 55vh;
 }
 
 .clients-table {

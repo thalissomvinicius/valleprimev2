@@ -898,10 +898,22 @@ def manage_clients():
         print(f"[DEBUG] Found {len(clients) if clients else 0} clients")
         # Normalize response for frontend
         if isinstance(clients, list):
+            import re
+            seen = set()
+            deduped = []
+            for c in clients:
+                cpf_raw = str(c.get('cpf_cnpj') or '')
+                cpf_digits = re.sub(r'\D', '', cpf_raw)
+                tipo = str(c.get('tipo_pessoa') or '')
+                key = f"{tipo}:{cpf_digits}" if cpf_digits else f"id:{c.get('id')}"
+                if key in seen:
+                    continue
+                seen.add(key)
+                deduped.append(c)
             return jsonify({
                 "success": True,
-                "clients": clients,
-                "total_count": len(clients)
+                "clients": deduped,
+                "total_count": len(deduped)
             })
         return jsonify({"success": True, "clients": [], "total_count": 0})
 
@@ -916,7 +928,8 @@ def manage_clients():
             # Robust data extraction for both sources (Proposal vs Client Tab)
             nome = data.get('nome') or data.get('nome_proponente') or data.get('razao_social_proponente')
             cpf_cnpj = data.get('cpf_cnpj') or data.get('cpf_cnpj_proponente')
-            tipo_pessoa = data.get('tipo_pessoa', 'PF')
+            tipo_pessoa = str(data.get('tipo_pessoa', 'PF')).upper()
+            client_id_raw = data.get('client_id') or data.get('id')
             
             print(f"[DEBUG] Extracted - nome: {nome}, cpf_cnpj: {cpf_cnpj}, tipo_pessoa: {tipo_pessoa}")
             
@@ -927,12 +940,106 @@ def manage_clients():
                     'message': 'Nome e CPF/CNPJ são obrigatórios',
                     'required': ['nome or nome_proponente', 'cpf_cnpj or cpf_cnpj_proponente']
                 }), 400
-            
-            # Insert into database
-            print(f"[DEBUG] Attempting to insert client: {nome} - {cpf_cnpj}")
+
+            import re
+
+            def extract_numeric_id(value):
+                if value is None:
+                    return None
+                match = re.search(r'\d+', str(value))
+                return int(match.group()) if match else None
+
+            def normalize_digits(value):
+                return re.sub(r'\D', '', str(value or '')).strip()
+
+            def format_cpf_cnpj(digits):
+                d = normalize_digits(digits)
+                if len(d) == 11:
+                    return f"{d[:3]}.{d[3:6]}.{d[6:9]}-{d[9:]}"
+                if len(d) == 14:
+                    return f"{d[:2]}.{d[2:5]}.{d[5:8]}/{d[8:12]}-{d[12:]}"
+                return d
+
+            client_id = extract_numeric_id(client_id_raw)
+            cpf_digits = normalize_digits(cpf_cnpj)
+            if not cpf_digits:
+                return jsonify({'success': False, 'error': 'CPF/CNPJ inválido'}), 400
+
+            cpf_candidates = [cpf_digits]
+            cpf_masked = format_cpf_cnpj(cpf_digits)
+            if cpf_masked and cpf_masked != cpf_digits:
+                cpf_candidates.append(cpf_masked)
+
+            can_edit_any = request.user_role == 'admin'
+            if not can_edit_any:
+                user = query_db("SELECT permissions FROM users WHERE id = ?", (request.user_id,), one=True)
+                perms = json.loads(user['permissions']) if user and user['permissions'] else {}
+                can_edit_any = perms.get('canViewAllClients', False)
+
+            def find_existing_by_cpf(exclude_id=None):
+                for cand in cpf_candidates:
+                    if exclude_id:
+                        existing_row = query_db(
+                            "SELECT id, created_by FROM clients WHERE cpf_cnpj = ? AND id != ? ORDER BY id DESC",
+                            (cand, exclude_id),
+                            one=True
+                        )
+                    else:
+                        existing_row = query_db(
+                            "SELECT id, created_by FROM clients WHERE cpf_cnpj = ? ORDER BY id DESC",
+                            (cand,),
+                            one=True
+                        )
+                    if existing_row:
+                        return existing_row
+                return None
+
+            payload_json = json.dumps(data)
+
+            if client_id:
+                current = query_db("SELECT id, created_by FROM clients WHERE id = ?", (client_id,), one=True)
+                if not current:
+                    return jsonify({'success': False, 'error': 'Cliente não encontrado'}), 404
+                if not can_edit_any and str(current.get('created_by') or '') != str(request.user_id):
+                    return jsonify({'success': False, 'error': 'Sem permissão para atualizar este cliente'}), 403
+
+                dup = find_existing_by_cpf(exclude_id=client_id)
+                if dup:
+                    if can_edit_any or str(dup.get('created_by') or '') == str(request.user_id):
+                        return jsonify({'success': False, 'error': 'CPF/CNPJ já cadastrado em outro cliente'}), 409
+                    return jsonify({'success': False, 'error': 'CPF/CNPJ já cadastrado no sistema. Solicite ao administrador.', 'error_code': 'DUPLICATE_CPF'}), 409
+
+                print(f"[DEBUG] Updating client {client_id}: {nome} - {cpf_digits}")
+                success = query_db(
+                    "UPDATE clients SET nome = ?, cpf_cnpj = ?, tipo_pessoa = ?, data = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                    (nome, cpf_digits, tipo_pessoa, payload_json, client_id),
+                    commit=True
+                )
+                print(f"[DEBUG] Update result: {success}")
+                if success:
+                    return jsonify({'success': True, 'message': 'Cliente atualizado com sucesso', 'client_id': client_id})
+                return jsonify({'success': False, 'error': 'Falha ao atualizar cliente'}), 500
+
+            existing = find_existing_by_cpf()
+            if existing:
+                if can_edit_any or str(existing.get('created_by') or '') == str(request.user_id):
+                    existing_id = int(existing['id'])
+                    print(f"[DEBUG] Upserting existing client {existing_id}: {nome} - {cpf_digits}")
+                    success = query_db(
+                        "UPDATE clients SET nome = ?, cpf_cnpj = ?, tipo_pessoa = ?, data = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                        (nome, cpf_digits, tipo_pessoa, payload_json, existing_id),
+                        commit=True
+                    )
+                    print(f"[DEBUG] Upsert update result: {success}")
+                    if success:
+                        return jsonify({'success': True, 'message': 'Cliente atualizado com sucesso', 'client_id': existing_id})
+                    return jsonify({'success': False, 'error': 'Falha ao atualizar cliente existente'}), 500
+                return jsonify({'success': False, 'error': 'CPF/CNPJ já cadastrado no sistema. Solicite ao administrador.', 'error_code': 'DUPLICATE_CPF'}), 409
+
+            print(f"[DEBUG] Inserting client: {nome} - {cpf_digits}")
             success = query_db(
                 "INSERT INTO clients (nome, cpf_cnpj, tipo_pessoa, created_by, data) VALUES (?, ?, ?, ?, ?)",
-                (nome, cpf_cnpj, tipo_pessoa, str(request.user_id), json.dumps(data)), 
+                (nome, cpf_digits, tipo_pessoa, str(request.user_id), payload_json),
                 commit=True
             )
             
@@ -957,6 +1064,87 @@ def manage_clients():
                 'message': str(e),
                 'trace': error_trace if os.getenv('VERCEL') else None  # Only show trace in production for debugging
             }), 500
+
+
+@app.route('/api/clients/<int:client_id>', methods=['PUT'])
+@app.route('/api/manage-clients/<int:client_id>', methods=['PUT'])
+@token_required
+def update_client(client_id):
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
+
+        nome = data.get('nome') or data.get('nome_proponente') or data.get('razao_social_proponente')
+        cpf_cnpj = data.get('cpf_cnpj') or data.get('cpf_cnpj_proponente')
+        tipo_pessoa = str(data.get('tipo_pessoa', 'PF')).upper()
+
+        if not nome or not cpf_cnpj:
+            return jsonify({'success': False, 'error': 'Nome e CPF/CNPJ são obrigatórios'}), 400
+
+        import re
+
+        def normalize_digits(value):
+            return re.sub(r'\D', '', str(value or '')).strip()
+
+        def format_cpf_cnpj(digits):
+            d = normalize_digits(digits)
+            if len(d) == 11:
+                return f"{d[:3]}.{d[3:6]}.{d[6:9]}-{d[9:]}"
+            if len(d) == 14:
+                return f"{d[:2]}.{d[2:5]}.{d[5:8]}/{d[8:12]}-{d[12:]}"
+            return d
+
+        cpf_digits = normalize_digits(cpf_cnpj)
+        if not cpf_digits:
+            return jsonify({'success': False, 'error': 'CPF/CNPJ inválido'}), 400
+
+        cpf_candidates = [cpf_digits]
+        cpf_masked = format_cpf_cnpj(cpf_digits)
+        if cpf_masked and cpf_masked != cpf_digits:
+            cpf_candidates.append(cpf_masked)
+
+        can_edit_any = request.user_role == 'admin'
+        if not can_edit_any:
+            user = query_db("SELECT permissions FROM users WHERE id = ?", (request.user_id,), one=True)
+            perms = json.loads(user['permissions']) if user and user['permissions'] else {}
+            can_edit_any = perms.get('canViewAllClients', False)
+
+        current = query_db("SELECT id, created_by FROM clients WHERE id = ?", (client_id,), one=True)
+        if not current:
+            return jsonify({'success': False, 'error': 'Cliente não encontrado'}), 404
+        if not can_edit_any and str(current.get('created_by') or '') != str(request.user_id):
+            return jsonify({'success': False, 'error': 'Sem permissão para atualizar este cliente'}), 403
+
+        dup = None
+        for cand in cpf_candidates:
+            dup = query_db(
+                "SELECT id, created_by FROM clients WHERE cpf_cnpj = ? AND id != ? ORDER BY id DESC",
+                (cand, client_id),
+                one=True
+            )
+            if dup:
+                break
+        if dup:
+            if can_edit_any or str(dup.get('created_by') or '') == str(request.user_id):
+                return jsonify({'success': False, 'error': 'CPF/CNPJ já cadastrado em outro cliente'}), 409
+            return jsonify({'success': False, 'error': 'CPF/CNPJ já cadastrado no sistema. Solicite ao administrador.', 'error_code': 'DUPLICATE_CPF'}), 409
+
+        payload_json = json.dumps(data)
+        success = query_db(
+            "UPDATE clients SET nome = ?, cpf_cnpj = ?, tipo_pessoa = ?, data = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+            (nome, cpf_digits, tipo_pessoa, payload_json, client_id),
+            commit=True
+        )
+        if success:
+            return jsonify({'success': True, 'message': 'Cliente atualizado com sucesso', 'client_id': client_id})
+        return jsonify({'success': False, 'error': 'Falha ao atualizar cliente'}), 500
+    except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"[ERROR] update_client: {str(e)}")
+        print(f"[ERROR] Traceback: {error_trace}")
+        return jsonify({'success': False, 'error': str(e), 'trace': error_trace if os.getenv('VERCEL') else None}), 500
 
 
 @app.route('/api/clients/<int:client_id>', methods=['DELETE'])
@@ -1016,15 +1204,41 @@ def check_duplicate_client():
             if match:
                 client_id = int(match.group())
         
-        # Check if exists
-        if client_id:
-            # Editing existing client - exclude self from check
-            existing = query_db("SELECT id, nome FROM clients WHERE cpf_cnpj = ? AND id != ?", 
-                               (cpf_cnpj, client_id), one=True)
-        else:
-            # New client
-            existing = query_db("SELECT id, nome FROM clients WHERE cpf_cnpj = ?", 
-                               (cpf_cnpj,), one=True)
+        import re
+
+        def normalize_digits(value):
+            return re.sub(r'\D', '', str(value or '')).strip()
+
+        def format_cpf_cnpj(digits):
+            d = normalize_digits(digits)
+            if len(d) == 11:
+                return f"{d[:3]}.{d[3:6]}.{d[6:9]}-{d[9:]}"
+            if len(d) == 14:
+                return f"{d[:2]}.{d[2:5]}.{d[5:8]}/{d[8:12]}-{d[12:]}"
+            return d
+
+        digits = normalize_digits(cpf_cnpj)
+        candidates = [digits]
+        masked = format_cpf_cnpj(digits)
+        if masked and masked != digits:
+            candidates.append(masked)
+
+        existing = None
+        for cand in candidates:
+            if client_id:
+                existing = query_db(
+                    "SELECT id, nome FROM clients WHERE cpf_cnpj = ? AND id != ?",
+                    (cand, client_id),
+                    one=True
+                )
+            else:
+                existing = query_db(
+                    "SELECT id, nome FROM clients WHERE cpf_cnpj = ?",
+                    (cand,),
+                    one=True
+                )
+            if existing:
+                break
         
         if existing:
             return jsonify({'exists': True, 'client_name': existing['nome'], 'client_id': existing['id']})
@@ -1204,8 +1418,22 @@ def generate_proposal():
         proposta_data = str(pick_first(data.get("proposta_data"), data.get("propostaDate"))).strip()
         if proposta_data and len(proposta_data) >= 10 and proposta_data[4] == "-" and proposta_data[7] == "-":
             ano, mes, dia = proposta_data[:10].split("-")
+            meses = {
+                "01": "JANEIRO",
+                "02": "FEVEREIRO",
+                "03": "MARCO",
+                "04": "ABRIL",
+                "05": "MAIO",
+                "06": "JUNHO",
+                "07": "JULHO",
+                "08": "AGOSTO",
+                "09": "SETEMBRO",
+                "10": "OUTUBRO",
+                "11": "NOVEMBRO",
+                "12": "DEZEMBRO",
+            }
             pdf_data["dia_proposta_final"] = dia
-            pdf_data["mes_proposta_final"] = mes
+            pdf_data["mes_proposta_final"] = meses.get(mes, mes)
             pdf_data["ano_proposta_final"] = ano
 
         entrada_enabled = bool(data.get("entradaEnabled"))
