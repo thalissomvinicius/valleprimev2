@@ -10,13 +10,30 @@ export async function onRequestOptions() {
   });
 }
 
-export async function onRequestGet({ request, params }) {
+export async function onRequestGet({ request, params, env }) {
   const url = new URL(request.url);
   const codigo = params.codigo;
   const t = url.searchParams.get("t") || String(Date.now());
 
-  const upstream = new URL(`http://177.221.240.85:8000/api/consulta/${encodeURIComponent(codigo)}/`);
+  const upstreamBase = (env?.CONSULTA_UPSTREAM_BASE || "http://177.221.240.85:8000").replace(/\/$/, "");
+  const upstream = new URL(`${upstreamBase}/api/consulta/${encodeURIComponent(codigo)}/`);
   upstream.searchParams.set("t", t);
+
+  const allowedPorts = new Set(["", "80", "443", "8080", "8443", "2052", "2053", "2082", "2083", "2086", "2087", "2095", "2096"]);
+  if (!allowedPorts.has(upstream.port)) {
+    return new Response(JSON.stringify({
+      success: false,
+      data: [],
+      error: `Porta upstream não suportada no Cloudflare Pages Functions: ${upstream.port || "(vazia)"}`
+    }), {
+      status: 500,
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+        "Access-Control-Allow-Origin": "*",
+        "Cache-Control": "no-store",
+      },
+    });
+  }
 
   let resp;
   try {
@@ -48,4 +65,3 @@ export async function onRequestGet({ request, params }) {
     },
   });
 }
-
