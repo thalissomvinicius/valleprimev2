@@ -48,6 +48,11 @@ const requestWithRetry = async (fn, { retries = 2, baseDelay = 800 } = {}) => {
 // Request interceptor: em *.pages.dev usar URL absoluta para o Render (garante que a requisição vá ao backend)
 const RENDER_API = 'https://valleprimev2.onrender.com';
 api.interceptors.request.use(config => {
+  if (typeof window !== 'undefined' && config.url?.startsWith?.('/api/consulta')) {
+    config.url = window.location.origin + config.url;
+    config.baseURL = '';
+    return config;
+  }
   if (typeof window !== 'undefined' && /\.pages\.dev$/i.test(window.location?.hostname || '') && config.url?.startsWith?.('/api')) {
     config.url = RENDER_API + config.url; // URL absoluta → axios ignora baseURL
     config.baseURL = '';
