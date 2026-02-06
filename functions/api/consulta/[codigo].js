@@ -15,7 +15,7 @@ export async function onRequestGet({ request, params, env }) {
   const codigo = params.codigo;
   const t = url.searchParams.get("t") || String(Date.now());
 
-  const upstreamBase = (env?.CONSULTA_UPSTREAM_BASE || "http://177.221.240.85:8000").replace(/\/$/, "");
+  const upstreamBase = (env?.CONSULTA_UPSTREAM_BASE || "https://consulta-proxy.vercel.app").replace(/\/$/, "");
   const upstream = new URL(`${upstreamBase}/api/consulta/${encodeURIComponent(codigo)}/`);
   upstream.searchParams.set("t", t);
 

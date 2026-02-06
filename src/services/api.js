@@ -2,7 +2,6 @@ import axios from 'axios';
 
 // Em produção: use VITE_API_BASE se definido; senão fallback para a API no Render
 const ENV_API = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '');
-const ENV_CONSULTA = (import.meta.env.VITE_CONSULTA_BASE || '').replace(/\/$/, '');
 const isDev = import.meta.env.DEV;
 const PRODUCTION_API = 'https://valleprimev2.onrender.com';
 // Se estiver no Cloudflare Pages (*.pages.dev), sempre usar a API no Render
@@ -50,7 +49,7 @@ const requestWithRetry = async (fn, { retries = 2, baseDelay = 800 } = {}) => {
 const RENDER_API = 'https://valleprimev2.onrender.com';
 api.interceptors.request.use(config => {
   if (typeof window !== 'undefined' && config.url?.startsWith?.('/api/consulta')) {
-    config.url = (ENV_CONSULTA ? ENV_CONSULTA : window.location.origin) + config.url;
+    config.url = window.location.origin + config.url;
     config.baseURL = '';
     return config;
   }
