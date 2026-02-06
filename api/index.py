@@ -812,33 +812,6 @@ def fetch_consulta(numprod_psc):
         print(f"[ERROR] fetch_consulta {numprod_psc}: {e}")
         return jsonify({"success": False, "data": [], "error": str(e)})
 
-@app.route('/api/clients/<int:client_id>', methods=['DELETE'])
-@app.route('/api/manage-clients/<int:client_id>', methods=['DELETE'])
-@token_required
-def delete_client(client_id):
-    """Delete a specific client by ID"""
-    try:
-        print(f"[DEBUG] DELETE Client {client_id} by user {request.user_id}")
-        
-        # Check if user can delete this client
-        can_delete = request.user_role == 'admin'
-        if not can_delete:
-            # Check if user owns this client
-            client = query_db("SELECT created_by FROM clients WHERE id = ?", (client_id,), one=True)
-            if client and str(client.get('created_by')) == str(request.user_id):
-                can_delete = True
-        
-        if not can_delete:
-            return jsonify({'success': False, 'error': 'Sem permissão para excluir este cliente'}), 403
-        
-        # Delete the client
-        query_db("DELETE FROM clients WHERE id = ?", (client_id,), commit=True)
-        
-        return jsonify({'success': True, 'message': 'Cliente excluído com sucesso'})
-    except Exception as e:
-        print(f"[ERROR] Delete client: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
 @app.route('/api/clients', methods=['GET', 'POST'])
 @app.route('/api/manage-clients', methods=['GET', 'POST'])
 @token_required
