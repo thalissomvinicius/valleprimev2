@@ -36,9 +36,6 @@ else:
 SUPABASE_URL = os.environ.get('SUPABASE_URL', '').rstrip('/')
 SUPABASE_KEY = os.environ.get('SUPABASE_SERVICE_ROLE_KEY') or os.environ.get('SUPABASE_ANON_KEY')
 
-CONSULTA_CACHE_TTL_SECONDS = int(os.environ.get('CONSULTA_CACHE_TTL_SECONDS', '900'))
-_consulta_cache = {}
-
 def get_db_connection():
     # Only SQLite fallback now
     conn = sqlite3.connect(DB_PATH)
@@ -731,7 +728,7 @@ def get_consulta(codigo):
     return fetch_consulta(codigo)
 
 def fetch_consulta(numprod_psc):
-    """Busca dados de lotes do servidor externo ou fallback local"""
+    """Busca dados de lotes do servidor externo"""
     def enrich_payload(payload):
         """Guarantee Data_Atualizacao exists at root and items for frontend footer."""
         if not payload:
@@ -775,58 +772,23 @@ def fetch_consulta(numprod_psc):
                 payload["Data_Atualizacao"] = formatted
         return payload
 
-    external_error = None
     try:
         import time
-        for attempt in range(2):
-            try:
-                resp = requests.get(
-                    f"http://177.221.240.85:8000/api/consulta/{numprod_psc}/",
-                    params={"t": int(time.time())},
-                    timeout=(3, 10)
-                )
-                if resp.status_code == 200:
-                    payload = enrich_payload(resp.json())
-                    if isinstance(payload, dict) and payload.get("success") is None:
-                        payload["success"] = True
-                    _consulta_cache[numprod_psc] = {
-                        "ts": time.time(),
-                        "data": payload
-                    }
-                    return jsonify(payload)
-                external_error = f"HTTP {resp.status_code}"
-            except Exception as ext_err:
-                external_error = str(ext_err)
-            time.sleep(0.6 * (attempt + 1))
-
-        cache_entry = _consulta_cache.get(numprod_psc)
-        if cache_entry and (time.time() - cache_entry.get("ts", 0) <= CONSULTA_CACHE_TTL_SECONDS):
-            cached_payload = cache_entry.get("data") or {"data": []}
-            if isinstance(cached_payload, dict):
-                cached_payload["_cached"] = True
-                cached_payload["_external_error"] = external_error
-                if cached_payload.get("success") is None:
-                    cached_payload["success"] = True
-            return jsonify(cached_payload)
-
-        filename = f"fallback_{numprod_psc}.json"
-        filepath = os.path.join(BASE_DIR, filename)
-        if os.path.exists(filepath):
-            with open(filepath, 'r', encoding='utf-8-sig') as f:
-                payload = enrich_payload(json.load(f))
-            if isinstance(payload, dict):
-                payload["_cached"] = True
-                payload["_external_error"] = external_error
-                if payload.get("success") is None:
-                    payload["success"] = True
+        resp = requests.get(
+            f"http://177.221.240.85:8000/api/consulta/{numprod_psc}/",
+            params={"t": int(time.time())},
+            timeout=(3, 12)
+        )
+        if resp.status_code == 200:
+            payload = enrich_payload(resp.json())
+            if isinstance(payload, dict) and payload.get("success") is None:
+                payload["success"] = True
             return jsonify(payload)
-
         return jsonify({
             "success": False,
             "data": [],
-            "error": "Consulta indisponível.",
-            "external_error": external_error
-        })
+            "error": f"Consulta indisponível. HTTP {resp.status_code}"
+        }), resp.status_code
     except Exception as e:
         print(f"[ERROR] fetch_consulta {numprod_psc}: {e}")
         return jsonify({"success": False, "data": [], "error": str(e)})

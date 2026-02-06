@@ -162,11 +162,28 @@ export const getClients = async ({ search = '', page = 1, limit = 50, type = '',
 
     const response = await api.get(`${CLIENT_BASE}?${params.toString()}`);
     const data = response.data;
+    const normalizeClients = (payload) => {
+      if (!payload || !Array.isArray(payload.clients)) return payload;
+      const normalizedClients = payload.clients.map((client) => {
+        const rawData = client?.data;
+        if (!rawData || typeof rawData !== 'string') {
+          return client;
+        }
+        try {
+          const parsed = JSON.parse(rawData);
+          return { ...client, data: parsed };
+        } catch {
+          return client;
+        }
+      });
+      return { ...payload, clients: normalizedClients };
+    };
     // Normalize: backend may return { clients } or { success, clients, total_count }
     if (data && Array.isArray(data.clients) && data.success === undefined) {
-      return { success: true, clients: data.clients, total_count: data.clients.length };
+      const payload = { success: true, clients: data.clients, total_count: data.clients.length };
+      return normalizeClients(payload);
     }
-    return data;
+    return normalizeClients(data);
   } catch (error) {
     console.error('Error fetching clients:', error);
     throw error;
