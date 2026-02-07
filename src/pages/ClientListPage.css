@@ -1,6 +1,7 @@
 .client-list-page {
     min-height: 100vh;
-    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    background: radial-gradient(1200px 600px at 50% 0%, rgba(22, 90, 147, 0.10), transparent 60%),
+        linear-gradient(135deg, #f8fafc 0%, #eef2f7 100%);
 }
 
 .client-list-container {
@@ -9,12 +10,27 @@
     margin: 0 auto;
 }
 
-.list-header {
+.header-actions-desktop {
     display: flex;
-    flex-direction: column;
+    gap: 0.5rem;
     align-items: center;
-    gap: 1.5rem;
-    width: 100%;
+}
+
+.clients-filters-card {
+    background: rgba(255, 255, 255, 0.86);
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    border-radius: 18px;
+    padding: 1rem 1.25rem;
+    box-shadow: 0 10px 30px rgba(2, 8, 23, 0.08);
+    backdrop-filter: blur(10px);
+    margin-bottom: 1.25rem;
+}
+
+.filters-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
 }
 
 /* Client Type Tabs - Modern Card Style */
@@ -26,7 +42,7 @@
     width: fit-content;
     border: 1px solid rgba(148, 163, 184, 0.2);
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.8);
-    margin: 0 auto;
+    margin: 0;
 }
 
 .client-tab-btn {
@@ -83,8 +99,8 @@
 .search-bar-wrapper {
     position: relative;
     width: 100%;
-    max-width: 450px;
-    margin: 0 auto;
+    max-width: 520px;
+    margin: 0;
 }
 
 .search-icon {
@@ -99,7 +115,7 @@
 .search-bar-wrapper input {
     width: 100%;
     padding: 0.875rem 1rem 0.875rem 2.75rem;
-    border: 1px solid #e2e8f0;
+    border: 1px solid rgba(148, 163, 184, 0.35);
     border-radius: 12px;
     background: #ffffff;
     color: var(--text-primary);
@@ -115,8 +131,8 @@
 
 .search-bar-wrapper input:focus {
     outline: none;
-    border-color: #3182ce;
-    box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.12), 0 4px 12px rgba(49, 130, 206, 0.08);
+    border-color: rgba(2, 132, 199, 0.9);
+    box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.14), 0 10px 26px rgba(2, 132, 199, 0.10);
     background: #ffffff;
 }
 
@@ -156,6 +172,25 @@
     border-radius: 20px;
     overflow: hidden;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(148, 163, 184, 0.1);
+    max-height: calc(100vh - 320px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(2, 132, 199, 0.6) rgba(148, 163, 184, 0.25);
+}
+
+.clients-table-container::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+.clients-table-container::-webkit-scrollbar-thumb {
+    background: rgba(2, 132, 199, 0.5);
+    border-radius: 999px;
+    border: 2px solid rgba(255, 255, 255, 0.75);
+}
+
+.clients-table-container::-webkit-scrollbar-track {
+    background: rgba(148, 163, 184, 0.18);
 }
 
 .clients-table {
@@ -176,6 +211,9 @@
     color: #475569;
     text-transform: uppercase;
     letter-spacing: 0.08em;
+    position: sticky;
+    top: 0;
+    z-index: 1;
 }
 
 .clients-table th.actions-column {
@@ -234,6 +272,11 @@
 
 .client-name span {
     font-weight: 600;
+    display: inline-block;
+    max-width: 520px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .clients-table td.cpf-cell {
@@ -319,8 +362,8 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.6rem 1rem;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
+    background: rgba(2, 8, 23, 0.04);
+    border: 1px solid rgba(148, 163, 184, 0.35);
     border-radius: 10px;
     color: var(--text-primary);
     font-weight: 500;
@@ -329,8 +372,9 @@
 }
 
 .btn-back:hover {
-    background: var(--border-color);
-    transform: translateX(-4px);
+    background: rgba(2, 8, 23, 0.06);
+    border-color: rgba(2, 132, 199, 0.55);
+    transform: translateY(-1px);
 }
 
 /* Modals */
@@ -371,13 +415,18 @@
         grid-template-columns: 1fr;
     }
 
-    .list-header {
+    .clients-filters-card {
+        padding: 0.9rem 0.75rem;
+    }
+
+    .filters-row {
         flex-direction: column;
         align-items: stretch;
+        gap: 0.75rem;
     }
 
     .search-bar-wrapper {
-        max-width: none;
+        max-width: 100%;
     }
 }
 
@@ -486,18 +535,6 @@
         margin-bottom: 1rem;
     }
 
-    /* Stack Header Controls: Tabs + Search */
-    .list-controls-row {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0.75rem;
-    }
-
-    .search-bar-wrapper {
-        max-width: 100%;
-    }
-
-    /* Tabs compact */
     .client-type-tabs {
         width: 100%;
         overflow-x: auto;
@@ -519,6 +556,7 @@
         box-shadow: none;
         border: 1px solid var(--border-color);
         border-radius: 8px;
+        max-height: calc(100vh - 300px);
     }
 
     /* Allow table to shrink */

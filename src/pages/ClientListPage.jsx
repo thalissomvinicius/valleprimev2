@@ -178,7 +178,7 @@ function ClientListPage() {
     return (
         <div className="client-list-page">
             <Header title="Gerenciamento de Clientes">
-                <div className="header-actions-desktop" style={{ display: 'flex', gap: '0.5rem' }}>
+                <div className="header-actions-desktop">
                     <button className="btn-new-client" onClick={handleNewClient}>
                         <UserPlus size={18} />
                         <span>Novo Cliente</span>
@@ -203,25 +203,25 @@ function ClientListPage() {
                     </button>
                 </div>
 
-                <div className="list-header animate-fade-in">
-                    <div className="client-type-tabs">
-                        <button
-                            className={`client-tab-btn ${clientTab === 'pf' ? 'active' : ''}`}
-                            onClick={() => setClientTab('pf')}
-                        >
-                            <User size={16} />
-                            Pessoa Física
-                        </button>
-                        <button
-                            className={`client-tab-btn ${clientTab === 'pj' ? 'active' : ''}`}
-                            onClick={() => setClientTab('pj')}
-                        >
-                            <Building2 size={16} />
-                            Pessoa Jurídica
-                        </button>
-                    </div>
+                <div className="clients-filters-card animate-fade-in">
+                    <div className="filters-row">
+                        <div className="client-type-tabs">
+                            <button
+                                className={`client-tab-btn ${clientTab === 'pf' ? 'active' : ''}`}
+                                onClick={() => setClientTab('pf')}
+                            >
+                                <User size={16} />
+                                Pessoa Física
+                            </button>
+                            <button
+                                className={`client-tab-btn ${clientTab === 'pj' ? 'active' : ''}`}
+                                onClick={() => setClientTab('pj')}
+                            >
+                                <Building2 size={16} />
+                                Pessoa Jurídica
+                            </button>
+                        </div>
 
-                    <div className="list-controls-row">
                         <div className="search-bar-wrapper">
                             <Search className="search-icon" size={20} />
                             <input
