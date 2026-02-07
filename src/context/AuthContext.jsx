@@ -169,6 +169,7 @@ export function AuthProvider({ children }) {
                 setLoading(false);
                 return;
             }
+            const tokenAtStart = token;
 
             try {
                 const result = await authMe();
@@ -180,8 +181,10 @@ export function AuthProvider({ children }) {
                     }
                 }
             } catch {
-                // Token invalid
-                logout();
+                const currentToken = localStorage.getItem(STORAGE_KEYS.TOKEN);
+                if (!cancelled && currentToken === tokenAtStart) {
+                    logout();
+                }
             } finally {
                 if (!cancelled) setLoading(false);
             }

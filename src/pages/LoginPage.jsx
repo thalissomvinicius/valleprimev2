@@ -64,7 +64,7 @@ function LoginPage() {
                 setTimeout(() => {
                     isLoggingIn.current = false;
                     navigate(redirectTo, { replace: true });
-                }, 1200);
+                }, 2000);
             } else {
                 isLoggingIn.current = false;
                 setError(translateLoginError(result?.error) || 'Usuário ou senha inválidos.');
