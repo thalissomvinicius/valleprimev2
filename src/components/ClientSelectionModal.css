@@ -27,6 +27,7 @@
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     animation: slideUp 0.3s ease-out;
     margin: auto 0;
+    overflow: hidden;
 }
 
 @keyframes slideUp {
@@ -45,8 +46,9 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1.5rem 2rem;
-    border-bottom: 1px solid #e2e8f0;
+    padding: 1rem 1.5rem;
+    background: linear-gradient(135deg, #0b2d55, #165a93);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.16);
 }
 
 .modal-header-left {
@@ -61,10 +63,10 @@
     align-items: center;
     gap: 0.5rem;
     background: none;
-    border: 1px solid var(--border-color);
+    border: 1px solid rgba(255, 255, 255, 0.25);
     cursor: pointer;
-    color: var(--text-secondary);
-    padding: 0.5rem 0.75rem;
+    color: rgba(255, 255, 255, 0.92);
+    padding: 0.5rem 0.9rem;
     border-radius: 10px;
     transition: all 0.2s;
     font-weight: 600;
@@ -72,53 +74,63 @@
 }
 
 .back-btn:hover {
-    background: var(--bg-secondary);
-    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.12);
+    color: white;
 }
 
 .modal-title {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    color: var(--primary-color);
+    color: white;
+    min-width: 0;
 }
 
 .modal-title h2 {
     margin: 0;
-    font-size: 1.5rem;
-    font-weight: 600;
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .close-btn {
     background: none;
     border: none;
     cursor: pointer;
-    color: var(--text-muted);
+    color: rgba(255, 255, 255, 0.92);
     padding: 0.5rem;
     border-radius: 8px;
     transition: all 0.2s;
 }
 
 .close-btn:hover {
-    background: var(--bg-secondary);
-    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.12);
+    color: white;
 }
 
 .modal-body {
-    padding: 1.5rem 2rem 2rem;
+    padding: 1.25rem 1.5rem 1.5rem;
     overflow-y: auto;
     flex: 1;
+    background: #f8fafc;
 }
 
-.action-buttons {
-    margin-bottom: 1.5rem;
+.top-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
 }
 
 .btn-new-client {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.875rem 1.5rem;
+    padding: 0.8rem 1.1rem;
     background: linear-gradient(135deg, var(--accent-color), var(--accent-light));
     color: white;
     border: none;
@@ -127,6 +139,7 @@
     cursor: pointer;
     transition: all 0.2s;
     box-shadow: 0 4px 12px rgba(49, 130, 206, 0.3);
+    white-space: nowrap;
 }
 
 .btn-new-client:hover {
@@ -135,7 +148,7 @@
 }
 
 .search-section {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
 }
 
 /* Client Type Tabs - Segmented Control Style */
@@ -145,9 +158,9 @@
     background: #f1f5f9;
     /* Slate-100 */
     border-radius: 12px;
-    width: fit-content;
+    width: auto;
     border: 1px solid #e2e8f0;
-    margin-bottom: 1rem;
+    margin-bottom: 0;
 }
 
 .client-tab-btn {
@@ -209,6 +222,7 @@
     border-radius: 12px;
     font-size: 1rem;
     transition: all 0.2s;
+    background: white;
 }
 
 .search-wrapper input:focus {
@@ -223,7 +237,26 @@
     overflow-y: auto;
     border-radius: 12px;
     border: 1px solid var(--border-color);
-    max-height: 55vh;
+    max-height: calc(100vh - 330px);
+    background: white;
+    box-shadow: 0 10px 30px rgba(2, 8, 23, 0.08);
+    scrollbar-width: thin;
+    scrollbar-color: rgba(2, 132, 199, 0.6) rgba(148, 163, 184, 0.25);
+}
+
+.clients-table-container::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+.clients-table-container::-webkit-scrollbar-thumb {
+    background: rgba(2, 132, 199, 0.5);
+    border-radius: 999px;
+    border: 2px solid rgba(255, 255, 255, 0.75);
+}
+
+.clients-table-container::-webkit-scrollbar-track {
+    background: rgba(148, 163, 184, 0.18);
 }
 
 .clients-table {
@@ -245,6 +278,9 @@
     color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    position: sticky;
+    top: 0;
+    z-index: 1;
 }
 
 .clients-table th.actions-column {
@@ -260,7 +296,6 @@
 
 .clients-table tbody tr:hover {
     background: #f8fafc;
-    transform: scale(1.01);
 }
 
 .clients-table tbody tr:last-child {
@@ -296,6 +331,15 @@
 .client-name {
     font-weight: 600;
     color: var(--text-primary);
+}
+
+.name-cell span {
+    display: inline-block;
+    max-width: 440px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
 }
 
 .cpf-cell {
@@ -461,149 +505,78 @@
         position: sticky;
         top: 0;
         z-index: 10;
-        padding: 0.75rem;
+        padding: 0.75rem 0.75rem;
+    }
+
+    .modal-body {
+        padding: 0.9rem 0.75rem 1rem;
+    }
+
+    .back-btn {
+        padding: 0.45rem 0.6rem;
+    }
+
+    .back-btn svg {
+        margin: 0;
+    }
+
+    .back-btn {
+        font-size: 0;
+        gap: 0;
     }
 
     .modal-title h2 {
         font-size: 1rem;
     }
 
-    .search-input-group input {
-        font-size: 16px;
-        /* Prevent zoom */
-        padding: 0.6rem 0.75rem 0.6rem 2.25rem;
+    .top-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
     }
 
-    /* Tabs */
+    .btn-new-client {
+        justify-content: center;
+        width: 100%;
+    }
+
     .client-type-tabs {
         width: 100%;
-        overflow-x: auto;
-        margin-bottom: 0.5rem;
     }
 
     .client-tab-btn {
-        flex: 1;
-        min-width: unset;
-        font-size: 0.8rem;
-        padding: 6px 8px;
-        white-space: nowrap;
+        min-width: 0;
+        padding: 10px 12px;
+        font-size: 0.9rem;
     }
 
-    /* Simplify Table - No Scroll, Fit Screen */
-    .clients-list-container {
-        padding: 0.25rem;
-        overflow-x: hidden;
-        /* Disable horizontal scroll */
+    .search-wrapper input {
+        font-size: 16px;
     }
 
     .clients-table-container {
-        border: none;
-        box-shadow: none;
-        min-width: 100%;
+        max-height: calc(100vh - 320px);
     }
 
-    /* Strict Table Layout */
-    .clients-table {
-        display: table;
-        width: 100%;
-        table-layout: fixed;
-    }
-
-    .clients-table thead {
-        display: table-header-group;
-    }
-
-    .clients-table tbody {
-        display: table-row-group;
-    }
-
-    .clients-table tr {
-        display: table-row;
-        background: white;
-        border: none;
-        box-shadow: none;
-        border-bottom: 1px solid #e2e8f0;
-    }
-
-    /* Header & Cell Compact Styles */
-    .clients-table th {
-        padding: 0.5rem 0.25rem;
-        font-size: 0.7rem;
-        white-space: nowrap;
-        overflow: hidden;
-    }
-
-    .clients-table td {
-        display: table-cell;
-        padding: 0.5rem 0.25rem;
-        border-bottom: 1px solid #f1f5f9;
-        text-align: left;
-        font-size: 0.75rem;
-        /* Small font */
-        vertical-align: middle;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .clients-table td:last-child {
-        border-bottom: none;
-    }
-
-    /* Hide Extra Columns: Phone, City, Date, etc. */
     .clients-table th:nth-child(3),
     .clients-table td:nth-child(3),
     .clients-table th:nth-child(4),
-    .clients-table td:nth-child(4) {
+    .clients-table td:nth-child(4),
+    .clients-table th:nth-child(5),
+    .clients-table td:nth-child(5) {
         display: none;
     }
 
-    /* Name Column */
-    .clients-table td:first-child {
-        width: 50%;
-        order: unset;
-        border-bottom: 1px solid #f1f5f9;
-        padding-bottom: 0.5rem;
-        margin-bottom: 0;
-        font-weight: normal;
-        font-size: 0.75rem;
-    }
-
-    .name-cell {
-        width: 100%;
-        display: block;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    /* Hide Avatar */
     .client-avatar-small {
         display: none;
     }
 
-    /* CPF Column */
-    .clients-table td.cpf-cell {
-        width: 30%;
-        font-size: 0.7rem;
+    .clients-table th,
+    .clients-table td {
+        padding: 0.75rem 0.6rem;
     }
 
-    /* Reset injected content */
-    .clients-table td::before {
-        content: none !important;
-        display: none !important;
-    }
-
-    /* Select Button Column */
-    .clients-table td:last-child {
-        width: 20%;
-        text-align: right;
-    }
-
-    .btn-select-client {
-        width: auto;
-        justify-content: center;
-        padding: 0.4rem 0.6rem;
-        margin-top: 0;
-        font-size: 0.75rem;
+    .name-cell span {
+        max-width: 220px;
     }
 }

@@ -136,29 +136,28 @@ const ClientSelectionModal = ({ onSelectClient, onNewClient, onClose, onBack }) 
                 </div>
 
                 <div className="modal-body">
-                    <div className="action-buttons">
+                    <div className="top-controls">
                         <button className="btn-new-client" onClick={onNewClient}>
                             <UserPlus size={20} />
                             Cadastrar Novo Cliente
                         </button>
-                    </div>
 
-                    {/* Tabs for PF/PJ */}
-                    <div className="client-type-tabs">
-                        <button
-                            className={`client-tab-btn ${clientTab === 'pf' ? 'active' : ''}`}
-                            onClick={() => setClientTab('pf')}
-                        >
-                            <User size={16} />
-                            Pessoa Física
-                        </button>
-                        <button
-                            className={`client-tab-btn ${clientTab === 'pj' ? 'active' : ''}`}
-                            onClick={() => setClientTab('pj')}
-                        >
-                            <Building2 size={16} />
-                            Pessoa Jurídica
-                        </button>
+                        <div className="client-type-tabs">
+                            <button
+                                className={`client-tab-btn ${clientTab === 'pf' ? 'active' : ''}`}
+                                onClick={() => setClientTab('pf')}
+                            >
+                                <User size={16} />
+                                Pessoa Física
+                            </button>
+                            <button
+                                className={`client-tab-btn ${clientTab === 'pj' ? 'active' : ''}`}
+                                onClick={() => setClientTab('pj')}
+                            >
+                                <Building2 size={16} />
+                                Pessoa Jurídica
+                            </button>
+                        </div>
                     </div>
 
                     <div className="search-section">
