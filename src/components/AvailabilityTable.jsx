@@ -1,5 +1,6 @@
 import React from 'react';
 import { ArrowUp, ArrowDown } from 'lucide-react';
+import Loader from './Loader';
 import './AvailabilityTable.css';
 
 const getStatusClass = (status) => {
@@ -82,7 +83,7 @@ const AvailabilityTable = ({ data, loading, onRowClick, onSort, sortConfig }) =>
                         ))}
                     </tbody>
                 </table>
-                <p className="loading-label">Carregando lotes...</p>
+                <Loader label="Carregando lotes..." size="sm" />
             </div>
         );
     }

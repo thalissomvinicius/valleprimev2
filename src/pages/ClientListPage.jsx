@@ -8,6 +8,7 @@ import {
 import { getClients, deleteClient, saveClient } from '../services/api';
 import { useAuth } from '../context/authContextValue';
 import ClientFormModal from '../components/ClientFormModal';
+import Loader from '../components/Loader';
 import Header from '../components/Header';
 import './ClientListPage.css';
 
@@ -236,8 +237,7 @@ function ClientListPage() {
 
                 {loading ? (
                     <div className="loading-state">
-                        <Loader2 className="animate-spin" size={40} />
-                        <p>Carregando contatos...</p>
+                        <Loader label="Carregando contatos..." />
                     </div>
                 ) : error ? (
                     <div className="error-state">

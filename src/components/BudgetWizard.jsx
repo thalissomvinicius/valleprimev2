@@ -4,6 +4,7 @@ import { OBRAS } from '../context/authConstants';
 import './BudgetWizard.css';
 import ClientFormModal from './ClientFormModal';
 import ClientSelectionModal from './ClientSelectionModal';
+import Loader from './Loader';
 import { saveClient } from '../services/api';
 import { useToast } from '../context/toastContextValue';
 import logo from '../assets/Valle-logo-azul.png';
@@ -551,6 +552,13 @@ ${sinalSection}
                     lot={lot}
                     obraName={obraName}
                 />
+            )}
+            {isGenerating && (
+                <div className="wizard-loading-overlay">
+                    <div className="wizard-loading-card">
+                        <Loader label="Gerando proposta..." />
+                    </div>
+                </div>
             )}
         </>
     );

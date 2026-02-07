@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { X, Search, UserPlus, Users, Edit2, Trash2, User, Building2, ChevronLeft } from 'lucide-react';
 import { getClients, deleteClient } from '../services/api';
+import Loader from './Loader';
 import './ClientSelectionModal.css';
 
 const ClientSelectionModal = ({ onSelectClient, onNewClient, onClose, onBack }) => {
@@ -175,8 +176,7 @@ const ClientSelectionModal = ({ onSelectClient, onNewClient, onClose, onBack }) 
 
                     {loading ? (
                         <div className="loading-state">
-                            <div className="spinner"></div>
-                            <p>Carregando clientes...</p>
+                            <Loader label="Carregando clientes..." />
                         </div>
                     ) : error ? (
                         <div className="error-state">
