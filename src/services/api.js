@@ -125,6 +125,11 @@ export const deleteUser = async (id) => {
   return response.data;
 };
 
+export const changeMyPassword = async (old_password, new_password) => {
+  const response = await api.put(`${USERS_BASE}/me/password`, { old_password, new_password });
+  return response.data;
+};
+
 export const fetchAvailability = async (obraCode = '624') => {
   try {
     const response = await requestWithRetry(() => api.get(`${API_BASE}/${obraCode}`, {

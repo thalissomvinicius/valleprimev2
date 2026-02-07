@@ -9,7 +9,7 @@ import {
 import './AdminPanel.css';
 
 function AdminPanel() {
-    const { users, currentUser, logout, addUser, updateUserPermissions, deleteUser, approveUser } = useAuth();
+    const { users, currentUser, logout, addUser, updateUserPermissions, deleteUser, approveUser, changePassword } = useAuth();
     const [editingUser, setEditingUser] = useState(null);
     const [editData, setEditData] = useState({});
     const [expandedUser, setExpandedUser] = useState(null);
@@ -20,6 +20,11 @@ function AdminPanel() {
     const [newNome, setNewNome] = useState('');
     const [addError, setAddError] = useState('');
     const [addSubmitting, setAddSubmitting] = useState(false);
+    const [pwCurrent, setPwCurrent] = useState('');
+    const [pwNew, setPwNew] = useState('');
+    const [pwConfirm, setPwConfirm] = useState('');
+    const [pwSubmitting, setPwSubmitting] = useState(false);
+    const [pwMessage, setPwMessage] = useState(null);
 
     // Filtrar usuários (não mostrar admin na lista)
     const regularUsers = users.filter(u => u.role !== 'admin');
@@ -122,6 +127,37 @@ function AdminPanel() {
         }
     };
 
+    const handleChangePassword = async (e) => {
+        e.preventDefault();
+        setPwMessage(null);
+        if (!pwCurrent || !pwNew) {
+            setPwMessage({ type: 'error', text: 'Preencha a senha atual e a nova senha.' });
+            return;
+        }
+        if (pwNew.length < 4) {
+            setPwMessage({ type: 'error', text: 'A nova senha deve ter no mínimo 4 caracteres.' });
+            return;
+        }
+        if (pwNew !== pwConfirm) {
+            setPwMessage({ type: 'error', text: 'A confirmação não confere com a nova senha.' });
+            return;
+        }
+        setPwSubmitting(true);
+        const result = await changePassword(pwCurrent, pwNew);
+        if (result?.success) {
+            setPwCurrent('');
+            setPwNew('');
+            setPwConfirm('');
+            setPwMessage({ type: 'success', text: 'Senha atualizada com sucesso.' });
+        } else {
+            const raw = result?.error || 'Erro ao alterar senha.';
+            const normalized = String(raw).toLowerCase();
+            const msg = normalized.includes('invalid current password') ? 'Senha atual inválida.' : raw;
+            setPwMessage({ type: 'error', text: msg });
+        }
+        setPwSubmitting(false);
+    };
+
     return (
         <div className="admin-panel">
             <header className="admin-header">
@@ -179,6 +215,64 @@ function AdminPanel() {
                             <span className="stat-label">Obras Disponíveis</span>
                         </div>
                     </div>
+                </div>
+
+                <div className="account-section">
+                    <div className="section-header">
+                        <h2>
+                            <Settings size={22} />
+                            Minha Conta
+                        </h2>
+                    </div>
+                    <form className="change-password-form" onSubmit={handleChangePassword}>
+                        <div className="change-password-fields">
+                            <div className="form-group">
+                                <label>Senha atual</label>
+                                <input
+                                    type="password"
+                                    value={pwCurrent}
+                                    onChange={(e) => setPwCurrent(e.target.value)}
+                                    autoComplete="current-password"
+                                    disabled={pwSubmitting}
+                                    required
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>Nova senha</label>
+                                <input
+                                    type="password"
+                                    value={pwNew}
+                                    onChange={(e) => setPwNew(e.target.value)}
+                                    autoComplete="new-password"
+                                    disabled={pwSubmitting}
+                                    required
+                                    minLength={4}
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>Confirmar nova senha</label>
+                                <input
+                                    type="password"
+                                    value={pwConfirm}
+                                    onChange={(e) => setPwConfirm(e.target.value)}
+                                    autoComplete="new-password"
+                                    disabled={pwSubmitting}
+                                    required
+                                    minLength={4}
+                                />
+                            </div>
+                            <div className="change-password-submit">
+                                <button type="submit" className="btn-save" disabled={pwSubmitting}>
+                                    {pwSubmitting ? 'Salvando...' : 'Atualizar Senha'}
+                                </button>
+                            </div>
+                        </div>
+                        {pwMessage && (
+                            <div className={`message ${pwMessage.type === 'success' ? 'success-message' : 'error-message'}`} style={{ marginTop: '0.75rem' }}>
+                                {pwMessage.text}
+                            </div>
+                        )}
+                    </form>
                 </div>
 
                 <div className="users-section">
@@ -271,6 +365,9 @@ function AdminPanel() {
                                                     {!user.aprovado && (
                                                         <span className="badge pending">Pendente</span>
                                                     )}
+                                                    <span className="badge clients">
+                                                        {Number(user.clientsCount || 0)} cliente(s)
+                                                    </span>
                                                     <span className="badge obras">
                                                         {user.obrasPermitidas.length} obra(s)
                                                     </span>

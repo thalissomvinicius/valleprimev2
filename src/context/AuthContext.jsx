@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { authLogin, authMe, getUsers, createUser, updateUser, deleteUser as apiDeleteUser } from '../services/api';
+import { authLogin, authMe, getUsers, createUser, updateUser, deleteUser as apiDeleteUser, changeMyPassword } from '../services/api';
 import { AuthContext } from './authContextValue';
 import { OBRAS } from './authConstants';
 
@@ -38,7 +38,8 @@ export function AuthProvider({ children }) {
                     obrasPermitidas: (u.permissions || {}).obrasPermitidas || [],
                     statusPermitidos: (u.permissions || {}).statusPermitidos || [],
                     canViewAllClients: (u.permissions || {}).canViewAllClients || (u.role === 'admin'),
-                    aprovado: u.active
+                    aprovado: u.active,
+                    clientsCount: Number(u.clients_count || 0),
                 }));
                 setUsers(mapped);
             }
@@ -160,6 +161,19 @@ export function AuthProvider({ children }) {
         }
     }, [loadUsers]);
 
+    const changePassword = useCallback(async (currentPassword, newPassword) => {
+        try {
+            const result = await changeMyPassword(currentPassword, newPassword);
+            if (result?.success) {
+                return { success: true };
+            }
+            return { success: false, error: result?.message || 'Erro ao alterar senha.' };
+        } catch (e) {
+            const msg = e?.response?.data?.message || e?.message || 'Erro ao alterar senha.';
+            return { success: false, error: msg };
+        }
+    }, []);
+
     // Initial load
     useEffect(() => {
         let cancelled = false;
@@ -202,6 +216,7 @@ export function AuthProvider({ children }) {
             isAdmin,
             login,
             logout,
+            changePassword,
             addUser,
             deleteUser,
             updateUserPermissions,

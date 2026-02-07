@@ -1261,6 +1261,17 @@ def manage_users():
         users = query_db("SELECT id, username, nome, role, permissions, active FROM users ORDER BY id")
         for u in users:
              u['permissions'] = json.loads(u['permissions']) if u['permissions'] else {}
+             count_row = query_db("SELECT COUNT(*) as count FROM clients WHERE created_by = ?", (str(u['id']),), one=True)
+             if isinstance(count_row, dict):
+                 count_val = count_row.get('count', 0)
+             elif isinstance(count_row, (list, tuple)) and len(count_row) > 0:
+                 count_val = count_row[0]
+             else:
+                 count_val = 0
+             try:
+                 u['clients_count'] = int(count_val or 0)
+             except:
+                 u['clients_count'] = 0
         return jsonify({'users': users})
     
     if request.method == 'POST':
@@ -1274,6 +1285,32 @@ def manage_users():
         query_db("INSERT INTO users (username, password_hash, nome, role, active, permissions) VALUES (?, ?, ?, ?, ?, ?)",
                 (username, pw_hash, data.get('nome'), 'user', True, json.dumps(data.get('permissions', {}))), commit=True)
         return jsonify({'success': True})
+
+@app.route('/api/users/me/password', methods=['PUT'])
+@token_required
+def change_my_password():
+    try:
+        data = request.get_json() or {}
+        old_password = (data.get('old_password') or '').strip()
+        new_password = (data.get('new_password') or '').strip()
+        if not old_password or not new_password:
+            return jsonify({'message': 'Missing fields'}), 400
+        if len(new_password) < 4:
+            return jsonify({'message': 'Password too short'}), 400
+
+        user = query_db("SELECT id, password_hash FROM users WHERE id = ?", (request.user_id,), one=True)
+        if not user:
+            return jsonify({'message': 'User not found'}), 404
+        stored_hash = user.get('password_hash') if isinstance(user, dict) else (user[1] if isinstance(user, (list, tuple)) and len(user) > 1 else None)
+        if not verify_password(stored_hash, old_password):
+            return jsonify({'message': 'Invalid current password'}), 400
+
+        new_hash = hash_password(new_password)
+        query_db("UPDATE users SET password_hash = ? WHERE id = ?", (new_hash, request.user_id), commit=True)
+        return jsonify({'success': True})
+    except Exception as e:
+        print(f"[ERROR] change_my_password: {str(e)}")
+        return jsonify({'message': 'Error'}), 500
 
 @app.route('/api/users/<int:user_id>', methods=['PUT', 'DELETE'])
 @token_required

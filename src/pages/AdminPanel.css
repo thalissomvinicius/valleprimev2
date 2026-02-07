@@ -154,6 +154,80 @@
     margin-top: 0.25rem;
 }
 
+.account-section {
+    background: white;
+    border-radius: 20px;
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    box-shadow: 0 10px 30px rgba(2, 8, 23, 0.08);
+    overflow: hidden;
+    margin-bottom: 2rem;
+}
+
+.change-password-form {
+    padding: 1.25rem 2rem;
+    background: rgba(248, 250, 252, 0.9);
+    border-top: 1px solid var(--border-color);
+}
+
+.change-password-fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    align-items: end;
+}
+
+.change-password-fields .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.change-password-fields .form-group label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.change-password-fields .form-group input {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    background: white;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.change-password-fields .form-group input:focus {
+    outline: none;
+    border-color: rgba(2, 132, 199, 0.9);
+    box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.14);
+}
+
+.change-password-submit {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.message {
+    padding: 0.6rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    border: 1px solid transparent;
+}
+
+.message.error-message {
+    background: var(--danger-light);
+    color: var(--danger-dark);
+    border-color: rgba(239, 68, 68, 0.55);
+}
+
+.message.success-message {
+    background: rgba(16, 185, 129, 0.12);
+    color: rgba(5, 120, 87, 1);
+    border-color: rgba(16, 185, 129, 0.35);
+}
+
 /* Users Section */
 .users-section {
     background: white;
@@ -356,6 +430,11 @@
 .badge.pending {
     background: var(--warning-light);
     color: var(--warning-dark);
+}
+
+.badge.clients {
+    background: rgba(2, 132, 199, 0.12);
+    color: rgba(2, 132, 199, 0.95);
 }
 
 .badge.obras {
