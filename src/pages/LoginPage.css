@@ -405,12 +405,12 @@
     width: 96px;
     height: 96px;
     margin: 0 auto 24px;
-    background: linear-gradient(135deg, #10b981, #059669);
+    background: linear-gradient(135deg, var(--login-accent), var(--login-primary));
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 15px 45px rgba(16, 185, 129, 0.4);
+    box-shadow: 0 15px 45px rgba(49, 130, 206, 0.35);
     position: relative;
 }
 
@@ -419,7 +419,7 @@
     position: absolute;
     inset: -8px;
     border-radius: 50%;
-    border: 2px solid #10b981;
+    border: 2px solid rgba(99, 179, 237, 0.8);
     animation: ripple 1.5s ease-out infinite;
 }
 
@@ -435,10 +435,41 @@
     }
 }
 
-.success-icon svg {
-    width: 48px;
-    height: 48px;
-    color: white;
+.success-check {
+    width: 56px;
+    height: 56px;
+}
+
+.success-check__circle {
+    stroke: rgba(255, 255, 255, 0.92);
+    stroke-width: 3;
+    stroke-dasharray: 160;
+    stroke-dashoffset: 160;
+    animation: successStroke 520ms cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+.success-check__check {
+    stroke: white;
+    stroke-width: 4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 48;
+    stroke-dashoffset: 48;
+    animation: successStroke 360ms 360ms cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+@keyframes successStroke {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .success-check__circle,
+    .success-check__check {
+        animation: none !important;
+        stroke-dashoffset: 0 !important;
+    }
 }
 
 .login-success h2 {

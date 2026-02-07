@@ -26,6 +26,28 @@ function LoginPage() {
         }
     }, [isAuthenticated, navigate]);
 
+    const translateLoginError = (rawMessage) => {
+        const msg = String(rawMessage || '');
+        const normalized = msg.toLowerCase();
+        if (!msg) return 'Erro ao validar login.';
+        if (normalized.includes('status code 401') || normalized.includes('unauthorized') || normalized.includes('invalid credentials') || normalized.includes('invalid username') || normalized.includes('invalid password')) {
+            return 'Usuário ou senha inválidos.';
+        }
+        if (normalized.includes('status code 403') || normalized.includes('not approved') || normalized.includes('not active') || normalized.includes('inactive') || normalized.includes('pending')) {
+            return 'Seu acesso ainda não foi aprovado. Aguarde a liberação do administrador.';
+        }
+        if (normalized.includes('network error') || normalized.includes('failed to fetch') || normalized.includes('fetch failed')) {
+            return 'Erro de conexão. Verifique sua internet e tente novamente.';
+        }
+        if (normalized.includes('too many requests')) {
+            return 'Muitas tentativas. Aguarde alguns minutos e tente novamente.';
+        }
+        if (normalized.includes('status code 500') || normalized.includes('internal server error')) {
+            return 'Erro interno no servidor. Tente novamente.';
+        }
+        return msg;
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
@@ -42,10 +64,10 @@ function LoginPage() {
                 setTimeout(() => {
                     isLoggingIn.current = false;
                     navigate(redirectTo, { replace: true });
-                }, 1500);
+                }, 1200);
             } else {
                 isLoggingIn.current = false;
-                setError(result?.error || 'Credenciais inválidas');
+                setError(translateLoginError(result?.error) || 'Usuário ou senha inválidos.');
                 setLoading(false);
             }
         } catch {
@@ -76,8 +98,9 @@ function LoginPage() {
                 {success ? (
                     <div className="login-success">
                         <div className="success-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <polyline points="20 6 9 17 4 12"></polyline>
+                            <svg className="success-check" viewBox="0 0 52 52">
+                                <circle className="success-check__circle" cx="26" cy="26" r="25" fill="none" />
+                                <path className="success-check__check" fill="none" d="M14 27l7 7 17-17" />
                             </svg>
                         </div>
                         <h2>Login realizado!</h2>

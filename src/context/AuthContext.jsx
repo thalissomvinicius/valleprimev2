@@ -47,32 +47,50 @@ export function AuthProvider({ children }) {
         }
     }, []);
 
+    const translateLoginError = useCallback((rawMessage, status) => {
+        const msg = String(rawMessage || '');
+        const normalized = msg.toLowerCase();
+        if (!msg) return 'Erro ao validar login.';
+        if (status === 401 || normalized.includes('status code 401') || normalized.includes('unauthorized') || normalized.includes('invalid credentials') || normalized.includes('invalid username') || normalized.includes('invalid password')) {
+            return 'Usuário ou senha inválidos.';
+        }
+        if (status === 403 || normalized.includes('status code 403') || normalized.includes('forbidden') || normalized.includes('not approved') || normalized.includes('not active') || normalized.includes('inactive') || normalized.includes('pending')) {
+            return 'Seu acesso ainda não foi aprovado. Aguarde a liberação do administrador.';
+        }
+        if (status === 429 || normalized.includes('too many requests')) {
+            return 'Muitas tentativas. Aguarde alguns minutos e tente novamente.';
+        }
+        if (status === 500 || normalized.includes('status code 500') || normalized.includes('internal server error')) {
+            return 'Erro interno no servidor. Tente novamente.';
+        }
+        if (normalized.includes('network error') || normalized.includes('failed to fetch') || normalized.includes('fetch failed')) {
+            return 'Erro de conexão. Verifique sua internet e tente novamente.';
+        }
+        if (normalized.includes('user not found')) {
+            return 'Usuário não encontrado.';
+        }
+        return msg;
+    }, []);
+
     const login = useCallback(async (username, password) => {
         const trimmed = (username || '').trim();
         if (!trimmed || !password) return { success: false, error: 'Usuário e senha são obrigatórios.' };
 
         try {
-            console.log('[DEBUG] Calling authLogin...');
             const result = await authLogin(trimmed, password);
-            console.log('[DEBUG] authLogin result:', result);
             if (result.token) {
-                console.log('[DEBUG] Token received, saving...');
                 localStorage.setItem(STORAGE_KEYS.TOKEN, result.token);
                 const user = processUser(result.user);
-                console.log('[DEBUG] User processed:', user);
                 setCurrentUser(user);
                 // Load users if admin
                 if (user.role === 'admin') {
                     loadUsers();
                 }
-                console.log('[DEBUG] Returning success: true');
                 return { success: true, user };
             } else {
-                console.log('[DEBUG] No token in result!');
                 return { success: false, error: 'Falha no login.' };
             }
         } catch (e) {
-            console.error('[DEBUG] Login error:', e);
             const rawMsg = e?.response?.data?.message || e?.message;
             let msg = rawMsg || 'Erro ao validar login.';
             const normalized = String(msg).toLowerCase();
@@ -80,10 +98,12 @@ export function AuthProvider({ children }) {
                 msg = 'Tempo de resposta excedido. Tente novamente.';
             } else if (e?.response?.status === 503) {
                 msg = 'Servidor indisponível no momento. Tente novamente.';
+            } else {
+                msg = translateLoginError(msg, e?.response?.status);
             }
             return { success: false, error: msg };
         }
-    }, [processUser, loadUsers]);
+    }, [processUser, loadUsers, translateLoginError]);
 
     const logout = useCallback(() => {
         setCurrentUser(null);
