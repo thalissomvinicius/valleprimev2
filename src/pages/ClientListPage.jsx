@@ -6,7 +6,7 @@ import {
     Calendar, Mail, Phone, MapPin, Building2, User
 } from 'lucide-react';
 import { getClients, deleteClient, saveClient } from '../services/api';
-import { useAuth } from '../context/authContextValue';
+import { useAuth } from '../context/AuthContext';
 import ClientFormModal from '../components/ClientFormModal';
 import Loader from '../components/Loader';
 import Header from '../components/Header';

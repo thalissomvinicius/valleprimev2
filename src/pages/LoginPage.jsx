@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import logo from '../assets/Valle-logo-azul.png';
 import { Eye, EyeOff } from 'lucide-react';
 import './LoginPage.css';
-import { useAuth } from '../context/authContextValue';
+import { useAuth } from '../context/AuthContext';
 
 function LoginPage() {
     const [username, setUsername] = useState('');
