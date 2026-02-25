@@ -122,11 +122,18 @@ export const deleteUser = async (id) => {
 
 export const fetchAvailability = async (obraCode = '624') => {
   try {
-    const response = await requestWithRetry(() => api.get(`${API_BASE}/${obraCode}`, {
-      params: { t: Date.now() },
-      timeout: 20000
-    }), { retries: 2, baseDelay: 800 });
-    const res = response.data;
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Tempo de resposta excedido. Tente novamente.')), 25000);
+    });
+    const response = await Promise.race([
+      requestWithRetry(() => api.get(`${API_BASE}/${obraCode}`, {
+        params: { t: Date.now() },
+        timeout: 20000
+      }), { retries: 2, baseDelay: 800 }),
+      timeoutPromise
+    ]);
+    const raw = response?.data;
+    const res = typeof raw === 'string' ? parseJsonResponse(raw) : raw;
     if (!res) throw new Error('Resposta vazia');
     const list = Array.isArray(res.data) ? res.data : (res.success ? res.data : []);
     const normalized = Array.isArray(list) ? list : [];

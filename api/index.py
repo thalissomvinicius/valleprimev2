@@ -1122,44 +1122,90 @@ def manage_clients():
     if request.method == 'POST':
         try:
             data = request.get_json()
-            print(f"[DEBUG] Received data: {data}")  # Log received data
-            
+            print(f"[DEBUG] Received data: {data}")
+
             if not data:
                 return jsonify({'success': False, 'error': 'No data provided'}), 400
-            
-            # Robust data extraction for both sources (Proposal vs Client Tab)
+
+            client_id_raw = data.get('client_id')
+            client_id = None
+            if client_id_raw:
+                import re
+                match = re.search(r'\d+', str(client_id_raw))
+                if match:
+                    client_id = int(match.group())
+
             nome = data.get('nome') or data.get('nome_proponente') or data.get('razao_social_proponente')
             cpf_cnpj = data.get('cpf_cnpj') or data.get('cpf_cnpj_proponente')
             tipo_pessoa = data.get('tipo_pessoa', 'PF')
-            
-            print(f"[DEBUG] Extracted - nome: {nome}, cpf_cnpj: {cpf_cnpj}, tipo_pessoa: {tipo_pessoa}")
-            
+
+            print(f"[DEBUG] Extracted - nome: {nome}, cpf_cnpj: {cpf_cnpj}, tipo_pessoa: {tipo_pessoa}, client_id: {client_id}")
+
             if not nome or not cpf_cnpj:
                 return jsonify({
-                    'success': False, 
+                    'success': False,
                     'error': 'Campos obrigatórios faltando',
                     'message': 'Nome e CPF/CNPJ são obrigatórios',
                     'required': ['nome or nome_proponente', 'cpf_cnpj or cpf_cnpj_proponente']
                 }), 400
-            
-            # Insert into database
+
+            if client_id:
+                existing = query_db("SELECT id, created_by FROM clients WHERE id = ?", (client_id,), one=True)
+                if not existing:
+                    return jsonify({'success': False, 'error': 'Cliente não encontrado'}), 404
+
+                can_update_any = request.user_role == 'admin'
+                if not can_update_any:
+                    user = query_db("SELECT permissions FROM users WHERE id = ?", (request.user_id,), one=True)
+                    perms = json.loads(user['permissions']) if user and user['permissions'] else {}
+                    can_update_any = perms.get('canViewAllClients', False)
+
+                if not can_update_any and str(existing.get('created_by')) != str(request.user_id):
+                    return jsonify({'success': False, 'error': 'Sem permissão para atualizar este cliente'}), 403
+
+                updated_at = datetime.datetime.now().isoformat()
+                print(f"[DEBUG] Attempting to update client: {client_id} - {nome} - {cpf_cnpj}")
+                success = query_db(
+                    "UPDATE clients SET nome = ?, cpf_cnpj = ?, tipo_pessoa = ?, data = ?, updated_at = ? WHERE id = ?",
+                    (nome, cpf_cnpj, tipo_pessoa, json.dumps(data), updated_at, client_id),
+                    commit=True
+                )
+                print(f"[DEBUG] Update result: {success}")
+                if success:
+                    return jsonify({'success': True, 'message': 'Cliente atualizado com sucesso', 'database': 'supabase-rest'})
+                return jsonify({'success': False, 'error': 'Falha ao atualizar no banco de dados Supabase'}), 500
+
+            existing = query_db(
+                "SELECT id FROM clients WHERE cpf_cnpj = ? AND tipo_pessoa = ? AND created_by = ? ORDER BY id DESC LIMIT 1",
+                (cpf_cnpj, tipo_pessoa, str(request.user_id)),
+                one=True
+            )
+            if existing and existing.get('id'):
+                updated_at = datetime.datetime.now().isoformat()
+                print(f"[DEBUG] Attempting to update existing client by CPF/CNPJ: {existing.get('id')}")
+                success = query_db(
+                    "UPDATE clients SET nome = ?, cpf_cnpj = ?, tipo_pessoa = ?, data = ?, updated_at = ? WHERE id = ?",
+                    (nome, cpf_cnpj, tipo_pessoa, json.dumps(data), updated_at, existing.get('id')),
+                    commit=True
+                )
+                print(f"[DEBUG] Update result: {success}")
+                if success:
+                    return jsonify({'success': True, 'message': 'Cliente atualizado com sucesso', 'database': 'supabase-rest'})
+                return jsonify({'success': False, 'error': 'Falha ao atualizar no banco de dados Supabase'}), 500
+
             print(f"[DEBUG] Attempting to insert client: {nome} - {cpf_cnpj}")
             success = query_db(
                 "INSERT INTO clients (nome, cpf_cnpj, tipo_pessoa, created_by, data) VALUES (?, ?, ?, ?, ?)",
-                (nome, cpf_cnpj, tipo_pessoa, str(request.user_id), json.dumps(data)), 
+                (nome, cpf_cnpj, tipo_pessoa, str(request.user_id), json.dumps(data)),
                 commit=True
             )
-            
-            # Additional logic: if it's a proposal flow, we might want to store extra metadata
-            # but for now, ensuring it saves in the same central table is the priority.
             print(f"[DEBUG] Insert result: {success}")
-            
+
             if success:
-                # Return success in the format both areas expect
                 return jsonify({'success': True, 'message': 'Cliente salvo com sucesso', 'database': 'supabase-rest'})
             else:
                 return jsonify({'success': False, 'error': 'Falha ao inserir no banco de dados Supabase'}), 500
-                
+
         except Exception as e:
             import traceback
             error_trace = traceback.format_exc()
