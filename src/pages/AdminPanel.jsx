@@ -170,7 +170,7 @@ function AdminPanel() {
                         </div>
                     </div>
                     <div className="admin-actions">
-                        <Link to="/" className="btn-logout btn-admin-home" title="Voltar ao sistema">
+                        <Link to="/dashboard" className="btn-logout btn-admin-home" title="Voltar ao sistema">
                             <Home size={18} />
                             Início
                         </Link>

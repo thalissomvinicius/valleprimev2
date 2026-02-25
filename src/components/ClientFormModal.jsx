@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { debounce } from 'lodash';
 import ClientSelectionModal from './ClientSelectionModal';
 import { X, FileText, CheckCircle, Building2, User, Users, MapPin, Contact, Briefcase, ChevronRight, ChevronLeft, Trash2, Search, AlertCircle } from 'lucide-react';
 import { deleteClient, checkDuplicate } from '../services/api';
-import { useToast } from '../context/toastContextValue';
+import { useToast } from '../context/ToastContext';
 import { maskCPF, maskCNPJ, maskCEP, maskDDD, maskPhoneNumber, unmask } from '../utils/masks';
 import { validateCNPJ, validateEmail } from '../utils/validators';
 import { generateResidenceDeclaration } from '../utils/generateResidenceDeclaration';
@@ -242,38 +242,38 @@ const ClientFormModal = ({ onClose, onConfirm, onDelete, initialData = null, cli
 
     // Verificação de duplicatas (debounced)
     const checkDuplicateCPF = useMemo(() => debounce(async (cpfCnpj, fieldName, personType) => {
-            try {
-                // checkDuplicate(cpf, tipo, clientId) - ordem correta dos parâmetros
-                const result = await checkDuplicate(cpfCnpj, personType, clientId);
-                if (result.exists) {
-                    setDuplicateWarning({
-                        show: true,
-                        clientName: result.client_name || result.client?.nome_proponente || 'Cliente existente',
-                        clientId: result.client_id || result.client?.id,
-                        field: fieldName
-                    });
-                    setFieldErrors(prev => ({
-                        ...prev,
-                        [fieldName]: `CPF/CNPJ já cadastrado: ${result.client_name || 'outro cliente'}`
-                    }));
-                } else {
-                    setDuplicateWarning({ show: false, clientName: '', clientId: null, field: null });
-                    setFieldErrors(prev => {
-                        const newErrors = { ...prev };
-                        if (newErrors[fieldName]?.includes('já cadastrado')) {
-                            delete newErrors[fieldName];
-                        }
-                        return newErrors;
-                    });
-                }
-            } catch (error) {
-                console.error('Error checking duplicate:', error);
+        try {
+            // checkDuplicate(cpf, tipo, clientId) - ordem correta dos parâmetros
+            const result = await checkDuplicate(cpfCnpj, personType, clientId);
+            if (result.exists) {
+                setDuplicateWarning({
+                    show: true,
+                    clientName: result.client_name || result.client?.nome_proponente || 'Cliente existente',
+                    clientId: result.client_id || result.client?.id,
+                    field: fieldName
+                });
+                setFieldErrors(prev => ({
+                    ...prev,
+                    [fieldName]: `CPF/CNPJ já cadastrado: ${result.client_name || 'outro cliente'}`
+                }));
+            } else {
+                setDuplicateWarning({ show: false, clientName: '', clientId: null, field: null });
+                setFieldErrors(prev => {
+                    const newErrors = { ...prev };
+                    if (newErrors[fieldName]?.includes('já cadastrado')) {
+                        delete newErrors[fieldName];
+                    }
+                    return newErrors;
+                });
             }
-        }, 800), [clientId]);
+        } catch (error) {
+            console.error('Error checking duplicate:', error);
+        }
+    }, 800), [clientId]);
 
     useEffect(() => {
         return () => {
-            checkDuplicateCPF.cancel?.();
+            checkDuplicateCPF.cancel();
         };
     }, [checkDuplicateCPF]);
 
@@ -448,23 +448,6 @@ const ClientFormModal = ({ onClose, onConfirm, onDelete, initialData = null, cli
                 // Flag to tell backend: only save spouse link, not others
                 salvar_vinculo_segundo: isConjuge
             };
-
-            const shouldClearSecond = !submissionData.has_segundo || submissionData.tipo_segundo === 'none';
-            if (shouldClearSecond) {
-                for (const key of Object.keys(submissionData)) {
-                    if (key === 'tipo_segundo' || key === 'has_segundo') continue;
-                    if (key.endsWith('_segundo') || key.includes('_segundo')) {
-                        submissionData[key] = typeof submissionData[key] === 'boolean' ? false : '';
-                    }
-                }
-                submissionData.has_segundo = false;
-                submissionData.tipo_segundo = 'none';
-                submissionData.tipo_conjuge = false;
-                submissionData.tipo_segundo_proponente = false;
-                submissionData.tipo_procurador = false;
-                submissionData.tipo_pessoa_segundo = null;
-                submissionData.salvar_vinculo_segundo = false;
-            }
 
             await onConfirm(submissionData);
             showToast(clientId ? 'Cliente atualizado com sucesso!' : 'Cliente salvo com sucesso!', 'success');
@@ -844,36 +827,35 @@ const ClientFormModal = ({ onClose, onConfirm, onDelete, initialData = null, cli
             <div className="form-section-title"><FileText size={16} /> Documentos Adicionais</div>
 
             <div className="documents-card">
-                <section className="doc-section">
-                    <header className="doc-section-header">
-                        <h3>Declaração de Residência</h3>
-                        <p>Gera o PDF da declaração para os proponentes qualificados no formulário.</p>
-                    </header>
+                <div className="doc-item">
+                    <div className="doc-info">
+                        <h3>Declaracao de Residencia</h3>
+                        <p>Gera o PDF da declaracao para os proponentes qualificados no formulario.</p>
+                    </div>
 
-                    <div className="doc-section-body">
-                        <div className="doc-fields">
-                            <div className="form-group">
-                                <label>Data do Documento</label>
-                                <input
-                                    type="date"
-                                    value={residenceDeclarationDate}
-                                    onChange={(e) => setResidenceDeclarationDate(e.target.value)}
-                                />
-                            </div>
-
-                            {formData.has_segundo && formData.tipo_segundo !== 'conjuge' && (
-                                <div className="form-group">
-                                    <label>Modo de Geração</label>
-                                    <select
-                                        value={declarationMode}
-                                        onChange={(e) => setDeclarationMode(e.target.value)}
-                                    >
-                                        <option value="combined">Declaração combinada (ambos no mesmo PDF)</option>
-                                        <option value="individual">Declarações individuais (1 PDF para cada)</option>
-                                    </select>
-                                </div>
-                            )}
+                    <div className="doc-controls">
+                        <div className="form-group">
+                            <label>Data do Documento</label>
+                            <input
+                                type="date"
+                                value={residenceDeclarationDate}
+                                onChange={(e) => setResidenceDeclarationDate(e.target.value)}
+                            />
                         </div>
+
+                        {formData.has_segundo && formData.tipo_segundo !== 'conjuge' && (
+                            <div className="form-group">
+                                <label>Modo de Geracao</label>
+                                <select
+                                    value={declarationMode}
+                                    onChange={(e) => setDeclarationMode(e.target.value)}
+                                    style={{ width: '100%' }}
+                                >
+                                    <option value="combined">Declaracao Combinada (Ambos no mesmo PDF)</option>
+                                    <option value="individual">Declaracoes Individuais (1 PDF para cada)</option>
+                                </select>
+                            </div>
+                        )}
 
                         <button
                             type="button"
@@ -881,76 +863,79 @@ const ClientFormModal = ({ onClose, onConfirm, onDelete, initialData = null, cli
                             onClick={handleGenerateResidencePDF}
                         >
                             <FileText size={18} />
-                            {declarationMode === 'individual' && formData.has_segundo && formData.tipo_segundo !== 'conjuge' ? 'Gerar 2 PDFs' : 'Gerar PDF'}
+                            {declarationMode === 'individual' && formData.has_segundo && formData.tipo_segundo !== 'conjuge' ? 'GERAR 2 PDFs (INDIVIDUAL)' : 'GERAR PDF AGORA'}
                         </button>
                     </div>
-                </section>
+                </div>
 
-                <section className="doc-section doc-section--reason">
-                    <header className="doc-section-header">
-                        <h3>Motivo da Declaração</h3>
-                        <p>Selecione o motivo pelo qual não possui comprovante de endereço.</p>
-                    </header>
+                <div className="doc-item" style={{ marginTop: '1.5rem', flexDirection: 'column', alignItems: 'stretch' }}>
+                    <div className="doc-info">
+                        <h3>Motivo da Declaracao</h3>
+                        <p>Selecione o motivo pelo qual nao possui comprovante de endereco:</p>
+                    </div>
 
-                    <div className="residence-reason-options">
-                        <label className={`reason-option ${residenceReason === 'option1' ? 'active' : ''}`}>
+                    <div className="residence-reason-options" style={{ marginTop: '1rem' }}>
+                        <label style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '0.75rem', cursor: 'pointer' }}>
                             <input
                                 type="radio"
                                 name="residenceReason"
                                 value="option1"
                                 checked={residenceReason === 'option1'}
                                 onChange={(e) => setResidenceReason(e.target.value)}
+                                style={{ marginTop: '0.2rem' }}
                             />
-                            <span className="reason-text">Não resido em endereço fixo/próprio (locatário)</span>
+                            <span style={{ marginLeft: '0.5rem', fontSize: '0.9rem' }}>Não resido em endereço fixo/próprio (locatário)</span>
                         </label>
 
-                        <label className={`reason-option ${residenceReason === 'option2' ? 'active' : ''}`}>
+                        <label style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '0.75rem', cursor: 'pointer' }}>
                             <input
                                 type="radio"
                                 name="residenceReason"
                                 value="option2"
                                 checked={residenceReason === 'option2'}
                                 onChange={(e) => setResidenceReason(e.target.value)}
+                                style={{ marginTop: '0.2rem' }}
                             />
-                            <span className="reason-text">Bairro onde resido não possui rede de água ou elétrica regularizada pela prefeitura</span>
+                            <span style={{ marginLeft: '0.5rem', fontSize: '0.9rem' }}>Bairro onde resido não possui rede de água ou elétrica regularizada pela prefeitura</span>
                         </label>
 
-                        <label className={`reason-option ${residenceReason === 'option3' ? 'active' : ''}`}>
+                        <label style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '0.75rem', cursor: 'pointer' }}>
                             <input
                                 type="radio"
                                 name="residenceReason"
                                 value="option3"
                                 checked={residenceReason === 'option3'}
                                 onChange={(e) => setResidenceReason(e.target.value)}
+                                style={{ marginTop: '0.2rem' }}
                             />
-                            <span className="reason-text">Declaro que resido no endereço acima citado</span>
+                            <span style={{ marginLeft: '0.5rem', fontSize: '0.9rem' }}>Declaro que resido no endereço acima citado</span>
                         </label>
 
-                        <label className={`reason-option ${residenceReason === 'outros' ? 'active' : ''}`}>
+                        <label style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '0.75rem', cursor: 'pointer' }}>
                             <input
                                 type="radio"
                                 name="residenceReason"
                                 value="outros"
                                 checked={residenceReason === 'outros'}
                                 onChange={(e) => setResidenceReason(e.target.value)}
+                                style={{ marginTop: '0.2rem' }}
                             />
-                            <span className="reason-text">Outros (especifique abaixo)</span>
+                            <span style={{ marginLeft: '0.5rem', fontSize: '0.9rem' }}>Outros (especifique abaixo)</span>
                         </label>
 
                         {residenceReason === 'outros' && (
-                            <div className="reason-other">
-                                <div className="form-group">
-                                    <input
-                                        type="text"
-                                        value={residenceReasonOther}
-                                        onChange={(e) => setResidenceReasonOther(e.target.value.toUpperCase())}
-                                        placeholder="DIGITE O MOTIVO..."
-                                    />
-                                </div>
+                            <div className="form-group" style={{ marginTop: '0.5rem', marginLeft: '1.75rem' }}>
+                                <input
+                                    type="text"
+                                    value={residenceReasonOther}
+                                    onChange={(e) => setResidenceReasonOther(e.target.value.toUpperCase())}
+                                    placeholder="DIGITE O MOTIVO..."
+                                    style={{ width: '100%' }}
+                                />
                             </div>
                         )}
                     </div>
-                </section>
+                </div>
             </div>
 
             <div className="doc-tips">

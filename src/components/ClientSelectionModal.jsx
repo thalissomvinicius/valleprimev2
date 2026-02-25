@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, Search, UserPlus, Users, Edit2, Trash2, User, Building2, ChevronLeft } from 'lucide-react';
+import { X, Search, UserPlus, Users, Edit2, Trash2, User, Building2 } from 'lucide-react';
 import { getClients, deleteClient } from '../services/api';
-import Loader from './Loader';
 import './ClientSelectionModal.css';
 
-const ClientSelectionModal = ({ onSelectClient, onNewClient, onClose, onBack }) => {
+const ClientSelectionModal = ({ onSelectClient, onNewClient, onClose }) => {
     const [clients, setClients] = useState([]);
     const [loading, setLoading] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
@@ -114,6 +113,7 @@ const ClientSelectionModal = ({ onSelectClient, onNewClient, onClose, onBack }) 
         return ddd ? `(${ddd}) ${number}` : number;
     };
 
+    // Filter clients by type based on CPF/CNPJ length
     // Server-side filtering, no local filter needed
     const filteredClients = clients;
 
@@ -121,15 +121,9 @@ const ClientSelectionModal = ({ onSelectClient, onNewClient, onClose, onBack }) 
         <div className="modal-overlay" onClick={onClose}>
             <div className="client-selection-modal" onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
-                    <div className="modal-header-left">
-                        <button className="back-btn" onClick={onBack || onClose} type="button">
-                            <ChevronLeft size={20} />
-                            Voltar
-                        </button>
-                        <div className="modal-title">
-                            <Users size={24} />
-                            <h2>Selecionar Cliente</h2>
-                        </div>
+                    <div className="modal-title">
+                        <Users size={24} />
+                        <h2>Selecionar Cliente</h2>
                     </div>
                     <button className="close-btn" onClick={onClose}>
                         <X size={24} />
@@ -137,28 +131,29 @@ const ClientSelectionModal = ({ onSelectClient, onNewClient, onClose, onBack }) 
                 </div>
 
                 <div className="modal-body">
-                    <div className="top-controls">
+                    <div className="action-buttons">
                         <button className="btn-new-client" onClick={onNewClient}>
                             <UserPlus size={20} />
                             Cadastrar Novo Cliente
                         </button>
+                    </div>
 
-                        <div className="client-type-tabs">
-                            <button
-                                className={`client-tab-btn ${clientTab === 'pf' ? 'active' : ''}`}
-                                onClick={() => setClientTab('pf')}
-                            >
-                                <User size={16} />
-                                Pessoa Física
-                            </button>
-                            <button
-                                className={`client-tab-btn ${clientTab === 'pj' ? 'active' : ''}`}
-                                onClick={() => setClientTab('pj')}
-                            >
-                                <Building2 size={16} />
-                                Pessoa Jurídica
-                            </button>
-                        </div>
+                    {/* Tabs for PF/PJ */}
+                    <div className="client-type-tabs">
+                        <button
+                            className={`client-tab-btn ${clientTab === 'pf' ? 'active' : ''}`}
+                            onClick={() => setClientTab('pf')}
+                        >
+                            <User size={16} />
+                            Pessoa Física
+                        </button>
+                        <button
+                            className={`client-tab-btn ${clientTab === 'pj' ? 'active' : ''}`}
+                            onClick={() => setClientTab('pj')}
+                        >
+                            <Building2 size={16} />
+                            Pessoa Jurídica
+                        </button>
                     </div>
 
                     <div className="search-section">
@@ -176,7 +171,8 @@ const ClientSelectionModal = ({ onSelectClient, onNewClient, onClose, onBack }) 
 
                     {loading ? (
                         <div className="loading-state">
-                            <Loader label="Carregando clientes..." />
+                            <div className="spinner"></div>
+                            <p>Carregando clientes...</p>
                         </div>
                     ) : error ? (
                         <div className="error-state">

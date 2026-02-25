@@ -48,11 +48,6 @@ const requestWithRetry = async (fn, { retries = 2, baseDelay = 800 } = {}) => {
 // Request interceptor: em *.pages.dev usar URL absoluta para o Render (garante que a requisição vá ao backend)
 const RENDER_API = 'https://valleprimev2.onrender.com';
 api.interceptors.request.use(config => {
-  if (typeof window !== 'undefined' && config.url?.startsWith?.('/api/consulta')) {
-    config.url = window.location.origin + config.url;
-    config.baseURL = '';
-    return config;
-  }
   if (typeof window !== 'undefined' && /\.pages\.dev$/i.test(window.location?.hostname || '') && config.url?.startsWith?.('/api')) {
     config.url = RENDER_API + config.url; // URL absoluta → axios ignora baseURL
     config.baseURL = '';
@@ -125,17 +120,12 @@ export const deleteUser = async (id) => {
   return response.data;
 };
 
-export const changeMyPassword = async (old_password, new_password) => {
-  const response = await api.put(`${USERS_BASE}/me/password`, { old_password, new_password });
-  return response.data;
-};
-
 export const fetchAvailability = async (obraCode = '624') => {
   try {
     const response = await requestWithRetry(() => api.get(`${API_BASE}/${obraCode}`, {
       params: { t: Date.now() },
-      timeout: 60000
-    }), { retries: 2, baseDelay: 1000 });
+      timeout: 20000
+    }), { retries: 2, baseDelay: 800 });
     const res = response.data;
     if (!res) throw new Error('Resposta vazia');
     const list = Array.isArray(res.data) ? res.data : (res.success ? res.data : []);
@@ -202,14 +192,7 @@ export const getClients = async ({ search = '', page = 1, limit = 50, type = '',
 
 export const saveClient = async (clientData) => {
   try {
-    const clientId = clientData?.client_id || clientData?.id || null;
-    const payload = { ...(clientData || {}) };
-    if (payload.client_id) delete payload.client_id;
-    if (payload.id) delete payload.id;
-
-    const response = clientId
-      ? await api.put(`${CLIENT_BASE}/${clientId}`, payload)
-      : await api.post(CLIENT_BASE, payload);
+    const response = await api.post(CLIENT_BASE, clientData);
     return response.data; // Response should be { success: true } or { error: ... }
   } catch (error) {
     const details = error?.response?.data;
@@ -239,3 +222,32 @@ export const checkDuplicate = async (cpf, tipo = 'PF', clientId = null) => {
     return { exists: false };
   }
 }
+
+export const getProposals = async ({ page = 1, limit = 50 } = {}) => {
+  const response = await requestWithRetry(() => api.get(`/api/proposals?page=${page}&limit=${limit}`, {
+    timeout: 30000
+  }), { retries: 2, baseDelay: 1000 });
+  return response.data;
+};
+
+export const getProposalById = async (id) => {
+  const response = await api.get(`/api/proposals/${id}`);
+  return response.data;
+};
+
+export const updateProposal = async (id, payload) => {
+  const response = await api.put(`/api/proposals/${id}`, { payload });
+  return response.data;
+};
+
+export const deleteProposal = async (id) => {
+  const response = await api.delete(`/api/proposals/${id}`);
+  return response.data;
+};
+
+export const printProposal = async (id) => {
+  const response = await api.get(`/api/proposals/${id}/pdf`, { responseType: 'blob' });
+  return response.data;
+};
+
+

@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { X, ChevronLeft, ChevronRight, Check, Send, ClipboardCopy, Calendar, Plus, Trash2, CheckCircle, MapPin, Maximize, Layers, Info } from 'lucide-react';
-import { OBRAS } from '../context/authConstants';
+import { OBRAS } from '../context/AuthContext';
 import './BudgetWizard.css';
 import ClientFormModal from './ClientFormModal';
 import ClientSelectionModal from './ClientSelectionModal';
-import Loader from './Loader';
 import { saveClient } from '../services/api';
-import { useToast } from '../context/toastContextValue';
+import { useToast } from '../context/ToastContext';
 import logo from '../assets/Valle-logo-azul.png';
 
 const ENV_API = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '');
@@ -85,15 +84,17 @@ const BudgetWizard = ({ lot, onClose, obraName }) => {
 
     // Auto-calculate first sinal line value
     useEffect(() => {
-        if (formData.skipSinalEnabled) return;
-        setFormData(prev => {
-            if (prev.sinalLines.length !== 1) return prev;
-            return {
+        if (
+            formData.sinalLines.length === 1 &&
+            !formData.skipSinalEnabled &&
+            formData.sinalLines[0].value !== sinalDiscountedTotal
+        ) {
+            setFormData(prev => ({
                 ...prev,
                 sinalLines: [{ qtd: prev.sinalLines[0].qtd, value: sinalDiscountedTotal }]
-            };
-        });
-    }, [sinalDiscountedTotal, formData.skipSinalEnabled]);
+            }));
+        }
+    }, [sinalDiscountedTotal, formData.skipSinalEnabled, formData.sinalLines]);
 
     // Helper functions
     const formatCurrency = (val) => {
@@ -382,10 +383,14 @@ ${sinalSection}
         };
 
         try {
-      const proposalUrl = '/api/generate_proposal';
+            const proposalUrl = '/api/generate_proposal';
+            const token = localStorage.getItem('valle_token');
             const response = await fetch(proposalUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {})
+                },
                 body: JSON.stringify(payload)
             });
 
@@ -538,7 +543,6 @@ ${sinalSection}
             {showClientSelection && (
                 <ClientSelectionModal
                     onClose={() => setShowClientSelection(false)}
-                    onBack={() => setShowClientSelection(false)}
                     onSelectClient={handleSelectClient}
                     onNewClient={handleNewClient}
                 />
@@ -552,13 +556,6 @@ ${sinalSection}
                     lot={lot}
                     obraName={obraName}
                 />
-            )}
-            {isGenerating && (
-                <div className="wizard-loading-overlay">
-                    <div className="wizard-loading-card">
-                        <Loader label="Gerando proposta..." />
-                    </div>
-                </div>
             )}
         </>
     );

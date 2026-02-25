@@ -92,6 +92,7 @@ def query_db(sql, params=(), one=False, commit=False):
         sql_lower = sql.lower()
         if "clients" in sql_lower: table = "clients"
         elif "users" in sql_lower: table = "users"
+        elif "proposals" in sql_lower: table = "proposals"
         
         if table:
             try:
@@ -106,7 +107,7 @@ def query_db(sql, params=(), one=False, commit=False):
                             "created_by": params[3],
                             "data": params[4]
                         }
-                    else: # users
+                    elif table == "users":
                         payload = {
                             "username": params[0],
                             "password_hash": params[1],
@@ -114,6 +115,15 @@ def query_db(sql, params=(), one=False, commit=False):
                             "role": params[3],
                             "active": params[4],
                             "permissions": json.loads(params[5]) if len(params) > 5 and isinstance(params[5], str) else (params[5] if len(params) > 5 else {})
+                        }
+                    elif table == "proposals":
+                        payload = {
+                            "user_id": params[0],
+                            "obra_codigo": params[1],
+                            "obra_nome": params[2],
+                            "quadra": params[3],
+                            "lote": params[4],
+                            "payload": params[5]
                         }
                     res = query_supabase_rest(table, 'POST', data=payload)
                     return True if res is not None else False
@@ -193,6 +203,10 @@ def query_db(sql, params=(), one=False, commit=False):
                         rest_params.append("order=created_at.desc")
                     elif "ORDER BY id" in sql:
                         rest_params.append("order=id.asc")
+
+                    if "LIMIT ? OFFSET ?" in sql.upper() and len(params) >= 2:
+                        rest_params.append(f"limit={params[-2]}")
+                        rest_params.append(f"offset={params[-1]}")
                     
                     final_params = "&".join(rest_params) if rest_params else None
                     print(f"[SUPABASE SELECT] table={table}, params={final_params}")
@@ -348,6 +362,19 @@ def migrate_db_internal():
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS proposals (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER,
+                    obra_codigo TEXT,
+                    obra_nome TEXT,
+                    quadra TEXT,
+                    lote TEXT,
+                    payload TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
         else:
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS clients (
@@ -371,6 +398,19 @@ def migrate_db_internal():
                     permissions TEXT,
                     active BOOLEAN DEFAULT 1,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS proposals (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER,
+                    obra_codigo TEXT,
+                    obra_nome TEXT,
+                    quadra TEXT,
+                    lote TEXT,
+                    payload TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
         # Ensure admin user exists
@@ -439,6 +479,43 @@ def migrate_db():
         return jsonify({"success": True, "message": "Database initialized/migrated"})
     else:
         return jsonify({"success": False, "message": "Migration failed (check logs)"}), 500
+
+def get_optional_user_from_token():
+    auth_header = request.headers.get('Authorization', '')
+    if not auth_header.startswith('Bearer '):
+        return None, None
+    token = auth_header.split(' ')[1]
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        return payload.get('user_id'), payload.get('role')
+    except:
+        return None, None
+
+def extract_proposal_meta(payload):
+    obra_codigo = None
+    obra_nome = None
+    quadra = None
+    lote = None
+    if isinstance(payload, dict):
+        obra_nome = payload.get('obraName') or payload.get('obra_nome') or payload.get('obra')
+        obra_codigo = payload.get('obra_codigo')
+        lot = payload.get('lot')
+        if isinstance(lot, dict):
+            quadra = lot.get('QD') or lot.get('quadra')
+            lote = lot.get('LT') or lot.get('lote')
+            obra_codigo = obra_codigo or lot.get('CODIGO') or lot.get('codigo_obra')
+        else:
+            quadra = payload.get('quadra')
+            lote = payload.get('lote')
+    return obra_codigo, obra_nome, quadra, lote
+
+def store_proposal(payload, user_id):
+    obra_codigo, obra_nome, quadra, lote = extract_proposal_meta(payload)
+    query_db(
+        "INSERT INTO proposals (user_id, obra_codigo, obra_nome, quadra, lote, payload) VALUES (?, ?, ?, ?, ?, ?)",
+        (user_id, obra_codigo, obra_nome, quadra, lote, json.dumps(payload)),
+        commit=True
+    )
 
 # Rota para verificar autenticação (usada pelo frontend ao carregar a página)
 @app.route('/api/auth/me', methods=['GET'])
@@ -739,6 +816,140 @@ def login():
         if conn: conn.close()
         return jsonify({'message': 'Internal Login Error', 'error': str(e)}), 500
 
+@app.route('/api/proposals', methods=['GET'])
+@token_required
+def list_proposals():
+    try:
+        page = int(request.args.get('page', 1))
+        limit = int(request.args.get('limit', 50))
+        if page < 1: page = 1
+        if limit < 1: limit = 50
+        offset = (page - 1) * limit
+
+        if request.user_role == 'admin':
+            where_sql = ""
+            params = ()
+        else:
+            where_sql = "WHERE user_id = ?"
+            params = (request.user_id,)
+
+        total_count = query_db(f"SELECT COUNT(*) as count FROM proposals {where_sql}", params, one=True)
+        rows = query_db(
+            f"SELECT id, user_id, obra_codigo, obra_nome, quadra, lote, payload, created_at, updated_at FROM proposals {where_sql} ORDER BY created_at DESC LIMIT ? OFFSET ?",
+            params + (limit, offset)
+        )
+
+        proposals = []
+        for row in rows:
+            payload = row.get('payload')
+            if isinstance(payload, str):
+                try:
+                    payload = json.loads(payload)
+                except:
+                    pass
+            proposals.append({
+                "id": row.get("id"),
+                "user_id": row.get("user_id"),
+                "obra_codigo": row.get("obra_codigo"),
+                "obra_nome": row.get("obra_nome"),
+                "quadra": row.get("quadra"),
+                "lote": row.get("lote"),
+                "payload": payload,
+                "created_at": row.get("created_at"),
+                "updated_at": row.get("updated_at")
+            })
+
+        return jsonify({
+            "success": True,
+            "proposals": proposals,
+            "total_count": total_count['count'] if total_count else 0,
+            "page": page,
+            "limit": limit
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/api/proposals/<int:proposal_id>', methods=['GET', 'PUT'])
+@token_required
+def proposal_detail(proposal_id):
+    proposal = query_db("SELECT * FROM proposals WHERE id = ?", (proposal_id,), one=True)
+    if not proposal:
+        return jsonify({"error": "Not found"}), 404
+
+    if request.user_role != 'admin' and proposal.get('user_id') != request.user_id:
+        return jsonify({"error": "Forbidden"}), 403
+
+    if request.method == 'GET':
+        payload = proposal.get('payload')
+        if isinstance(payload, str):
+            try:
+                payload = json.loads(payload)
+            except:
+                pass
+        return jsonify({
+            "id": proposal.get("id"),
+            "user_id": proposal.get("user_id"),
+            "obra_codigo": proposal.get("obra_codigo"),
+            "obra_nome": proposal.get("obra_nome"),
+            "quadra": proposal.get("quadra"),
+            "lote": proposal.get("lote"),
+            "payload": payload,
+            "created_at": proposal.get("created_at"),
+            "updated_at": proposal.get("updated_at")
+        })
+
+    data = request.get_json(silent=True) or {}
+    payload = data.get('payload') if isinstance(data, dict) and 'payload' in data else data
+    if not isinstance(payload, dict):
+        return jsonify({"error": "Invalid payload"}), 400
+
+    obra_codigo, obra_nome, quadra, lote = extract_proposal_meta(payload)
+    query_db(
+        "UPDATE proposals SET payload = ?, obra_codigo = ?, obra_nome = ?, quadra = ?, lote = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+        (json.dumps(payload), obra_codigo, obra_nome, quadra, lote, proposal_id),
+        commit=True
+    )
+    return jsonify({"success": True})
+
+@app.route('/api/proposals/<int:proposal_id>/pdf', methods=['GET'])
+@token_required
+def proposal_pdf(proposal_id):
+    proposal = query_db("SELECT * FROM proposals WHERE id = ?", (proposal_id,), one=True)
+    if not proposal:
+        return jsonify({"error": "Not found"}), 404
+
+    if request.user_role != 'admin' and proposal.get('user_id') != request.user_id:
+        return jsonify({"error": "Forbidden"}), 403
+
+    payload = proposal.get('payload')
+    if isinstance(payload, str):
+        try:
+            payload = json.loads(payload)
+        except:
+            payload = None
+    if not payload:
+        return jsonify({"error": "Invalid payload"}), 400
+
+    if not generate_pdf_reportlab:
+        return jsonify({'error': 'PDF generator not available'}), 500
+
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    positions_path = os.path.join(base_dir, 'posicoes_campos.json')
+    background_path = os.path.join(base_dir, 'proposta_template.png')
+    output_path = os.path.join(base_dir, f'proposta_output_{proposal_id}.pdf')
+
+    generate_pdf_reportlab(payload, background_path, positions_path, output_path)
+
+    if not os.path.exists(output_path):
+        return jsonify({'error': 'Failed to generate PDF'}), 500
+
+    return send_file(
+        output_path,
+        mimetype='application/pdf',
+        as_attachment=False,
+        download_name='proposta.pdf'
+    )
+
 @app.route('/api/availability')
 def get_availability():
     numprod_psc = request.args.get('numprod_psc', '624')
@@ -749,25 +960,6 @@ def get_availability():
 def get_consulta(codigo):
     """Rota alternativa para compatibilidade com frontend"""
     return fetch_consulta(codigo)
-
-@app.route('/api/consulta/push/<codigo>', methods=['POST'])
-def push_consulta(codigo):
-    expected = os.environ.get('CONSULTA_PUSH_KEY', '')
-    provided = request.headers.get('X-Consulta-Push-Key', '')
-    if not expected or provided != expected:
-        return jsonify({"success": False, "error": "Forbidden"}), 403
-
-    payload = request.get_json(silent=True)
-    if payload is None:
-        return jsonify({"success": False, "error": "Invalid JSON"}), 400
-
-    fallback_path = os.path.join(os.path.dirname(__file__), f'fallback_{codigo}.json')
-    try:
-        with open(fallback_path, 'w', encoding='utf-8') as f:
-            json.dump(payload, f, ensure_ascii=False)
-        return jsonify({"success": True, "codigo": str(codigo)})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
 
 def fetch_consulta(numprod_psc):
     """Busca dados de lotes do servidor externo"""
@@ -790,9 +982,11 @@ def fetch_consulta(numprod_psc):
 
         last_update = None
         data_list = payload.get("data") if isinstance(payload, dict) and isinstance(payload.get("data"), list) else None
+        # start with root date if present
         if isinstance(payload, dict):
             last_update = parse_date_str(payload.get("Data_Atualizacao"))
 
+        # compute max date across items
         if data_list:
             for item in data_list:
                 if not isinstance(item, dict):
@@ -801,9 +995,11 @@ def fetch_consulta(numprod_psc):
                 if d and (last_update is None or d > last_update):
                     last_update = d
 
+        # If still none, try first item's date
         if last_update is None and data_list and isinstance(data_list[0], dict):
             last_update = parse_date_str(data_list[0].get("Data_Atualizacao"))
 
+        # propagate back to items and root in DD/MM/YYYY
         if last_update:
             formatted = last_update.strftime('%d/%m/%Y')
             if data_list:
@@ -821,6 +1017,7 @@ def fetch_consulta(numprod_psc):
         retries = int(os.environ.get('CONSULTA_RETRIES', '1'))
         last_error = None
         
+        # Headers para simular navegador real e evitar bloqueio por WAF/Firewall
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'Accept': 'application/json, text/javascript, */*; q=0.01',
@@ -848,28 +1045,35 @@ def fetch_consulta(numprod_psc):
                 last_error = str(e)
             time.sleep(0.6 * (attempt + 1))
         
-        fallback_path = os.path.join(os.path.dirname(__file__), f'fallback_{numprod_psc}.json')
-        if os.path.exists(fallback_path):
-            try:
-                with open(fallback_path, 'r', encoding='utf-8-sig') as f:
+        # Fallback para arquivo local se a API externa falhar
+        try:
+            fallback_path = os.path.join(os.path.dirname(__file__), f'fallback_{numprod_psc}.json')
+            if os.path.exists(fallback_path):
+                print(f"[WARN] API externa falhou ({last_error}). Usando fallback local: {fallback_path}")
+                with open(fallback_path, 'r', encoding='utf-8') as f:
                     data = json.load(f)
-                payload = enrich_payload(data)
-                if isinstance(payload, dict):
-                    payload["success"] = True
-                    payload["_cached"] = True
-                    payload["_error"] = str(last_error)
-                return jsonify(payload)
-            except Exception:
-                pass
+                    # Tenta enriquecer dados do fallback também
+                    payload = enrich_payload(data)
+                    if isinstance(payload, dict):
+                        payload["success"] = True
+                        payload["_cached"] = True
+                        payload["_error"] = str(last_error)
+                    return jsonify(payload)
+        except Exception as fallback_err:
+            print(f"[ERROR] Falha ao ler fallback: {fallback_err}")
 
         return jsonify({
             "success": False,
             "data": [],
-            "error": f"Consulta indisponível. {last_error}"
+            "error": f"Consulta indisponivel. {last_error}"
         }), 503
     except Exception as e:
-        print(f"[ERROR] fetch_consulta {numprod_psc}: {e}")
-        return jsonify({"success": False, "data": [], "error": str(e)})
+        print(f"[consulta] external fetch failed: {e}")
+        return jsonify({
+            "success": False,
+            "data": [],
+            "error": str(e)
+        })
 
 @app.route('/api/clients', methods=['GET', 'POST'])
 @app.route('/api/manage-clients', methods=['GET', 'POST'])
@@ -888,32 +1092,28 @@ def manage_clients():
              user = query_db("SELECT permissions FROM users WHERE id = ?", (request.user_id,), one=True)
              perms = json.loads(user['permissions']) if user and user['permissions'] else {}
              can_see_all = perms.get('canViewAllClients', False)
+
+        created_by = request.args.get('created_by')
+        force_created_by = None
+        if created_by and (request.user_role == 'admin' or str(created_by) == str(request.user_id)):
+            force_created_by = str(created_by)
         
         # Filter by tipo_pessoa AND optionally by created_by
         if can_see_all:
-            clients = query_db("SELECT * FROM clients WHERE tipo_pessoa = ? ORDER BY created_at DESC", (client_type,))
+            if force_created_by:
+                clients = query_db("SELECT * FROM clients WHERE tipo_pessoa = ? AND created_by = ? ORDER BY created_at DESC", (client_type, force_created_by))
+            else:
+                clients = query_db("SELECT * FROM clients WHERE tipo_pessoa = ? ORDER BY created_at DESC", (client_type,))
         else:
             clients = query_db("SELECT * FROM clients WHERE tipo_pessoa = ? AND created_by = ? ORDER BY created_at DESC", (client_type, str(request.user_id)))
         
         print(f"[DEBUG] Found {len(clients) if clients else 0} clients")
         # Normalize response for frontend
         if isinstance(clients, list):
-            import re
-            seen = set()
-            deduped = []
-            for c in clients:
-                cpf_raw = str(c.get('cpf_cnpj') or '')
-                cpf_digits = re.sub(r'\D', '', cpf_raw)
-                tipo = str(c.get('tipo_pessoa') or '')
-                key = f"{tipo}:{cpf_digits}" if cpf_digits else f"id:{c.get('id')}"
-                if key in seen:
-                    continue
-                seen.add(key)
-                deduped.append(c)
             return jsonify({
                 "success": True,
-                "clients": deduped,
-                "total_count": len(deduped)
+                "clients": clients,
+                "total_count": len(clients)
             })
         return jsonify({"success": True, "clients": [], "total_count": 0})
 
@@ -928,8 +1128,7 @@ def manage_clients():
             # Robust data extraction for both sources (Proposal vs Client Tab)
             nome = data.get('nome') or data.get('nome_proponente') or data.get('razao_social_proponente')
             cpf_cnpj = data.get('cpf_cnpj') or data.get('cpf_cnpj_proponente')
-            tipo_pessoa = str(data.get('tipo_pessoa', 'PF')).upper()
-            client_id_raw = data.get('client_id') or data.get('id')
+            tipo_pessoa = data.get('tipo_pessoa', 'PF')
             
             print(f"[DEBUG] Extracted - nome: {nome}, cpf_cnpj: {cpf_cnpj}, tipo_pessoa: {tipo_pessoa}")
             
@@ -940,106 +1139,12 @@ def manage_clients():
                     'message': 'Nome e CPF/CNPJ são obrigatórios',
                     'required': ['nome or nome_proponente', 'cpf_cnpj or cpf_cnpj_proponente']
                 }), 400
-
-            import re
-
-            def extract_numeric_id(value):
-                if value is None:
-                    return None
-                match = re.search(r'\d+', str(value))
-                return int(match.group()) if match else None
-
-            def normalize_digits(value):
-                return re.sub(r'\D', '', str(value or '')).strip()
-
-            def format_cpf_cnpj(digits):
-                d = normalize_digits(digits)
-                if len(d) == 11:
-                    return f"{d[:3]}.{d[3:6]}.{d[6:9]}-{d[9:]}"
-                if len(d) == 14:
-                    return f"{d[:2]}.{d[2:5]}.{d[5:8]}/{d[8:12]}-{d[12:]}"
-                return d
-
-            client_id = extract_numeric_id(client_id_raw)
-            cpf_digits = normalize_digits(cpf_cnpj)
-            if not cpf_digits:
-                return jsonify({'success': False, 'error': 'CPF/CNPJ inválido'}), 400
-
-            cpf_candidates = [cpf_digits]
-            cpf_masked = format_cpf_cnpj(cpf_digits)
-            if cpf_masked and cpf_masked != cpf_digits:
-                cpf_candidates.append(cpf_masked)
-
-            can_edit_any = request.user_role == 'admin'
-            if not can_edit_any:
-                user = query_db("SELECT permissions FROM users WHERE id = ?", (request.user_id,), one=True)
-                perms = json.loads(user['permissions']) if user and user['permissions'] else {}
-                can_edit_any = perms.get('canViewAllClients', False)
-
-            def find_existing_by_cpf(exclude_id=None):
-                for cand in cpf_candidates:
-                    if exclude_id:
-                        existing_row = query_db(
-                            "SELECT id, created_by FROM clients WHERE cpf_cnpj = ? AND id != ? ORDER BY id DESC",
-                            (cand, exclude_id),
-                            one=True
-                        )
-                    else:
-                        existing_row = query_db(
-                            "SELECT id, created_by FROM clients WHERE cpf_cnpj = ? ORDER BY id DESC",
-                            (cand,),
-                            one=True
-                        )
-                    if existing_row:
-                        return existing_row
-                return None
-
-            payload_json = json.dumps(data)
-
-            if client_id:
-                current = query_db("SELECT id, created_by FROM clients WHERE id = ?", (client_id,), one=True)
-                if not current:
-                    return jsonify({'success': False, 'error': 'Cliente não encontrado'}), 404
-                if not can_edit_any and str(current.get('created_by') or '') != str(request.user_id):
-                    return jsonify({'success': False, 'error': 'Sem permissão para atualizar este cliente'}), 403
-
-                dup = find_existing_by_cpf(exclude_id=client_id)
-                if dup:
-                    if can_edit_any or str(dup.get('created_by') or '') == str(request.user_id):
-                        return jsonify({'success': False, 'error': 'CPF/CNPJ já cadastrado em outro cliente'}), 409
-                    return jsonify({'success': False, 'error': 'CPF/CNPJ já cadastrado no sistema. Solicite ao administrador.', 'error_code': 'DUPLICATE_CPF'}), 409
-
-                print(f"[DEBUG] Updating client {client_id}: {nome} - {cpf_digits}")
-                success = query_db(
-                    "UPDATE clients SET nome = ?, cpf_cnpj = ?, tipo_pessoa = ?, data = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-                    (nome, cpf_digits, tipo_pessoa, payload_json, client_id),
-                    commit=True
-                )
-                print(f"[DEBUG] Update result: {success}")
-                if success:
-                    return jsonify({'success': True, 'message': 'Cliente atualizado com sucesso', 'client_id': client_id})
-                return jsonify({'success': False, 'error': 'Falha ao atualizar cliente'}), 500
-
-            existing = find_existing_by_cpf()
-            if existing:
-                if can_edit_any or str(existing.get('created_by') or '') == str(request.user_id):
-                    existing_id = int(existing['id'])
-                    print(f"[DEBUG] Upserting existing client {existing_id}: {nome} - {cpf_digits}")
-                    success = query_db(
-                        "UPDATE clients SET nome = ?, cpf_cnpj = ?, tipo_pessoa = ?, data = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-                        (nome, cpf_digits, tipo_pessoa, payload_json, existing_id),
-                        commit=True
-                    )
-                    print(f"[DEBUG] Upsert update result: {success}")
-                    if success:
-                        return jsonify({'success': True, 'message': 'Cliente atualizado com sucesso', 'client_id': existing_id})
-                    return jsonify({'success': False, 'error': 'Falha ao atualizar cliente existente'}), 500
-                return jsonify({'success': False, 'error': 'CPF/CNPJ já cadastrado no sistema. Solicite ao administrador.', 'error_code': 'DUPLICATE_CPF'}), 409
-
-            print(f"[DEBUG] Inserting client: {nome} - {cpf_digits}")
+            
+            # Insert into database
+            print(f"[DEBUG] Attempting to insert client: {nome} - {cpf_cnpj}")
             success = query_db(
                 "INSERT INTO clients (nome, cpf_cnpj, tipo_pessoa, created_by, data) VALUES (?, ?, ?, ?, ?)",
-                (nome, cpf_digits, tipo_pessoa, str(request.user_id), payload_json),
+                (nome, cpf_cnpj, tipo_pessoa, str(request.user_id), json.dumps(data)), 
                 commit=True
             )
             
@@ -1064,87 +1169,6 @@ def manage_clients():
                 'message': str(e),
                 'trace': error_trace if os.getenv('VERCEL') else None  # Only show trace in production for debugging
             }), 500
-
-
-@app.route('/api/clients/<int:client_id>', methods=['PUT'])
-@app.route('/api/manage-clients/<int:client_id>', methods=['PUT'])
-@token_required
-def update_client(client_id):
-    try:
-        data = request.get_json()
-        if not data:
-            return jsonify({'success': False, 'error': 'No data provided'}), 400
-
-        nome = data.get('nome') or data.get('nome_proponente') or data.get('razao_social_proponente')
-        cpf_cnpj = data.get('cpf_cnpj') or data.get('cpf_cnpj_proponente')
-        tipo_pessoa = str(data.get('tipo_pessoa', 'PF')).upper()
-
-        if not nome or not cpf_cnpj:
-            return jsonify({'success': False, 'error': 'Nome e CPF/CNPJ são obrigatórios'}), 400
-
-        import re
-
-        def normalize_digits(value):
-            return re.sub(r'\D', '', str(value or '')).strip()
-
-        def format_cpf_cnpj(digits):
-            d = normalize_digits(digits)
-            if len(d) == 11:
-                return f"{d[:3]}.{d[3:6]}.{d[6:9]}-{d[9:]}"
-            if len(d) == 14:
-                return f"{d[:2]}.{d[2:5]}.{d[5:8]}/{d[8:12]}-{d[12:]}"
-            return d
-
-        cpf_digits = normalize_digits(cpf_cnpj)
-        if not cpf_digits:
-            return jsonify({'success': False, 'error': 'CPF/CNPJ inválido'}), 400
-
-        cpf_candidates = [cpf_digits]
-        cpf_masked = format_cpf_cnpj(cpf_digits)
-        if cpf_masked and cpf_masked != cpf_digits:
-            cpf_candidates.append(cpf_masked)
-
-        can_edit_any = request.user_role == 'admin'
-        if not can_edit_any:
-            user = query_db("SELECT permissions FROM users WHERE id = ?", (request.user_id,), one=True)
-            perms = json.loads(user['permissions']) if user and user['permissions'] else {}
-            can_edit_any = perms.get('canViewAllClients', False)
-
-        current = query_db("SELECT id, created_by FROM clients WHERE id = ?", (client_id,), one=True)
-        if not current:
-            return jsonify({'success': False, 'error': 'Cliente não encontrado'}), 404
-        if not can_edit_any and str(current.get('created_by') or '') != str(request.user_id):
-            return jsonify({'success': False, 'error': 'Sem permissão para atualizar este cliente'}), 403
-
-        dup = None
-        for cand in cpf_candidates:
-            dup = query_db(
-                "SELECT id, created_by FROM clients WHERE cpf_cnpj = ? AND id != ? ORDER BY id DESC",
-                (cand, client_id),
-                one=True
-            )
-            if dup:
-                break
-        if dup:
-            if can_edit_any or str(dup.get('created_by') or '') == str(request.user_id):
-                return jsonify({'success': False, 'error': 'CPF/CNPJ já cadastrado em outro cliente'}), 409
-            return jsonify({'success': False, 'error': 'CPF/CNPJ já cadastrado no sistema. Solicite ao administrador.', 'error_code': 'DUPLICATE_CPF'}), 409
-
-        payload_json = json.dumps(data)
-        success = query_db(
-            "UPDATE clients SET nome = ?, cpf_cnpj = ?, tipo_pessoa = ?, data = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-            (nome, cpf_digits, tipo_pessoa, payload_json, client_id),
-            commit=True
-        )
-        if success:
-            return jsonify({'success': True, 'message': 'Cliente atualizado com sucesso', 'client_id': client_id})
-        return jsonify({'success': False, 'error': 'Falha ao atualizar cliente'}), 500
-    except Exception as e:
-        import traceback
-        error_trace = traceback.format_exc()
-        print(f"[ERROR] update_client: {str(e)}")
-        print(f"[ERROR] Traceback: {error_trace}")
-        return jsonify({'success': False, 'error': str(e), 'trace': error_trace if os.getenv('VERCEL') else None}), 500
 
 
 @app.route('/api/clients/<int:client_id>', methods=['DELETE'])
@@ -1204,41 +1228,15 @@ def check_duplicate_client():
             if match:
                 client_id = int(match.group())
         
-        import re
-
-        def normalize_digits(value):
-            return re.sub(r'\D', '', str(value or '')).strip()
-
-        def format_cpf_cnpj(digits):
-            d = normalize_digits(digits)
-            if len(d) == 11:
-                return f"{d[:3]}.{d[3:6]}.{d[6:9]}-{d[9:]}"
-            if len(d) == 14:
-                return f"{d[:2]}.{d[2:5]}.{d[5:8]}/{d[8:12]}-{d[12:]}"
-            return d
-
-        digits = normalize_digits(cpf_cnpj)
-        candidates = [digits]
-        masked = format_cpf_cnpj(digits)
-        if masked and masked != digits:
-            candidates.append(masked)
-
-        existing = None
-        for cand in candidates:
-            if client_id:
-                existing = query_db(
-                    "SELECT id, nome FROM clients WHERE cpf_cnpj = ? AND id != ?",
-                    (cand, client_id),
-                    one=True
-                )
-            else:
-                existing = query_db(
-                    "SELECT id, nome FROM clients WHERE cpf_cnpj = ?",
-                    (cand,),
-                    one=True
-                )
-            if existing:
-                break
+        # Check if exists
+        if client_id:
+            # Editing existing client - exclude self from check
+            existing = query_db("SELECT id, nome FROM clients WHERE cpf_cnpj = ? AND id != ?", 
+                               (cpf_cnpj, client_id), one=True)
+        else:
+            # New client
+            existing = query_db("SELECT id, nome FROM clients WHERE cpf_cnpj = ?", 
+                               (cpf_cnpj,), one=True)
         
         if existing:
             return jsonify({'exists': True, 'client_name': existing['nome'], 'client_id': existing['id']})
@@ -1261,17 +1259,6 @@ def manage_users():
         users = query_db("SELECT id, username, nome, role, permissions, active FROM users ORDER BY id")
         for u in users:
              u['permissions'] = json.loads(u['permissions']) if u['permissions'] else {}
-             count_row = query_db("SELECT COUNT(*) as count FROM clients WHERE created_by = ?", (str(u['id']),), one=True)
-             if isinstance(count_row, dict):
-                 count_val = count_row.get('count', 0)
-             elif isinstance(count_row, (list, tuple)) and len(count_row) > 0:
-                 count_val = count_row[0]
-             else:
-                 count_val = 0
-             try:
-                 u['clients_count'] = int(count_val or 0)
-             except:
-                 u['clients_count'] = 0
         return jsonify({'users': users})
     
     if request.method == 'POST':
@@ -1285,32 +1272,6 @@ def manage_users():
         query_db("INSERT INTO users (username, password_hash, nome, role, active, permissions) VALUES (?, ?, ?, ?, ?, ?)",
                 (username, pw_hash, data.get('nome'), 'user', True, json.dumps(data.get('permissions', {}))), commit=True)
         return jsonify({'success': True})
-
-@app.route('/api/users/me/password', methods=['PUT'])
-@token_required
-def change_my_password():
-    try:
-        data = request.get_json() or {}
-        old_password = (data.get('old_password') or '').strip()
-        new_password = (data.get('new_password') or '').strip()
-        if not old_password or not new_password:
-            return jsonify({'message': 'Missing fields'}), 400
-        if len(new_password) < 4:
-            return jsonify({'message': 'Password too short'}), 400
-
-        user = query_db("SELECT id, password_hash FROM users WHERE id = ?", (request.user_id,), one=True)
-        if not user:
-            return jsonify({'message': 'User not found'}), 404
-        stored_hash = user.get('password_hash') if isinstance(user, dict) else (user[1] if isinstance(user, (list, tuple)) and len(user) > 1 else None)
-        if not verify_password(stored_hash, old_password):
-            return jsonify({'message': 'Invalid current password'}), 400
-
-        new_hash = hash_password(new_password)
-        query_db("UPDATE users SET password_hash = ? WHERE id = ?", (new_hash, request.user_id), commit=True)
-        return jsonify({'success': True})
-    except Exception as e:
-        print(f"[ERROR] change_my_password: {str(e)}")
-        return jsonify({'message': 'Error'}), 500
 
 @app.route('/api/users/<int:user_id>', methods=['PUT', 'DELETE'])
 @token_required
@@ -1352,198 +1313,24 @@ def generate_proposal():
             return jsonify({'error': 'No data provided'}), 400
         
         print(f"[DEBUG] Generating proposal with data keys: {list(data.keys())}")
+        user_id, _ = get_optional_user_from_token()
+        try:
+            store_proposal(data, user_id)
+        except Exception as e:
+            print(f"[WARN] Failed to store proposal history: {e}")
         
         # Check if PDF generator is available
         if not generate_pdf_reportlab:
             return jsonify({'error': 'PDF generator not available'}), 500
-
-        def pick_first(*values):
-            for v in values:
-                if v is None:
-                    continue
-                if isinstance(v, (int, float)):
-                    return v
-                s = str(v).strip()
-                if s != "":
-                    return v
-            return ""
-
-        def to_brl(value):
-            if value is None:
-                return ""
-            if isinstance(value, bool):
-                return ""
-            if isinstance(value, (int, float)):
-                s = f"{value:,.2f}"
-                return s.replace(",", "X").replace(".", ",").replace("X", ".")
-            s = str(value).strip()
-            if s == "":
-                return ""
-            s = s.replace("R$", "").strip()
-            return s
-
-        lot = data.get("lot") if isinstance(data.get("lot"), dict) else {}
-        obra_code = str(lot.get("Obra") or "").strip()
-        obra_map = {
-            "600": {"cidade": "Dom Eliseu", "uf": "PA", "descricao": "RESIDENCIAL JARDIM DO VALLE - DOM ELISEU"},
-            "601": {"cidade": "Capanema", "uf": "PA", "descricao": "RESIDENCIAL JARDIM AMERICA - CAPANEMA"},
-            "602": {"cidade": "Castanhal", "uf": "PA", "descricao": "RESIDENCIAL SALLES JARDIM - CASTANHAL"},
-            "603": {"cidade": "Castanhal", "uf": "PA", "descricao": "RESIDENCIAL JARDIM CASTANHAL - CASTANHAL"},
-            "604": {"cidade": "Tomé-Açu", "uf": "PA", "descricao": "RESIDENCIAL IPITINGA - TOMÉ-AÇU"},
-            "605": {"cidade": "Tomé-Açu", "uf": "PA", "descricao": "RESIDENCIAL VALLE DO IPITINGA - TOMÉ-AÇU"},
-            "610": {"cidade": "Tailândia", "uf": "PA", "descricao": "RESIDENCIAL JARDIM DO VALLE - TAILANDIA"},
-            "616": {"cidade": "Barcarena", "uf": "PA", "descricao": "RESIDENCIAL JARDIM DO VALLE - BARCARENA"},
-            "618": {"cidade": "Tailândia", "uf": "PA", "descricao": "RESIDENCIAL JARDIM DO VALLE II - TAILANDIA"},
-            "620": {"cidade": "Paragominas", "uf": "PA", "descricao": "RESIDENCIAL JARDIM VALLE DO URAIM - PARAGOMINAS"},
-            "621": {"cidade": "Rondon do Pará", "uf": "PA", "descricao": "RESIDENCIAL PARQUE DO VALLE - RONDON"},
-            "623": {"cidade": "Castanhal", "uf": "PA", "descricao": "RESIDENCIAL JARDIM CASTANHAL III - CASTANHAL"},
-            "624": {"cidade": "Tomé-Açu", "uf": "PA", "descricao": "RESIDENCIAL VALLE DO IPITINGA II - TOMÉ-AÇU"},
-            "625": {"cidade": "Tomé-Açu", "uf": "PA", "descricao": "RESIDENCIAL VALLE DO IPÊS - TOMÉ AÇU"},
-        }
-        obra_info = obra_map.get(obra_code) or {}
-
-        pdf_data = dict(data)
-
-        def split_obra_name(name):
-            s = str(name or "").strip()
-            if " - " in s:
-                left, right = s.split(" - ", 1)
-                return left.strip(), right.strip()
-            return s, ""
-
-        obra_name_raw = pick_first(data.get("obraName"), obra_info.get("descricao"))
-        obra_name_only, obra_city_from_name = split_obra_name(obra_name_raw)
-
-        pdf_data["empreendimento"] = pick_first(
-            data.get("empreendimento"),
-            obra_name_only,
-            lot.get("Descricao_Empreendimento"),
-            obra_name_raw,
-            "VALLE",
-        )
-        pdf_data["cidade_empreendimento"] = str(pick_first(
-            data.get("cidade_empreendimento"),
-            data.get("cidadeEmpreendimento"),
-            obra_info.get("cidade"),
-            obra_city_from_name,
-        )).upper().strip()
-        pdf_data["estado_empreendimento"] = str(pick_first(
-            data.get("estado_empreendimento"),
-            data.get("ufEmpreendimento"),
-            obra_info.get("uf"),
-            "PA",
-        )).upper().strip()
-        pdf_data["lote"] = pick_first(data.get("lote"), lot.get("LT"))
-        pdf_data["quadra"] = pick_first(data.get("quadra"), lot.get("QD"))
-        pdf_data["area"] = pick_first(data.get("area"), lot.get("M2"))
-        pdf_data["logradouro"] = pick_first(data.get("logradouro"), lot.get("Logradouro"))
-
-        pdf_data["valor_inicial"] = to_brl(pick_first(data.get("valor_inicial"), data.get("lotValue"), lot.get("Valor_Terreno")))
-        pdf_data["valor_sinal"] = to_brl(pick_first(data.get("valor_sinal"), data.get("downPaymentTotal")))
-        pdf_data["valor_total_entrada"] = to_brl(pick_first(data.get("valor_total_entrada"), data.get("entradaValue")))
-        pdf_data["valor_saldo_parcelar"] = to_brl(pick_first(data.get("valor_saldo_parcelar"), data.get("remainingBalance")))
-
-        cidade_final = str(pick_first(data.get("cidade_proposta_final"), pdf_data.get("cidade_empreendimento"))).strip()
-        uf_final = str(pick_first(data.get("uf_proposta_final"), pdf_data.get("estado_empreendimento"), obra_info.get("uf"), "PA")).strip().upper()
-        if not cidade_final:
-            obra_name = str(pick_first(data.get("obraName"), obra_info.get("descricao"))).strip()
-            if " - " in obra_name:
-                cidade_final = obra_name.split(" - ")[-1].strip()
-        cidade_final = str(cidade_final).upper().strip()
-        pdf_data["cidade_proposta_final"] = f"{cidade_final}/{uf_final}" if cidade_final and uf_final else cidade_final
-
-        proposta_data = str(pick_first(data.get("proposta_data"), data.get("propostaDate"))).strip()
-        if proposta_data and len(proposta_data) >= 10 and proposta_data[4] == "-" and proposta_data[7] == "-":
-            ano, mes, dia = proposta_data[:10].split("-")
-            meses = {
-                "01": "JANEIRO",
-                "02": "FEVEREIRO",
-                "03": "MARCO",
-                "04": "ABRIL",
-                "05": "MAIO",
-                "06": "JUNHO",
-                "07": "JULHO",
-                "08": "AGOSTO",
-                "09": "SETEMBRO",
-                "10": "OUTUBRO",
-                "11": "NOVEMBRO",
-                "12": "DEZEMBRO",
-            }
-            pdf_data["dia_proposta_final"] = dia
-            pdf_data["mes_proposta_final"] = meses.get(mes, mes)
-            pdf_data["ano_proposta_final"] = ano
-
-        entrada_enabled = bool(data.get("entradaEnabled"))
-        try:
-            entrada_value_num = float(data.get("entradaValue") or 0)
-        except Exception:
-            entrada_value_num = 0.0
-        if (not entrada_enabled) or entrada_value_num <= 0:
-            for k in list(pdf_data.keys()):
-                if isinstance(k, str) and k.startswith("entrada_"):
-                    pdf_data[k] = ""
-            pdf_data["valor_total_entrada"] = ""
-
-        skip_sinal = bool(data.get("skipSinal"))
-        if skip_sinal:
-            for k in list(pdf_data.keys()):
-                if isinstance(k, str) and k.startswith("sinal_"):
-                    pdf_data[k] = ""
-            pdf_data["valor_sinal"] = ""
-
-        try:
-            balance_installments_num = int(data.get("balanceInstallments") or 0)
-        except Exception:
-            balance_installments_num = 0
-        if balance_installments_num > 0:
-            if not str(pdf_data.get("saldo_qtd_parcelas") or "").strip():
-                pdf_data["saldo_qtd_parcelas"] = str(balance_installments_num).zfill(2)
-            if not str(pdf_data.get("saldo_valor_parcela") or "").strip():
-                try:
-                    saldo_val = float(data.get("remainingBalance") or 0)
-                except Exception:
-                    saldo_val = 0.0
-                parcela = (saldo_val / balance_installments_num) if balance_installments_num else 0.0
-                pdf_data["saldo_valor_parcela"] = to_brl(parcela) if parcela > 0 else ""
-            if not str(pdf_data.get("saldo_periodicidade") or "").strip():
-                pdf_data["saldo_periodicidade"] = "MENSAL" if balance_installments_num > 1 else "ÚNICA"
-            if not str(pdf_data.get("saldo_tipo_parcela") or "").strip():
-                if balance_installments_num <= 36:
-                    pdf_data["saldo_tipo_parcela"] = "FIXA"
-                elif balance_installments_num <= 72:
-                    pdf_data["saldo_tipo_parcela"] = "CORRIGIDA"
-                else:
-                    pdf_data["saldo_tipo_parcela"] = "REAJUSTÁVEL"
-
-        try:
-            remaining_balance_num = float(data.get("remainingBalance") or 0)
-        except Exception:
-            remaining_balance_num = 0.0
-        if remaining_balance_num <= 0:
-            for k in list(pdf_data.keys()):
-                if isinstance(k, str) and k.startswith("saldo_"):
-                    pdf_data[k] = ""
-            pdf_data["valor_saldo_parcelar"] = ""
         
         # Define paths
         base_dir = os.path.dirname(os.path.abspath(__file__))
         positions_path = os.path.join(base_dir, 'posicoes_campos.json')
-        template_candidates = [
-            os.path.join(base_dir, 'proposta_template.png'),
-            os.path.join(base_dir, 'PROPOSTA LIMPA.jpg'),
-            os.path.join(base_dir, 'PROPOSTA_LIMPA.jpg'),
-            os.path.join(base_dir, 'proposta_template.jpg'),
-            os.path.join(base_dir, 'proposta_template.jpeg'),
-        ]
-        background_path = next((p for p in template_candidates if os.path.exists(p)), None)
-        if not background_path:
-            return jsonify({'error': f'Template de proposta não encontrado. Procurado em: {template_candidates}'}), 500
-
-        tmp_dir = '/tmp' if os.path.isdir('/tmp') else base_dir
-        output_path = os.path.join(tmp_dir, 'proposta_output.pdf')
+        background_path = os.path.join(base_dir, 'proposta_template.png')
+        output_path = os.path.join(base_dir, 'proposta_output.pdf')
         
         # Generate PDF
-        generate_pdf_reportlab(pdf_data, background_path, positions_path, output_path)
+        generate_pdf_reportlab(data, background_path, positions_path, output_path)
         
         # Check if file was created
         if not os.path.exists(output_path):
@@ -1573,3 +1360,7 @@ try:
     print("[STARTUP] Database migration completed successfully")
 except Exception as e:
     print(f"[STARTUP] Database migration failed: {e}")
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", "5000"))
+    app.run(host="0.0.0.0", port=port, debug=True)

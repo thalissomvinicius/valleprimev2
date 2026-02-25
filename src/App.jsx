@@ -1,14 +1,13 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from './context/authContextValue';
-import { OBRAS } from './context/authConstants';
+import { useAuth, OBRAS } from './context/AuthContext';
 import LoginPage from './pages/LoginPage';
 import Header from './components/Header';
 import SearchBar from './components/SearchBar';
 import AvailabilityTable from './components/AvailabilityTable';
 import AdminPanel from './pages/AdminPanel';
 import { fetchAvailability } from './services/api';
-import { Building2, LogOut, ChevronDown, FileDown, CheckCircle, Shield, Lock, MessageCircle } from 'lucide-react';
+import { Building2, LogOut, ChevronDown, FileDown, CheckCircle, Shield, Lock, MessageCircle, LayoutDashboard, FileText } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import logo from './assets/Valle-logo-azul.png';
@@ -17,6 +16,8 @@ import ClientListPage from './pages/ClientListPage';
 import { Users as UsersIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import StatusWarningModal from './components/StatusWarningModal';
+import ProposalHistoryPage from './pages/ProposalHistoryPage';
+import DashboardPage from './pages/DashboardPage';
 
 function MainApp() {
   const { currentUser, logout, isAdmin } = useAuth();
@@ -59,26 +60,16 @@ function MainApp() {
   useEffect(() => {
     if (!selectedObra) return;
     localStorage.setItem('selectedObra', selectedObra);
-    let cancelled = false;
 
-    const loadAvailability = async () => {
-      setLoading(true);
-      try {
-        const result = await fetchAvailability(selectedObra);
-        if (cancelled) return;
+    setLoading(true);
+    fetchAvailability(selectedObra)
+      .then((result) => {
         setData(result);
         setError(null);
         dataCacheRef.current[selectedObra] = result;
-      } catch (err) {
-        if (cancelled) return;
-        setError(err?.message || 'Erro ao carregar dados. Por favor, tente novamente mais tarde.');
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-
-    loadAvailability();
-    return () => { cancelled = true; };
+      })
+      .catch((err) => setError(err?.message || 'Erro ao carregar dados. Por favor, tente novamente mais tarde.'))
+      .finally(() => setLoading(false));
   }, [selectedObra]);
 
   // Parse numeric value from formatted string
@@ -440,6 +431,14 @@ function MainApp() {
             </div>
           )}
 
+          <Link to="/dashboard" className="btn-clients-header" title="Dashboard">
+            <LayoutDashboard size={18} />
+            <span className="hide-mobile">Dashboard</span>
+          </Link>
+          <Link to="/propostas" className="btn-clients-header" title="Histórico de Propostas">
+            <FileText size={18} />
+            <span className="hide-mobile">Propostas</span>
+          </Link>
           <Link to="/clientes" className="btn-clients-header" title="Gerenciar Clientes">
             <UsersIcon size={18} />
             <span className="hide-mobile">Clientes</span>
@@ -576,10 +575,13 @@ function App() {
 
   return (
     <Routes>
-      <Route path="/admin" element={isAdmin ? <AdminPanel /> : <Navigate to="/" replace />} />
+      <Route path="/admin" element={isAdmin ? <AdminPanel /> : <Navigate to="/dashboard" replace />} />
       <Route path="/clientes" element={<ClientListPage />} />
-      <Route path="/" element={<MainApp />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="/propostas" element={<ProposalHistoryPage />} />
+      <Route path="/disponibilidade" element={<MainApp />} />
+      <Route path="/dashboard" element={<DashboardPage />} />
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
 }

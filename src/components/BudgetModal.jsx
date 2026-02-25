@@ -1,17 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { X, Send, Calculator, FileText, ClipboardCopy, CheckCircle, Loader2, AlertCircle, Plus, Trash2, Calendar, MapPin } from 'lucide-react';
-import { OBRAS } from '../context/authConstants';
+import { OBRAS } from '../context/AuthContext';
 import './BudgetModal.css';
 import ClientFormModal from './ClientFormModal';
 import ClientSelectionModal from './ClientSelectionModal';
 import BudgetWizard from './BudgetWizard';
 import { saveClient } from '../services/api';
-
 import logo from '../assets/Valle-logo-azul.png';
-
-const ENV_API = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '');
-const isPagesDev = typeof window !== 'undefined' && /\.pages\.dev$/i.test(window.location?.hostname || '');
-const API_BASE_URL = ENV_API || (isPagesDev ? 'https://valleprimev2.onrender.com' : '');
 
 const BudgetModal = ({ lot, onClose, obraName }) => {
     const lotValue = parseFloat(lot.Valor_Terreno.replace(/\./g, '').replace(',', '.')) || 0;
@@ -83,17 +78,11 @@ const BudgetModal = ({ lot, onClose, obraName }) => {
 
     // Auto-calculate first sinal line value when total changes
     useEffect(() => {
-        if (skipSinalEnabled) return;
-        setSinalLines(prev => {
-            if (prev.length !== 1) return prev;
-            const qtd = prev[0]?.qtd ?? 1;
-            const formatted = sinalDiscountedTotal
-                ? parseFloat(sinalDiscountedTotal).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                : '';
-            setSinalInputValues([formatted]);
-            return [{ qtd, value: sinalDiscountedTotal }];
-        });
-    }, [sinalDiscountedTotal, skipSinalEnabled]);
+        if (sinalLines.length === 1 && !skipSinalEnabled && sinalLines[0].value !== sinalDiscountedTotal) {
+            setSinalLines([{ qtd: sinalLines[0].qtd, value: sinalDiscountedTotal }]);
+            setSinalInputValues([formatCurrencyInput(sinalDiscountedTotal)]);
+        }
+    }, [sinalDiscountedTotal, skipSinalEnabled, sinalLines]);
 
     // Calculate total of custom sinal lines
     const totalSinalFromLines = sinalLines.reduce((acc, line) => acc + (parseFloat(line.value) || 0), 0);
@@ -340,9 +329,13 @@ ${sinalSection}
 
         try {
             const proposalUrl = '/api/generate_proposal';
+            const token = localStorage.getItem('valle_token');
             const response = await fetch(proposalUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {})
+                },
                 body: JSON.stringify({
                     lot,
                     obraName,

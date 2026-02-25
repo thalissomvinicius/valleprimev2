@@ -56,9 +56,9 @@ function ClientListPage() {
             } else {
                 setError(result.error);
             }
-        } catch (err) {
-            console.error(err);
-            setError(err.message || 'Erro ao carregar clientes.');
+        } catch (error) {
+            console.error(error);
+            setError(error.message || 'Erro ao carregar clientes.');
         } finally {
             setLoading(false);
             setLoadingMore(false);
@@ -184,7 +184,7 @@ function ClientListPage() {
                         <UserPlus size={18} />
                         <span>Novo Cliente</span>
                     </button>
-                    <button className="btn-back" onClick={() => navigate('/')}>
+                    <button className="btn-back" onClick={() => navigate('/disponibilidade')}>
                         <ArrowLeft size={18} />
                         <span>Voltar ao Mapa</span>
                     </button>
@@ -198,7 +198,7 @@ function ClientListPage() {
                         <UserPlus size={18} />
                         <span>Novo Cliente</span>
                     </button>
-                    <button className="btn-back full-width" onClick={() => navigate('/')}>
+                    <button className="btn-back full-width" onClick={() => navigate('/disponibilidade')}>
                         <ArrowLeft size={18} />
                         <span>Voltar ao Mapa</span>
                     </button>

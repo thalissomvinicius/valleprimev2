@@ -1,7 +1,35 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { authLogin, authMe, getUsers, createUser, updateUser, deleteUser as apiDeleteUser, changeMyPassword } from '../services/api';
-import { AuthContext } from './authContextValue';
-import { OBRAS } from './authConstants';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { authLogin, authMe, getUsers, createUser, updateUser, deleteUser as apiDeleteUser } from '../services/api';
+
+// Lista de obras disponíveis
+export const OBRAS = [
+    { codigo: '600', descricao: 'RESIDENCIAL JARDIM DO VALLE - DOM ELISEU', cidade: 'Dom Eliseu', uf: 'PA' },
+    { codigo: '601', descricao: 'RESIDENCIAL JARDIM AMERICA - CAPANEMA', cidade: 'Capanema', uf: 'PA' },
+    { codigo: '602', descricao: 'RESIDENCIAL SALLES JARDIM - CASTANHAL', cidade: 'Castanhal', uf: 'PA' },
+    { codigo: '603', descricao: 'RESIDENCIAL JARDIM CASTANHAL - CASTANHAL', cidade: 'Castanhal', uf: 'PA' },
+    { codigo: '604', descricao: 'RESIDENCIAL IPITINGA - TOMÉ-AÇU', cidade: 'Tomé-Açu', uf: 'PA' },
+    { codigo: '605', descricao: 'RESIDENCIAL VALLE DO IPITINGA - TOMÉ-AÇU', cidade: 'Tomé-Açu', uf: 'PA' },
+    { codigo: '610', descricao: 'RESIDENCIAL JARDIM DO VALLE - TAILANDIA', cidade: 'Tailândia', uf: 'PA' },
+    { codigo: '616', descricao: 'RESIDENCIAL JARDIM DO VALLE - BARCARENA', cidade: 'Barcarena', uf: 'PA' },
+    { codigo: '618', descricao: 'RESIDENCIAL JARDIM DO VALLE II - TAILANDIA', cidade: 'Tailândia', uf: 'PA' },
+    { codigo: '620', descricao: 'RESIDENCIAL JARDIM VALLE DO URAIM - PARAGOMINAS', cidade: 'Paragominas', uf: 'PA' },
+    { codigo: '621', descricao: 'RESIDENCIAL PARQUE DO VALLE - RONDON', cidade: 'Rondon do Pará', uf: 'PA' },
+    { codigo: '623', descricao: 'RESIDENCIAL JARDIM CASTANHAL III - CASTANHAL', cidade: 'Castanhal', uf: 'PA' },
+    { codigo: '624', descricao: 'RESIDENCIAL VALLE DO IPITINGA II - TOMÉ-AÇU', cidade: 'Tomé-Açu', uf: 'PA' },
+    { codigo: '625', descricao: 'RESIDENCIAL VALLE DO IPÊS - TOMÉ AÇU', cidade: 'Tomé-Açu', uf: 'PA' },
+];
+
+// Status de lotes disponíveis
+export const STATUS_LOTES = [
+    { value: '0 - Disponível', label: 'Disponível', color: 'success' },
+    { value: '1 - Vendido', label: 'Vendido', color: 'danger' },
+    { value: '2 - Reservado', label: 'Reservado', color: 'warning' },
+    { value: '4 - Quitado', label: 'Quitado', color: 'info' },
+    { value: '7 - Suspenso', label: 'Suspenso', color: 'secondary' },
+    { value: '8 - Fora de venda', label: 'Fora de venda', color: 'secondary' },
+];
+
+const AuthContext = createContext(null);
 
 const STORAGE_KEYS = {
     TOKEN: 'valle_token',
@@ -15,7 +43,7 @@ export function AuthProvider({ children }) {
     const isAuthenticated = Boolean(currentUser);
     const isAdmin = currentUser?.role === 'admin';
 
-    const processUser = useCallback((userData) => {
+    const processUser = (userData) => {
         // Flatten permissions for easy access in frontend
         const permissions = userData.permissions || {};
         const allObras = OBRAS.map(obra => obra.codigo);
@@ -27,9 +55,9 @@ export function AuthProvider({ children }) {
             aprovado: Boolean(userData.active !== false)
         };
         return user;
-    }, []);
+    }
 
-    const loadUsers = useCallback(async () => {
+    const loadUsers = async () => {
         try {
             const result = await getUsers();
             if (result.users) {
@@ -38,60 +66,41 @@ export function AuthProvider({ children }) {
                     obrasPermitidas: (u.permissions || {}).obrasPermitidas || [],
                     statusPermitidos: (u.permissions || {}).statusPermitidos || [],
                     canViewAllClients: (u.permissions || {}).canViewAllClients || (u.role === 'admin'),
-                    aprovado: u.active,
-                    clientsCount: Number(u.clients_count || 0),
+                    aprovado: u.active
                 }));
                 setUsers(mapped);
             }
         } catch (e) {
             console.error("Failed to load users", e);
         }
-    }, []);
-
-    const translateLoginError = useCallback((rawMessage, status) => {
-        const msg = String(rawMessage || '');
-        const normalized = msg.toLowerCase();
-        if (!msg) return 'Erro ao validar login.';
-        if (status === 401 || normalized.includes('status code 401') || normalized.includes('unauthorized') || normalized.includes('invalid credentials') || normalized.includes('invalid username') || normalized.includes('invalid password')) {
-            return 'Usuário ou senha inválidos.';
-        }
-        if (status === 403 || normalized.includes('status code 403') || normalized.includes('forbidden') || normalized.includes('not approved') || normalized.includes('not active') || normalized.includes('inactive') || normalized.includes('pending')) {
-            return 'Seu acesso ainda não foi aprovado. Aguarde a liberação do administrador.';
-        }
-        if (status === 429 || normalized.includes('too many requests')) {
-            return 'Muitas tentativas. Aguarde alguns minutos e tente novamente.';
-        }
-        if (status === 500 || normalized.includes('status code 500') || normalized.includes('internal server error')) {
-            return 'Erro interno no servidor. Tente novamente.';
-        }
-        if (normalized.includes('network error') || normalized.includes('failed to fetch') || normalized.includes('fetch failed')) {
-            return 'Erro de conexão. Verifique sua internet e tente novamente.';
-        }
-        if (normalized.includes('user not found')) {
-            return 'Usuário não encontrado.';
-        }
-        return msg;
-    }, []);
+    };
 
     const login = useCallback(async (username, password) => {
         const trimmed = (username || '').trim();
         if (!trimmed || !password) return { success: false, error: 'Usuário e senha são obrigatórios.' };
 
         try {
+            console.log('[DEBUG] Calling authLogin...');
             const result = await authLogin(trimmed, password);
+            console.log('[DEBUG] authLogin result:', result);
             if (result.token) {
+                console.log('[DEBUG] Token received, saving...');
                 localStorage.setItem(STORAGE_KEYS.TOKEN, result.token);
                 const user = processUser(result.user);
+                console.log('[DEBUG] User processed:', user);
                 setCurrentUser(user);
                 // Load users if admin
                 if (user.role === 'admin') {
                     loadUsers();
                 }
+                console.log('[DEBUG] Returning success: true');
                 return { success: true, user };
             } else {
+                console.log('[DEBUG] No token in result!');
                 return { success: false, error: 'Falha no login.' };
             }
         } catch (e) {
+            console.error('[DEBUG] Login error:', e);
             const rawMsg = e?.response?.data?.message || e?.message;
             let msg = rawMsg || 'Erro ao validar login.';
             const normalized = String(msg).toLowerCase();
@@ -99,12 +108,10 @@ export function AuthProvider({ children }) {
                 msg = 'Tempo de resposta excedido. Tente novamente.';
             } else if (e?.response?.status === 503) {
                 msg = 'Servidor indisponível no momento. Tente novamente.';
-            } else {
-                msg = translateLoginError(msg, e?.response?.status);
             }
             return { success: false, error: msg };
         }
-    }, [processUser, loadUsers, translateLoginError]);
+    }, []);
 
     const logout = useCallback(() => {
         setCurrentUser(null);
@@ -122,7 +129,7 @@ export function AuthProvider({ children }) {
             const msg = 'Erro ao criar usuário.';
             return { success: false, error: msg };
         }
-    }, [loadUsers]);
+    }, []);
 
     const updateUserPermissions = useCallback(async (userId, data) => {
         try {
@@ -139,7 +146,7 @@ export function AuthProvider({ children }) {
         } catch {
             return { success: false, error: 'Erro ao atualizar.' };
         }
-    }, [loadUsers]);
+    }, []);
 
     const deleteUser = useCallback(async (userId) => {
         try {
@@ -149,7 +156,7 @@ export function AuthProvider({ children }) {
         } catch {
             return { success: false, error: 'Erro ao excluir.' };
         }
-    }, [loadUsers]);
+    }, []);
 
     const approveUser = useCallback(async (userId) => {
         try {
@@ -158,19 +165,6 @@ export function AuthProvider({ children }) {
             return { success: true };
         } catch {
             return { success: false, error: 'Erro ao aprovar.' };
-        }
-    }, [loadUsers]);
-
-    const changePassword = useCallback(async (currentPassword, newPassword) => {
-        try {
-            const result = await changeMyPassword(currentPassword, newPassword);
-            if (result?.success) {
-                return { success: true };
-            }
-            return { success: false, error: result?.message || 'Erro ao alterar senha.' };
-        } catch (e) {
-            const msg = e?.response?.data?.message || e?.message || 'Erro ao alterar senha.';
-            return { success: false, error: msg };
         }
     }, []);
 
@@ -183,7 +177,6 @@ export function AuthProvider({ children }) {
                 setLoading(false);
                 return;
             }
-            const tokenAtStart = token;
 
             try {
                 const result = await authMe();
@@ -195,17 +188,15 @@ export function AuthProvider({ children }) {
                     }
                 }
             } catch {
-                const currentToken = localStorage.getItem(STORAGE_KEYS.TOKEN);
-                if (!cancelled && currentToken === tokenAtStart) {
-                    logout();
-                }
+                // Token invalid
+                logout();
             } finally {
                 if (!cancelled) setLoading(false);
             }
         }
         init();
         return () => { cancelled = true; };
-    }, [processUser, loadUsers, logout]);
+    }, [logout]);
 
     return (
         <AuthContext.Provider value={{
@@ -216,7 +207,6 @@ export function AuthProvider({ children }) {
             isAdmin,
             login,
             logout,
-            changePassword,
             addUser,
             deleteUser,
             updateUserPermissions,
@@ -225,4 +215,8 @@ export function AuthProvider({ children }) {
             {children}
         </AuthContext.Provider>
     );
+}
+
+export function useAuth() {
+    return useContext(AuthContext);
 }
