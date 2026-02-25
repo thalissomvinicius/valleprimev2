@@ -172,7 +172,9 @@ def query_db(sql, params=(), one=False, commit=False):
                     # For now, let's get matching items
                     res = query_supabase_rest(table, 'GET', params=where_clause)
                     count = len(res) if isinstance(res, list) else 0
-                    return (count,) if one else [(count,)]
+                    if one:
+                        return {"count": count}
+                    return [{"count": count}]
 
                 # Handle SELECT (all columns or specific columns)
                 if "SELECT" in sql.upper() and "FROM" in sql.upper():
