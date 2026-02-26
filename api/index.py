@@ -27,7 +27,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'dev_secret_key_valle_prime_v2')
 
 # Database path for SQLite
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-if os.environ.get('VERCEL') == '1' or os.path.exists('/tmp'):
+if os.environ.get('VERCEL') == '1':
     DB_PATH = '/tmp/clients.db'
 else:
     DB_PATH = os.path.join(BASE_DIR, 'clients.db')
@@ -513,11 +513,18 @@ def extract_proposal_meta(payload):
 
 def store_proposal(payload, user_id):
     obra_codigo, obra_nome, quadra, lote = extract_proposal_meta(payload)
-    query_db(
-        "INSERT INTO proposals (user_id, obra_codigo, obra_nome, quadra, lote, payload) VALUES (?, ?, ?, ?, ?, ?)",
-        (user_id, obra_codigo, obra_nome, quadra, lote, json.dumps(payload)),
-        commit=True
-    )
+    print(f"\n[DEBUG STORE_PROPOSAL] Preparing to insert into proposals: user_id={user_id}, obra_codigo={obra_codigo}, obra_nome={obra_nome}, quadra={quadra}, lote={lote}")
+    try:
+        query_db(
+            "INSERT INTO proposals (user_id, obra_codigo, obra_nome, quadra, lote, payload) VALUES (?, ?, ?, ?, ?, ?)",
+            (user_id, obra_codigo, obra_nome, quadra, lote, json.dumps(payload)),
+            commit=True
+        )
+        print("[DEBUG STORE_PROPOSAL] Insert successful.")
+    except Exception as e:
+        print(f"[DEBUG STORE_PROPOSAL] Insert exception: {e}")
+        import traceback
+        traceback.print_exc()
 
 # Rota para verificar autenticação (usada pelo frontend ao carregar a página)
 @app.route('/api/auth/me', methods=['GET'])
