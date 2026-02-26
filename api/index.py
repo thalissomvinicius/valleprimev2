@@ -937,7 +937,7 @@ def proposal_pdf(proposal_id):
 
     base_dir = os.path.dirname(os.path.abspath(__file__))
     positions_path = os.path.join(base_dir, 'posicoes_campos.json')
-    background_path = os.path.join(base_dir, 'proposta_template.png')
+    background_path = os.path.join(base_dir, 'PROPOSTA LIMPA.jpg')
     output_path = os.path.join(base_dir, f'proposta_output_{proposal_id}.pdf')
 
     generate_pdf_reportlab(payload, background_path, positions_path, output_path)
@@ -1374,7 +1374,7 @@ def generate_proposal():
         # Define paths
         base_dir = os.path.dirname(os.path.abspath(__file__))
         positions_path = os.path.join(base_dir, 'posicoes_campos.json')
-        background_path = os.path.join(base_dir, 'proposta_template.png')
+        background_path = os.path.join(base_dir, 'PROPOSTA LIMPA.jpg')
         output_path = os.path.join(base_dir, 'proposta_output.pdf')
         
         # Generate PDF
