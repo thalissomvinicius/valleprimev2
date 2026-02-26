@@ -505,7 +505,7 @@ def extract_proposal_meta(payload):
         if isinstance(lot, dict):
             quadra = lot.get('QD') or lot.get('quadra')
             lote = lot.get('LT') or lot.get('lote')
-            obra_codigo = obra_codigo or lot.get('CODIGO') or lot.get('codigo_obra')
+            obra_codigo = obra_codigo or lot.get('CODIGO') or lot.get('codigo_obra') or lot.get('Empreendimento') or lot.get('Obra')
         else:
             quadra = payload.get('quadra')
             lote = payload.get('lote')
@@ -1366,10 +1366,13 @@ def generate_proposal():
         
         print(f"[DEBUG] Generating proposal with data keys: {list(data.keys())}")
         user_id, _ = get_optional_user_from_token()
-        try:
-            store_proposal(data, user_id)
-        except Exception as e:
-            print(f"[WARN] Failed to store proposal history: {e}")
+        if user_id:
+            try:
+                store_proposal(data, user_id)
+            except Exception as e:
+                print(f"[WARN] Failed to store proposal history: {e}")
+        else:
+            print("[WARN] No user_id provided for proposal. Skipping history retention.")
         
         # Check if PDF generator is available
         if not generate_pdf_reportlab:
@@ -1420,7 +1423,7 @@ def generate_proposal():
                 data['empreendimento'] = nome_base
                 data['cidade_empreendimento'] = obra_info['cidade']
                 data['estado_empreendimento'] = obra_info['uf']
-                data['cidade_proposta_final'] = obra_info['cidade']
+                data['cidade_proposta_final'] = f"{obra_info['cidade']}/{obra_info['uf']}"
             else:
                 data.setdefault('empreendimento', obra_name)
                 # Fallback: tentar quebrar pelo traço
@@ -1464,7 +1467,7 @@ def generate_proposal():
                         val_parc = (rem_bal / installments) if installments > 0 else 0
                         data.setdefault('saldo_valor_parcela', format_currency(val_parc))
                     data.setdefault('saldo_periodicidade', 'MENSAL')
-                    data.setdefault('saldo_tipo_parcela', "REAJ." if installments > 36 else "FIXA")
+                    data.setdefault('saldo_tipo_parcela', "REAJUSTÁVEIS" if installments > 36 else "FIXA")
                 except:
                     pass
 
