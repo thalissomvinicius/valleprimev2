@@ -49,7 +49,10 @@ const requestWithRetry = async (fn, { retries = 2, baseDelay = 800 } = {}) => {
 const RENDER_API = 'https://valleprimev2.onrender.com';
 api.interceptors.request.use(config => {
   if (typeof window !== 'undefined' && /\.pages\.dev$/i.test(window.location?.hostname || '') && config.url?.startsWith?.('/api')) {
-    config.url = RENDER_API + config.url; // URL absoluta → axios ignora baseURL
+    // Para /api/consulta e /api/generate_proposal, usamos as functions locais do Cloudflare Pages
+    if (!config.url.startsWith('/api/consulta') && !config.url.startsWith('/api/generate_proposal')) {
+      config.url = RENDER_API + config.url; // URL absoluta → axios ignora baseURL
+    }
     config.baseURL = '';
   }
   const token = localStorage.getItem('valle_token');
