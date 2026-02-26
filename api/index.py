@@ -27,7 +27,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'dev_secret_key_valle_prime_v2')
 
 # Database path for SQLite
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-if os.environ.get('VERCEL') == '1':
+if os.environ.get('VERCEL') == '1' or os.environ.get('RENDER') == '1' or os.path.exists('/opt/render'):
     DB_PATH = '/tmp/clients.db'
 else:
     DB_PATH = os.path.join(BASE_DIR, 'clients.db')
