@@ -239,7 +239,7 @@ def generate_pdf_reportlab(data, background_image_path, positions_path, output_f
             
         # Decrease font size for REAJUSTAVEIS
         if key in ['saldo_tipo_parcela', 'saldo_l2_tipo_parcela'] and "REAJUST" in str(text_to_draw).upper():
-            font_size = 7
+            font_size = 8.8
 
         # Logradouro: evitar overflow — reduzir fonte e/ou truncar para caber na área
         max_logradouro_width_mm = 52  # espaço aproximado até a margem direita (A4 210mm - x ~153mm)
