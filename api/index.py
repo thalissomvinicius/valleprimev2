@@ -1516,6 +1516,13 @@ def generate_proposal():
 def health_check():
     return jsonify({"status": "healthy", "python": sys.version})
 
+@app.route('/api/debug-env', methods=['GET'])
+def debug_env():
+    import os
+    env_vars = {k: "SET" if ("KEY" in k or "SECRET" in k or "PASSWORD" in k) else v 
+                for k, v in os.environ.items() if k in ['SUPABASE_URL', 'VERCEL', 'RENDER', 'PYTHONVERSION']}
+    return jsonify({"env": env_vars, "status": "alive"})
+
 # Auto-migrate database on startup
 try:
     print("[STARTUP] Running database migration...")
