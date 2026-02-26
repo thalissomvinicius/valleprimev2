@@ -1381,6 +1381,59 @@ def generate_proposal():
         background_path = os.path.join(base_dir, 'PROPOSTA LIMPA.jpg')
         output_path = os.path.join(base_dir, 'proposta_output.pdf')
         
+        # -- BEGIN MAPPING FOR PDF GENERATOR --
+        try:
+            if 'lot' in data and isinstance(data['lot'], dict):
+                lot = data['lot']
+                data.setdefault('lote', lot.get('LT'))
+                data.setdefault('quadra', lot.get('QD'))
+                data.setdefault('area', lot.get('M2'))
+                data.setdefault('cidade_empreendimento', lot.get('Cidade', ''))
+                data.setdefault('estado_empreendimento', lot.get('UF', ''))
+            
+            data.setdefault('empreendimento', data.get('obraName', ''))
+            
+            def format_currency(val):
+                try:
+                    if not val: return ""
+                    v = float(val)
+                    return f"{v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+                except:
+                    return str(val)
+
+            if 'lotValue' in data: data.setdefault('valor_inicial', format_currency(data['lotValue']))
+            if 'downPaymentTotal' in data: data.setdefault('valor_sinal', format_currency(data['downPaymentTotal']))
+            if 'entradaValue' in data: data.setdefault('valor_total_entrada', format_currency(data['entradaValue']))
+            if 'remainingBalance' in data: data.setdefault('valor_saldo_parcelar', format_currency(data['remainingBalance']))
+
+            if 'balanceInstallments' in data:
+                try:
+                    installments = int(data['balanceInstallments'])
+                    data.setdefault('saldo_qtd_parcelas', str(installments).zfill(2))
+                    if 'remainingBalance' in data:
+                        rem_bal = float(data['remainingBalance'])
+                        val_parc = (rem_bal / installments) if installments > 0 else 0
+                        data.setdefault('saldo_valor_parcela', format_currency(val_parc))
+                    data.setdefault('saldo_periodicidade', 'MENSAL')
+                    data.setdefault('saldo_tipo_parcela', "REAJ." if installments > 36 else "FIXA")
+                except:
+                    pass
+
+            if 'proposta_data' in data and '-' in data['proposta_data']:
+                parts = data['proposta_data'].split('-')
+                if len(parts) == 3:
+                    ano, mes, dia = parts
+                    meses = ["", "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]
+                    idx_mes = int(mes)
+                    nome_mes = meses[idx_mes] if 1 <= idx_mes <= 12 else mes
+                    data.setdefault('dia_proposta_final', dia)
+                    data.setdefault('mes_proposta_final', nome_mes)
+                    data.setdefault('ano_proposta_final', ano[-2:])
+                    data.setdefault('cidade_proposta_final', data.get('cidade_empreendimento', ''))
+        except Exception as e:
+            print(f"[WARN] Error mapping PDF fields: {e}")
+        # -- END MAPPING --
+
         # Generate PDF
         generate_pdf_reportlab(data, background_path, positions_path, output_path)
         

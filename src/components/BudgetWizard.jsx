@@ -401,7 +401,11 @@ ${sinalSection}
                 // Forçar download para evitar bloqueio de pop-up
                 const link = document.createElement('a');
                 link.href = url;
-                link.download = `Proposta_${lot.QD}_${lot.LT}_${obraName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+                const shortObra = (obraName || 'EMPREENDIMENTO').substring(0, 15).toUpperCase();
+                const qdStr = String(lot.QD || '').padStart(3, '0');
+                const ltStr = String(lot.LT || '').padStart(3, '0');
+                const clientName = (clientData.nome_proponente || clientData.nome || 'CLIENTE').toUpperCase().substring(0, 30);
+                link.download = `${shortObra} - QD${qdStr} - LT${ltStr} - ${clientName}.pdf`;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
