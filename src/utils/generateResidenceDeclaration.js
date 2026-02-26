@@ -232,7 +232,14 @@ export const generateResidenceDeclaration = async (data, customCityUF = null, cu
 
         // Finalize
         const pdfBlobUrl = doc.output('bloburl');
-        window.open(pdfBlobUrl, '_blank');
+
+        // Forçar download direto
+        const link = document.createElement('a');
+        link.href = pdfBlobUrl;
+        link.download = `Declaracao_Residencia_${data.p1?.nome ? data.p1.nome.replace(/[^a-zA-Z0-9]/g, '_') : 'Cliente'}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
 
     } catch (error) {
         console.error("Erro ao gerar declaração:", error);

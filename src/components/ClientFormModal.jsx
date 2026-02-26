@@ -24,7 +24,7 @@ const ClientFormModal = ({ onClose, onConfirm, onDelete, initialData = null, cli
     const { showToast } = useToast();
     const [personType, setPersonType] = useState(initialData?.tipo_pessoa || 'PF');
     const [personTypeSegundo, setPersonTypeSegundo] = useState(initialData?.tipo_pessoa_segundo || 'PF');
-    const [activeTab, setActiveTab] = useState('titular');
+    const [activeTab, setActiveTab] = useState('titular_1');
     const [showP2Selection, setShowP2Selection] = useState(false);
     const [fieldErrors, setFieldErrors] = useState({});
     const [duplicateWarning, setDuplicateWarning] = useState({ show: false, clientName: '', clientId: null });
@@ -484,7 +484,7 @@ const ClientFormModal = ({ onClose, onConfirm, onDelete, initialData = null, cli
                     </button>
                 </div>
             )}
-            <div className="form-section-title"><User size={16} /> Identificação</div>
+            <div className="form-section-title"><User size={16} /> Identificação e Dados Principais</div>
             <div className="form-grid">
                 <div className="form-group full-width">
                     <label>{personType === 'PF' ? 'Nome Completo' : 'Razão Social'}</label>
@@ -519,7 +519,40 @@ const ClientFormModal = ({ onClose, onConfirm, onDelete, initialData = null, cli
                     </>
                 )}
             </div>
-            <div className="form-section-title" style={{ marginTop: '1.5rem' }}><MapPin size={16} /> Endereço Residencial</div>
+
+            <div className="form-section-title" style={{ marginTop: '1.5rem' }}><Contact size={16} /> Contatos</div>
+            <div className="form-grid">
+                <div className="form-group">
+                    <label>E-mail</label>
+                    <input
+                        type="email"
+                        name="email_proponente"
+                        value={formData.email_proponente}
+                        onChange={(e) => handleEmailChange(e, 'email_proponente')}
+                        className={fieldErrors.email_proponente ? 'input-error' : ''}
+                        style={{ textTransform: 'none' }}
+                        list="email-suggestions-titular"
+                    />
+                    {fieldErrors.email_proponente && (
+                        <span className="error-message">{fieldErrors.email_proponente}</span>
+                    )}
+                </div>
+                <datalist id="email-suggestions-titular">
+                    {getEmailSuggestions(formData.email_proponente).map(suggestion => (
+                        <option key={suggestion} value={suggestion} />
+                    ))}
+                </datalist>
+                <div className="form-group"><label>Telefone Principal</label><div className="flex-row"><input type="text" name="fone1_ddd_proponente" value={formData.fone1_ddd_proponente} onChange={(e) => handlePhoneChange(e, 'fone1_ddd_proponente')} style={{ width: '50px' }} placeholder="DDD" maxLength="2" /><input type="text" name="fone1_numero_proponente" value={formData.fone1_numero_proponente} onChange={(e) => handlePhoneChange(e, 'fone1_ddd_proponente')} style={{ flex: 1 }} placeholder="NÚMERO" maxLength="10" /></div></div>
+                <div className="form-group"><label>Telefone 02</label><div className="flex-row"><input type="text" name="fone2_ddd_proponente" value={formData.fone2_ddd_proponente} onChange={(e) => handlePhoneChange(e, 'fone2_ddd_proponente')} style={{ width: '50px' }} placeholder="DDD" maxLength="2" /><input type="text" name="fone2_numero_proponente" value={formData.fone2_numero_proponente} onChange={(e) => handlePhoneChange(e, 'fone2_ddd_proponente')} style={{ flex: 1 }} placeholder="NÚMERO" maxLength="10" /></div></div>
+                <div className="form-group"><label>Telefone Comercial</label><div className="flex-row"><input type="text" name="fone_comercial_ddd_proponente" value={formData.fone_comercial_ddd_proponente} onChange={(e) => handlePhoneChange(e, 'fone_comercial_ddd_proponente')} style={{ width: '50px' }} placeholder="DDD" maxLength="2" /><input type="text" name="fone_comercial_numero_proponente" value={formData.fone_comercial_numero_proponente} onChange={(e) => handlePhoneChange(e, 'fone_comercial_ddd_proponente')} style={{ flex: 1 }} placeholder="NÚMERO" maxLength="10" /></div></div>
+            </div>
+
+        </div>
+    );
+
+    const renderTitularStep2 = () => (
+        <div className="tab-pane">
+            <div className="form-section-title"><MapPin size={16} /> Endereço Residencial</div>
             <div className="form-grid">
                 <div className="form-group"><label>CEP</label><input type="text" name="cep_proponente" value={formData.cep_proponente} onChange={(e) => handleCEPChange(e, 'cep_proponente', 'titular')} placeholder="00000-000" maxLength="9" /></div>
                 <div className="form-group"><label>Cidade / UF</label><div className="flex-row"><select name="uf_endereco_proponente" value={formData.uf_endereco_proponente} onChange={(e) => handleUFChange(e, 'uf_endereco_proponente', setCidadesEndereco)} style={{ width: '75px' }}><option value="">UF</option>{estados.map(uf => <option key={uf.sigla} value={uf.sigla}>{uf.sigla}</option>)}</select><select name="cidade_proponente" value={formData.cidade_proponente} onChange={handleChange} style={{ flex: 1 }}><option value="">CIDADE...</option>{cidadesEndereco.map(city => <option key={city} value={city}>{city}</option>)}</select></div></div>
@@ -550,32 +583,6 @@ const ClientFormModal = ({ onClose, onConfirm, onDelete, initialData = null, cli
                     </div>
                 </>
             )}
-            <div className="form-section-title" style={{ marginTop: '1.5rem' }}><Contact size={16} /> Contatos</div>
-            <div className="form-grid">
-                <div className="form-group">
-                    <label>E-mail</label>
-                    <input
-                        type="email"
-                        name="email_proponente"
-                        value={formData.email_proponente}
-                        onChange={(e) => handleEmailChange(e, 'email_proponente')}
-                        className={fieldErrors.email_proponente ? 'input-error' : ''}
-                        style={{ textTransform: 'none' }}
-                        list="email-suggestions-titular"
-                    />
-                    {fieldErrors.email_proponente && (
-                        <span className="error-message">{fieldErrors.email_proponente}</span>
-                    )}
-                </div>
-                <datalist id="email-suggestions-titular">
-                    {getEmailSuggestions(formData.email_proponente).map(suggestion => (
-                        <option key={suggestion} value={suggestion} />
-                    ))}
-                </datalist>
-                <div className="form-group"><label>Telefone Principal</label><div className="flex-row"><input type="text" name="fone1_ddd_proponente" value={formData.fone1_ddd_proponente} onChange={(e) => handlePhoneChange(e, 'fone1_ddd_proponente')} style={{ width: '50px' }} placeholder="DDD" maxLength="2" /><input type="text" name="fone1_numero_proponente" value={formData.fone1_numero_proponente} onChange={(e) => handlePhoneChange(e, 'fone1_ddd_proponente')} style={{ flex: 1 }} placeholder="NÚMERO" maxLength="10" /></div></div>
-                <div className="form-group"><label>Telefone 02</label><div className="flex-row"><input type="text" name="fone2_ddd_proponente" value={formData.fone2_ddd_proponente} onChange={(e) => handlePhoneChange(e, 'fone2_ddd_proponente')} style={{ width: '50px' }} placeholder="DDD" maxLength="2" /><input type="text" name="fone2_numero_proponente" value={formData.fone2_numero_proponente} onChange={(e) => handlePhoneChange(e, 'fone2_ddd_proponente')} style={{ flex: 1 }} placeholder="NÚMERO" maxLength="10" /></div></div>
-                <div className="form-group"><label>Telefone Comercial</label><div className="flex-row"><input type="text" name="fone_comercial_ddd_proponente" value={formData.fone_comercial_ddd_proponente} onChange={(e) => handlePhoneChange(e, 'fone_comercial_ddd_proponente')} style={{ width: '50px' }} placeholder="DDD" maxLength="2" /><input type="text" name="fone_comercial_numero_proponente" value={formData.fone_comercial_numero_proponente} onChange={(e) => handlePhoneChange(e, 'fone_comercial_ddd_proponente')} style={{ flex: 1 }} placeholder="NÚMERO" maxLength="10" /></div></div>
-            </div>
             <div className="form-group-checkbox" style={{ marginTop: '1.5rem' }}><label className="checkbox-label"><input type="checkbox" name="has_referencia_titular" checked={formData.has_referencia_titular} onChange={handleChange} /><strong>Adicionar Referência Pessoal?</strong></label></div>
             {formData.has_referencia_titular && (
                 <div className="form-grid" style={{ marginTop: '1rem' }}><div className="form-group full-width"><label>Nome</label><input type="text" name="nome_referencia_proponente" value={formData.nome_referencia_proponente} onChange={handleChange} /></div><div className="form-group"><label>Telefone</label><div className="flex-row"><input type="text" name="fone_referencia_ddd_proponente" value={formData.fone_referencia_ddd_proponente} onChange={handleChange} style={{ width: '50px' }} /><input type="text" name="fone_referencia_numero_proponente" value={formData.fone_referencia_numero_proponente} onChange={handleChange} style={{ flex: 1 }} /></div></div></div>
@@ -946,9 +953,10 @@ const ClientFormModal = ({ onClose, onConfirm, onDelete, initialData = null, cli
     );
 
     const tabs = [
-        { id: 'titular', label: 'Comprador', icon: <User size={16} /> },
-        { id: 'segundo', label: '2º Proponente', icon: <Users size={16} /> },
-        { id: 'documentos', label: 'Documentos', icon: <FileText size={16} /> }
+        { id: 'titular_1', label: 'Passo 1: Identificação', icon: <User size={16} /> },
+        { id: 'titular_2', label: 'Passo 2: Endereço', icon: <MapPin size={16} /> },
+        { id: 'segundo', label: 'Passo 3: 2º Proponente', icon: <Users size={16} /> },
+        { id: 'documentos', label: 'Passo 4: Documentos', icon: <FileText size={16} /> }
     ];
     const goToNext = () => { const idx = tabs.findIndex(t => t.id === activeTab); if (idx < tabs.length - 1) setActiveTab(tabs[idx + 1].id); };
     const goToPrev = () => { const idx = tabs.findIndex(t => t.id === activeTab); if (idx > 0) setActiveTab(tabs[idx - 1].id); };
@@ -977,17 +985,32 @@ const ClientFormModal = ({ onClose, onConfirm, onDelete, initialData = null, cli
                 {!clientId && (
                     <div className="person-type-banner"><button type="button" className={`banner-btn ${personType === 'PF' ? 'active' : ''}`} onClick={() => setPersonType('PF')}><User size={18} /> PESSOA FÍSICA</button><button type="button" className={`banner-btn ${personType === 'PJ' ? 'active' : ''}`} onClick={() => setPersonType('PJ')}><Building2 size={18} /> PESSOA JURÍDICA</button></div>
                 )}
-                <nav className="client-modal-tabs">{tabs.map(tab => (<button type="button" key={tab.id} className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`} onClick={() => setActiveTab(tab.id)}>{tab.icon}<span>{tab.label}</span></button>))}</nav>
+                <nav className="client-modal-wizard-progress">
+                    {tabs.map((tab, idx) => {
+                        const isActive = activeTab === tab.id;
+                        const isPast = tabs.findIndex(t => t.id === activeTab) > idx;
+                        return (
+                            <div key={tab.id} className={`wizard-step ${isActive ? 'active' : ''} ${isPast ? 'completed' : ''}`} onClick={() => setActiveTab(tab.id)}>
+                                <div className="step-icon">
+                                    {isPast ? <CheckCircle size={16} /> : tab.icon}
+                                </div>
+                                <span>{tab.label}</span>
+                                {idx < tabs.length - 1 && <div className="step-line"></div>}
+                            </div>
+                        );
+                    })}
+                </nav>
                 <form onSubmit={handleSubmit} className="flex-form">
                     <div className="client-modal-body">
-                        {activeTab === 'titular' && renderTitular()}
+                        {activeTab === 'titular_1' && renderTitular()}
+                        {activeTab === 'titular_2' && renderTitularStep2()}
                         {activeTab === 'segundo' && renderSegundo()}
                         {activeTab === 'documentos' && renderDocumentos()}
                     </div>
                     <footer className="client-modal-footer">
                         <div className="nav-buttons">
-                            <div className="footer-left">{activeTab !== 'titular' && <button type="button" className="btn-nav" onClick={goToPrev}><ChevronLeft size={18} /> Anterior</button>}{clientId && <button type="button" className="btn-delete-modal" onClick={handleModalDelete}><Trash2 size={18} /> Excluir Cliente</button>}</div>
-                            <div className="footer-right">{activeTab !== 'segundo' && <button type="button" className="btn-nav primary" onClick={goToNext}>Próximo <ChevronRight size={18} /></button>}{(activeTab === 'segundo' || clientId) && <button type="submit" className="btn-confirm" disabled={isSaving}>{isSaving ? <><span className="spinner"></span> Salvando...</> : <><FileText size={18} /> {clientId ? 'GRAVAR ALTERAÇÕES' : 'GRAVAR E GERAR PROPOSTA'}</>}</button>}</div>
+                            <div className="footer-left">{activeTab !== 'titular_1' && <button type="button" className="btn-nav" onClick={goToPrev}><ChevronLeft size={18} /> Anterior</button>}{clientId && <button type="button" className="btn-delete-modal" onClick={handleModalDelete}><Trash2 size={18} /> Excluir Cliente</button>}</div>
+                            <div className="footer-right">{activeTab !== 'documentos' && <button type="button" className="btn-nav primary" onClick={goToNext}>Próximo <ChevronRight size={18} /></button>}{(activeTab === 'documentos' || clientId) && <button type="submit" className="btn-confirm" disabled={isSaving}>{isSaving ? <><span className="spinner"></span> Salvando...</> : <><FileText size={18} /> {clientId ? 'GRAVAR ALTERAÇÕES' : 'GRAVAR E GERAR PROPOSTA'}</>}</button>}</div>
                         </div>
                     </footer>
                 </form>

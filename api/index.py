@@ -123,7 +123,7 @@ def query_db(sql, params=(), one=False, commit=False):
                             "obra_nome": params[2],
                             "quadra": params[3],
                             "lote": params[4],
-                            "payload": params[5]
+                            "payload": json.loads(params[5]) if isinstance(params[5], str) and params[5].startswith('{') else params[5]
                         }
                     res = query_supabase_rest(table, 'POST', data=payload)
                     return True if res is not None else False
@@ -871,7 +871,7 @@ def list_proposals():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-@app.route('/api/proposals/<int:proposal_id>', methods=['GET', 'PUT'])
+@app.route('/api/proposals/<int:proposal_id>', methods=['GET', 'PUT', 'DELETE'])
 @token_required
 def proposal_detail(proposal_id):
     proposal = query_db("SELECT * FROM proposals WHERE id = ?", (proposal_id,), one=True)
@@ -880,6 +880,10 @@ def proposal_detail(proposal_id):
 
     if request.user_role != 'admin' and proposal.get('user_id') != request.user_id:
         return jsonify({"error": "Forbidden"}), 403
+
+    if request.method == 'DELETE':
+        query_db("DELETE FROM proposals WHERE id = ?", (proposal_id,), commit=True)
+        return jsonify({"success": True})
 
     if request.method == 'GET':
         payload = proposal.get('payload')

@@ -1,15 +1,15 @@
 .table-container {
-    background: transparent;
-    padding: 0;
-    margin-top: 1rem;
-    border-radius: 0;
-    box-shadow: none;
+    background: rgba(255, 255, 255, 0.8);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-lg);
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+    margin-bottom: 3rem;
     overflow-x: auto;
     overflow-y: visible;
-    margin-bottom: 3rem;
-    border: none;
-    border-top: 1px solid var(--border-color);
-    -webkit-overflow-scrolling: touch;
     max-width: 1200px;
     margin-left: auto;
     margin-right: auto;
@@ -28,32 +28,34 @@
 .data-table {
     width: 100%;
     min-width: 320px;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
 }
 
-/* Cabeçalho: texto sempre visível (evitar sobrescrita por outros CSS) */
+/* Cabeçalho */
 .table-container .data-table thead {
-    background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%);
+    background: transparent;
+}
+
+.table-container .data-table th {
+    background: rgba(49, 130, 206, 0.08);
+    padding: 1.25rem 1rem;
+    text-align: center;
+    color: var(--primary-color) !important;
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border-bottom: 2px solid rgba(49, 130, 206, 0.1);
 }
 
 .table-container .data-table thead th,
 .table-container .data-table thead th .header-content,
 .table-container .data-table thead th span,
 .table-container .data-table thead th svg {
-    color: #ffffff !important;
-    fill: #ffffff !important;
-    stroke: #ffffff !important;
-}
-
-.table-container .data-table th {
-    padding: 1rem 1.25rem;
-    text-align: center;
-    color: #ffffff !important;
-    font-weight: 600;
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    border-bottom: none;
+    color: var(--primary-color) !important;
+    fill: var(--primary-color) !important;
+    stroke: var(--primary-color) !important;
 }
 
 .sortable-header {
@@ -62,7 +64,7 @@
 }
 
 .sortable-header:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(49, 130, 206, 0.15);
 }
 
 .header-content {
@@ -74,39 +76,31 @@
 }
 
 .data-table th:first-child {
-    border-radius: 0;
+    border-top-left-radius: var(--radius-md);
 }
 
 .data-table th:last-child {
-    border-radius: 0;
+    border-top-right-radius: var(--radius-md);
 }
 
 .data-table td {
-    padding: 1rem 1.25rem;
+    padding: 1.25rem 1rem;
     text-align: left;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid rgba(226, 232, 240, 0.5);
     font-size: 0.95rem;
     color: var(--text-color);
-    transition: all 0.2s ease;
-}
-
-/* Linhas Zebradas */
-.data-table tbody tr:nth-child(even) {
-    background-color: var(--bg-secondary);
-}
-
-.data-table tbody tr:nth-child(odd) {
-    background-color: var(--bg-color);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background-color: transparent;
 }
 
 /* Hover Effect */
 .data-table tbody tr {
-    transition: all 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .data-table tbody tr:hover {
-    background-color: rgba(49, 130, 206, 0.08);
-    transform: scale(1.005);
+    background-color: rgba(255, 255, 255, 0.9);
+    transform: translateY(-2px);
     box-shadow: var(--shadow-md);
     position: relative;
     z-index: 1;
@@ -114,6 +108,17 @@
 
 .data-table tbody tr:hover td {
     color: var(--primary-dark);
+    border-bottom-color: transparent;
+}
+
+.data-table tbody tr:hover td:first-child {
+    border-top-left-radius: var(--radius-md);
+    border-bottom-left-radius: var(--radius-md);
+}
+
+.data-table tbody tr:hover td:last-child {
+    border-top-right-radius: var(--radius-md);
+    border-bottom-right-radius: var(--radius-md);
 }
 
 /* Status Badges */
@@ -220,23 +225,25 @@
 
 /* Responsivo: cabeçalho sempre visível em qualquer tamanho de tela */
 @media (max-width: 992px) {
+
     .table-container .data-table thead,
     .table-container .data-table thead th,
     .table-container .data-table thead th .header-content,
     .table-container .data-table thead th span,
     .table-container .data-table thead th svg {
-        color: #ffffff !important;
-        fill: #ffffff !important;
-        stroke: #ffffff !important;
+        color: var(--primary-color) !important;
+        fill: var(--primary-color) !important;
+        stroke: var(--primary-color) !important;
     }
 }
 
 @media (max-width: 768px) {
     .table-container {
-        border-radius: 0;
+        border-radius: var(--radius-lg);
         margin-bottom: 2rem;
-        width: 100%;
-        border: 1px solid var(--border-color);
+        width: calc(100% - 2rem);
+        margin: 1rem;
+        padding: 0.5rem;
     }
 
     .table-container .data-table thead,
@@ -244,16 +251,16 @@
     .table-container .data-table thead th .header-content,
     .table-container .data-table thead th span,
     .table-container .data-table thead th svg {
-        color: #ffffff !important;
-        fill: #ffffff !important;
-        stroke: #ffffff !important;
+        color: var(--primary-color) !important;
+        fill: var(--primary-color) !important;
+        stroke: var(--primary-color) !important;
     }
 
     .table-container .data-table th {
         font-size: 0.75rem;
         padding: 0.75rem 0.4rem;
         text-align: center;
-        color: #ffffff !important;
+        color: var(--primary-color) !important;
     }
 
     .data-table td {
@@ -267,40 +274,44 @@
     .table-container .data-table .show-mobile {
         display: inline !important;
     }
+
     .table-container .data-table .hide-mobile {
         display: none !important;
     }
 }
 
 @media (max-width: 600px) {
+
     .table-container .data-table thead th,
     .table-container .data-table thead th span,
     .table-container .data-table thead th svg {
-        color: #ffffff !important;
-        fill: #ffffff !important;
-        stroke: #ffffff !important;
+        color: var(--primary-color) !important;
+        fill: var(--primary-color) !important;
+        stroke: var(--primary-color) !important;
     }
+
     .table-container .data-table th {
-        color: #ffffff !important;
+        color: var(--primary-color) !important;
     }
 }
 
 @media (max-width: 480px) {
+
     .table-container .data-table thead,
     .table-container .data-table thead th,
     .table-container .data-table thead th .header-content,
     .table-container .data-table thead th span,
     .table-container .data-table thead th svg {
-        color: #ffffff !important;
-        fill: #ffffff !important;
-        stroke: #ffffff !important;
+        color: var(--primary-color) !important;
+        fill: var(--primary-color) !important;
+        stroke: var(--primary-color) !important;
     }
 
     .table-container .data-table th {
         font-size: 0.65rem;
         padding: 0.5rem 0.25rem;
         letter-spacing: 0.02em;
-        color: #ffffff !important;
+        color: var(--primary-color) !important;
     }
 
     .data-table td {
@@ -326,13 +337,16 @@
 
 /* Tablet: labels completos no cabeçalho */
 @media (min-width: 601px) and (max-width: 768px) {
+
     .table-container .data-table thead th,
     .table-container .data-table thead th span {
-        color: #ffffff !important;
+        color: var(--primary-color) !important;
     }
+
     .table-container .data-table .show-mobile {
         display: none !important;
     }
+
     .table-container .data-table .hide-mobile {
         display: inline !important;
     }
@@ -379,24 +393,32 @@
     height: 1rem;
     width: 60%;
     min-width: 2rem;
-    background: linear-gradient(90deg, var(--border-color) 25%, rgba(255,255,255,0.08) 50%, var(--border-color) 75%);
+    background: linear-gradient(90deg, var(--border-color) 25%, rgba(255, 255, 255, 0.08) 50%, var(--border-color) 75%);
     background-size: 200% 100%;
     animation: skeleton-shine 1.2s ease-in-out infinite;
     border-radius: 4px;
     vertical-align: middle;
 }
+
 .loading-skeleton .skeleton-long {
     width: 85%;
 }
+
 .loading-label {
     text-align: center;
     color: var(--text-muted, #718096);
     font-size: 0.875rem;
     margin-top: 0.75rem;
 }
+
 @keyframes skeleton-shine {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
 }
 
 /* ==========================================
@@ -450,7 +472,8 @@
    TOUCH TARGETS & ACESSIBILIDADE
    ========================================== */
 .clickable-row {
-    min-height: 48px; /* Touch target mínimo recomendado */
+    min-height: 48px;
+    /* Touch target mínimo recomendado */
 }
 
 @media (max-width: 768px) {
@@ -465,9 +488,7 @@
 @media (max-width: 480px) {
     .table-container {
         overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
         scroll-behavior: smooth;
-        scrollbar-width: thin;
     }
 
     .table-container::-webkit-scrollbar {

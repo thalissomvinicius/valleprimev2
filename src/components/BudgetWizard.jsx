@@ -307,11 +307,11 @@ ${sinalSection}
                 ...clientData,
                 client_id: selectedClientData?.id || null
             };
-            console.log('[BudgetWizard] Saving client:', { 
-                isEdit: !!selectedClientData?.id, 
-                clientId: dataToSave.client_id 
+            console.log('[BudgetWizard] Saving client:', {
+                isEdit: !!selectedClientData?.id,
+                clientId: dataToSave.client_id
             });
-            
+
             await saveClient(dataToSave);
         } catch (err) {
             console.error('Error saving client:', err);
@@ -397,9 +397,17 @@ ${sinalSection}
             if (response.ok) {
                 const blob = await response.blob();
                 const url = window.URL.createObjectURL(blob);
-                window.open(url, '_blank');
+
+                // Forçar download para evitar bloqueio de pop-up
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `Proposta_${lot.QD}_${lot.LT}_${obraName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
                 // Show success toast instead of closing
-                showToast('✅ Proposta gerada com sucesso! Abrindo em nova aba...', 'success');
+                showToast('✅ Proposta gerada com sucesso! O download foi iniciado.', 'success');
                 // Don't close wizard - user can close manually or generate another
             } else {
                 showToast('Erro ao gerar proposta. Tente novamente.', 'error');

@@ -3,8 +3,8 @@
     position: fixed;
     inset: 0;
     background: rgba(15, 23, 42, 0.9);
-    backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
     display: flex;
     align-items: stretch;
     justify-content: center;
@@ -14,8 +14,8 @@
     padding-bottom: env(safe-area-inset-bottom);
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
+    padding-right: env(safe-area-inset-right);
     overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
 }
 
 .client-modal-content {
@@ -38,9 +38,9 @@
         padding: 1rem;
         align-items: flex-start;
     }
+
     .client-modal-content {
         max-width: 800px;
-        min-height: auto;
         max-height: calc(100vh - 2rem);
         border-radius: 24px;
         box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
@@ -59,10 +59,12 @@
     gap: 0.75rem;
     flex-wrap: nowrap;
 }
+
 .client-modal-header .header-title-row {
     min-width: 0;
     flex: 1;
 }
+
 .client-modal-header .close-btn {
     flex-shrink: 0;
 }
@@ -114,61 +116,103 @@
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
-/* Tabs Navigation - evita faixa vazia: fundo visível e altura garantida */
-.client-modal-tabs {
+/* Wizard Navigation Bar */
+.client-modal-wizard-progress {
     display: flex;
-    background: #f1f5f9;
-    padding: 0 0.75rem;
+    background: #f8fafc;
+    padding: 1.5rem 2rem;
     border-bottom: 2px solid #e2e8f0;
     overflow-x: auto;
-    scrollbar-width: none;
     flex-shrink: 0;
-    min-height: 48px;
-    align-items: stretch;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
 }
 
-.client-modal-tabs::-webkit-scrollbar {
+.client-modal-wizard-progress::-webkit-scrollbar {
     display: none;
 }
 
-.tab-btn {
-    display: inline-flex;
+.wizard-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    position: relative;
+    cursor: pointer;
+    flex: 1;
+    min-width: 100px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.wizard-step .step-icon {
+    display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1rem;
-    border: none;
-    background: none;
-    color: #64748b;
-    font-weight: 600;
-    font-size: 0.8rem;
-    cursor: pointer;
-    position: relative;
-    white-space: nowrap;
-    transition: color 0.2s, background 0.2s;
-    min-height: 44px;
-}
-
-.tab-btn:hover {
-    color: var(--primary-color);
-    background: rgba(255,255,255,0.6);
-}
-
-.tab-btn.active {
-    color: var(--primary-color);
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
     background: white;
-    box-shadow: 0 -2px 0 0 white;
+    border: 2px solid #cbd5e1;
+    color: #94a3b8;
+    position: relative;
+    z-index: 2;
+    transition: all 0.3s ease;
 }
 
-.tab-btn.active::after {
-    content: "";
+.wizard-step span {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: all 0.3s ease;
+}
+
+.step-line {
     position: absolute;
-    bottom: 0;
-    left: 0.5rem;
-    right: 0.5rem;
-    height: 3px;
-    background: var(--primary-color);
-    border-radius: 3px 3px 0 0;
+    top: 1.25rem;
+    left: 50%;
+    width: 100%;
+    height: 2px;
+    background: #cbd5e1;
+    z-index: 1;
+    transition: background 0.3s ease;
+}
+
+.wizard-step:last-child .step-line {
+    display: none;
+}
+
+/* Completed Step */
+.wizard-step.completed .step-icon {
+    background: var(--success-color, #10b981);
+    border-color: var(--success-color, #10b981);
+    color: white;
+}
+
+.wizard-step.completed span {
+    color: var(--success-color, #10b981);
+}
+
+.wizard-step.completed .step-line {
+    background: var(--success-color, #10b981);
+}
+
+/* Active Step */
+.wizard-step.active .step-icon {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+}
+
+.wizard-step.active span {
+    color: var(--primary-color);
+}
+
+.wizard-step.active~.wizard-step .step-line {
+    background: #cbd5e1;
 }
 
 /* Form Layout */
@@ -598,9 +642,7 @@
     /* Modal Body - Better Spacing */
     .client-modal-body {
         padding: 1rem;
-        flex: 1;
         overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
     }
 
     .tab-pane {

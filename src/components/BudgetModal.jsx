@@ -279,11 +279,11 @@ ${sinalSection}
                 ...clientData,
                 client_id: selectedClientData?.id || null
             };
-            console.log('[BudgetModal] Saving client:', { 
-                isEdit: !!selectedClientData?.id, 
-                clientId: dataToSave.client_id 
+            console.log('[BudgetModal] Saving client:', {
+                isEdit: !!selectedClientData?.id,
+                clientId: dataToSave.client_id
             });
-            
+
             const saveResult = await saveClient(dataToSave);
             if (!saveResult.success) {
                 alert('Aviso: Não foi possível salvar as alterações no cadastro do cliente, mas a proposta será gerada com os dados atuais.');
@@ -382,7 +382,15 @@ ${sinalSection}
             if (response.ok) {
                 const blob = await response.blob();
                 const url = window.URL.createObjectURL(blob);
-                window.open(url, '_blank');
+
+                // Forçar download para evitar bloqueio de pop-up
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `Proposta_${lot.QD}_${lot.LT}_${obraName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
                 setGenStatus('success');
                 setShowSuccessView(true);
             } else {

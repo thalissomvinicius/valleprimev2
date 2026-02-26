@@ -336,7 +336,12 @@ function MainApp() {
       }
 
       const pdfBlobUrl = doc.output('bloburl');
-      window.open(pdfBlobUrl, '_blank');
+      const link = document.createElement('a');
+      link.href = pdfBlobUrl;
+      link.download = `Disponibilidade_Valle_${selectedObra}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
 
     } catch (error) {
       console.error("Erro ao exportar PDF:", error);
@@ -358,7 +363,7 @@ function MainApp() {
             </button>
           </div>
         </Header>
-        
+
         <div className="no-permission-container">
           <div className="no-permission-card">
             <div className="no-permission-icon">
@@ -367,11 +372,11 @@ function MainApp() {
             <h2>Acesso Restrito</h2>
             <p>Você ainda não possui permissão para acessar nenhum loteamento.</p>
             <p className="no-permission-subtitle">Entre em contato com o administrador do sistema para solicitar acesso.</p>
-            
+
             <div className="no-permission-contact">
-              <a 
-                href="https://wa.me/559191697664" 
-                target="_blank" 
+              <a
+                href="https://wa.me/559191697664"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="btn-whatsapp-contact"
               >
@@ -379,7 +384,7 @@ function MainApp() {
                 Falar com Vinicius Dev
               </a>
             </div>
-            
+
             <p className="no-permission-footer">© 2025 Desenvolvido por Vinicius Dev</p>
           </div>
         </div>

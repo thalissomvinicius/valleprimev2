@@ -1,56 +1,66 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 :root {
-  /* Primary Colors - Azul sofisticado */
-  --primary-color: #1a365d;
-  --primary-light: #2c5282;
-  --primary-dark: #0f2442;
-  --primary-gradient: linear-gradient(135deg, #1a365d 0%, #2c5282 100%);
+  /* Premium Primary Colors - Deep Ocean Blue to Vibrant Cyan */
+  --primary-color: #0f172a;
+  --primary-light: #1e293b;
+  --primary-dark: #020617;
+  --primary-gradient: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+  --primary-gradient-hover: linear-gradient(135deg, #1e293b 0%, #2563eb 100%);
 
-  /* Accent Colors */
-  --accent-color: #3182ce;
-  --accent-light: #63b3ed;
+  /* Accent Colors - Modern Tech feel */
+  --accent-color: #3b82f6;
+  --accent-light: #60a5fa;
+  --accent-glow: rgba(59, 130, 246, 0.4);
 
   /* Neutral Colors */
-  --bg-color: #ffffff;
-  --bg-secondary: #f7fafc;
-  --bg-tertiary: #edf2f7;
-  --text-color: #1a202c;
-  --text-secondary: #4a5568;
-  --text-muted: #718096;
-  --border-color: #e2e8f0;
+  --bg-color: #f8fafc;
+  --bg-secondary: #f1f5f9;
+  --bg-tertiary: #e2e8f0;
+  --text-color: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+  --border-color: #cbd5e1;
+  --border-light: rgba(255, 255, 255, 0.5);
 
-  /* Status Colors - Mais vibrantes */
-  --success-color: #38a169;
-  --success-light: #c6f6d5;
-  --success-dark: #22543d;
-  --warning-color: #d69e2e;
-  --warning-light: #fefcbf;
-  --warning-dark: #744210;
-  --danger-color: #e53e3e;
-  --danger-light: #fed7d7;
-  --danger-dark: #742a2a;
+  /* Status Colors - Vibrantes e Modernas */
+  --success-color: #10b981;
+  --success-light: #d1fae5;
+  --success-dark: #065f46;
+  --warning-color: #f59e0b;
+  --warning-light: #fef3c7;
+  --warning-dark: #78350f;
+  --danger-color: #ef4444;
+  --danger-light: #fee2e2;
+  --danger-dark: #7f1d1d;
 
-  /* Shadows */
+  /* Premium Shadows - Soft and Deep */
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  --shadow-lg: 0 10px 25px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+  --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+  --shadow-glow: 0 0 20px var(--accent-glow);
 
-  /* Glassmorphism */
-  --glass-bg: rgba(255, 255, 255, 0.85);
-  --glass-border: rgba(255, 255, 255, 0.3);
+  /* Modern Glassmorphism Variables */
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.5);
+  --glass-blur: blur(16px);
 
   /* Layout */
   --header-height: 80px;
-  --border-radius: 12px;
-  --border-radius-sm: 8px;
-  --border-radius-lg: 16px;
+  --border-radius: 16px;
+  --border-radius-sm: 10px;
+  --border-radius-lg: 24px;
 }
 
 body {
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  background: #f8fafc;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--bg-color);
+  background-image:
+    radial-gradient(at 0% 0%, hsla(210, 100%, 95%, 1) 0, transparent 50%),
+    radial-gradient(at 50% 0%, hsla(220, 100%, 97%, 1) 0, transparent 50%),
+    radial-gradient(at 100% 0%, hsla(230, 100%, 94%, 1) 0, transparent 50%);
+  background-attachment: fixed;
   color: var(--text-color);
   margin: 0;
   min-height: 100vh;
@@ -101,34 +111,55 @@ body {
   min-height: 100vh;
 }
 
-/* Buttons */
+/* Buttons - Premium Feel */
 .btn {
-  padding: 0.625rem 1.25rem;
+  padding: 0.75rem 1.5rem;
   border-radius: var(--border-radius-sm);
   border: none;
   cursor: pointer;
   font-weight: 600;
-  font-size: 0.875rem;
-  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  letter-spacing: 0.02em;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  position: relative;
+  overflow: hidden;
 }
 
 .btn-primary {
   background: var(--primary-gradient);
   color: white;
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 4px 15px rgba(15, 23, 42, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: all 0.5s ease;
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+  background: var(--primary-gradient-hover);
+  box-shadow: 0 8px 25px rgba(37, 99, 235, 0.3);
+}
+
+.btn-primary:hover::before {
+  left: 100%;
 }
 
 .btn-primary:active {
-  transform: translateY(0);
+  transform: translateY(1px);
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.2);
 }
 
 /* Error Message */
@@ -366,6 +397,7 @@ body {
     opacity: 0;
     transform: translateY(30px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -446,17 +478,17 @@ body {
     padding: 2rem 1.5rem;
     border-radius: 20px;
   }
-  
+
   .no-permission-icon {
     width: 100px;
     height: 100px;
   }
-  
+
   .no-permission-icon svg {
     width: 48px;
     height: 48px;
   }
-  
+
   .no-permission-card h2 {
     font-size: 1.5rem;
   }
@@ -522,6 +554,7 @@ input[type="button"],
 }
 
 @media (max-width: 768px) {
+
   button,
   a.btn,
   input[type="submit"],
@@ -534,6 +567,7 @@ input[type="button"],
    PREVENIR ZOOM NO iOS EM INPUTS
    ========================================== */
 @media (max-width: 768px) {
+
   input[type="text"],
   input[type="password"],
   input[type="email"],
@@ -554,9 +588,12 @@ html {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Melhorar performance de scroll em mobile */
-.table-container,
-.modal-content,
-.obra-dropdown {
-  -webkit-overflow-scrolling: touch;
+/* Utility - Scrollbar Hidden */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
 }
