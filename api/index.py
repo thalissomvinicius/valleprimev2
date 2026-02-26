@@ -1391,7 +1391,44 @@ def generate_proposal():
                 data.setdefault('cidade_empreendimento', lot.get('Cidade', ''))
                 data.setdefault('estado_empreendimento', lot.get('UF', ''))
             
-            data.setdefault('empreendimento', data.get('obraName', ''))
+            # Handle Empreendimento and City properly
+            obra_name = data.get('obraName', '')
+            
+            # Known Obras from Frontend
+            OBRAS = [
+                {'codigo': '600', 'descricao': 'RESIDENCIAL JARDIM DO VALLE - DOM ELISEU', 'cidade': 'DOM ELISEU', 'uf': 'PA'},
+                {'codigo': '601', 'descricao': 'RESIDENCIAL JARDIM AMERICA - CAPANEMA', 'cidade': 'CAPANEMA', 'uf': 'PA'},
+                {'codigo': '602', 'descricao': 'RESIDENCIAL SALLES JARDIM - CASTANHAL', 'cidade': 'CASTANHAL', 'uf': 'PA'},
+                {'codigo': '603', 'descricao': 'RESIDENCIAL JARDIM CASTANHAL - CASTANHAL', 'cidade': 'CASTANHAL', 'uf': 'PA'},
+                {'codigo': '604', 'descricao': 'RESIDENCIAL IPITINGA - TOMÉ-AÇU', 'cidade': 'TOMÉ-AÇU', 'uf': 'PA'},
+                {'codigo': '605', 'descricao': 'RESIDENCIAL VALLE DO IPITINGA - TOMÉ-AÇU', 'cidade': 'TOMÉ-AÇU', 'uf': 'PA'},
+                {'codigo': '610', 'descricao': 'RESIDENCIAL JARDIM DO VALLE - TAILANDIA', 'cidade': 'TAILÂNDIA', 'uf': 'PA'},
+                {'codigo': '616', 'descricao': 'RESIDENCIAL JARDIM DO VALLE - BARCARENA', 'cidade': 'BARCARENA', 'uf': 'PA'},
+                {'codigo': '618', 'descricao': 'RESIDENCIAL JARDIM DO VALLE II - TAILANDIA', 'cidade': 'TAILÂNDIA', 'uf': 'PA'},
+                {'codigo': '620', 'descricao': 'RESIDENCIAL JARDIM VALLE DO URAIM - PARAGOMINAS', 'cidade': 'PARAGOMINAS', 'uf': 'PA'},
+                {'codigo': '621', 'descricao': 'RESIDENCIAL PARQUE DO VALLE - RONDON', 'cidade': 'RONDON DO PARÁ', 'uf': 'PA'},
+                {'codigo': '623', 'descricao': 'RESIDENCIAL JARDIM CASTANHAL III - CASTANHAL', 'cidade': 'CASTANHAL', 'uf': 'PA'},
+                {'codigo': '624', 'descricao': 'RESIDENCIAL VALLE DO IPITINGA II - TOMÉ-AÇU', 'cidade': 'TOMÉ-AÇU', 'uf': 'PA'},
+                {'codigo': '625', 'descricao': 'RESIDENCIAL VALLE DO IPÊS - TOMÉ AÇU', 'cidade': 'TOMÉ-AÇU', 'uf': 'PA'}
+            ]
+            
+            obra_info = next((o for o in OBRAS if o['descricao'].upper() == obra_name.upper()), None)
+            
+            if obra_info:
+                # Se achou no dict, usamos o nome base (antes do " - CIDADE") para o Empreendimento, se houver
+                nome_base = obra_info['descricao'].split(' - ')[0] if ' - ' in obra_info['descricao'] else obra_info['descricao']
+                data['empreendimento'] = nome_base
+                data['cidade_empreendimento'] = obra_info['cidade']
+                data['estado_empreendimento'] = obra_info['uf']
+                data['cidade_proposta_final'] = obra_info['cidade']
+            else:
+                data.setdefault('empreendimento', obra_name)
+                # Fallback: tentar quebrar pelo traço
+                if ' - ' in obra_name:
+                    partes = obra_name.rsplit(' - ', 1)
+                    data['empreendimento'] = partes[0].strip()
+                    data.setdefault('cidade_empreendimento', partes[1].strip() if not data.get('cidade_empreendimento') else data['cidade_empreendimento'])
+                    data.setdefault('cidade_proposta_final', partes[1].strip() if not data.get('cidade_proposta_final') else data['cidade_proposta_final'])
             
             def format_currency(val):
                 try:
@@ -1403,8 +1440,20 @@ def generate_proposal():
 
             if 'lotValue' in data: data.setdefault('valor_inicial', format_currency(data['lotValue']))
             if 'downPaymentTotal' in data: data.setdefault('valor_sinal', format_currency(data['downPaymentTotal']))
-            if 'entradaValue' in data: data.setdefault('valor_total_entrada', format_currency(data['entradaValue']))
             if 'remainingBalance' in data: data.setdefault('valor_saldo_parcelar', format_currency(data['remainingBalance']))
+
+            # ENTRADA: Ocultar dados se for zerada ou desabilitada
+            entrada_enabled = data.get('entradaEnabled', False)
+            entrada_val = 0
+            if 'entradaValue' in data:
+                try: entrada_val = float(data['entradaValue'])
+                except: pass
+                
+            if not entrada_enabled or entrada_val <= 0:
+                for k in ['valor_total_entrada', 'entrada_qtd_parcelas', 'entrada_valor_parcela', 'entrada_dia', 'entrada_mes', 'entrada_ano', 'entrada_periodicidade']:
+                    data[k] = ""
+            else:
+                data['valor_total_entrada'] = format_currency(entrada_val)
 
             if 'balanceInstallments' in data:
                 try:
@@ -1423,13 +1472,12 @@ def generate_proposal():
                 parts = data['proposta_data'].split('-')
                 if len(parts) == 3:
                     ano, mes, dia = parts
-                    meses = ["", "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]
+                    meses = ["", "JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUNHO", "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO"]
                     idx_mes = int(mes)
                     nome_mes = meses[idx_mes] if 1 <= idx_mes <= 12 else mes
-                    data.setdefault('dia_proposta_final', dia)
-                    data.setdefault('mes_proposta_final', nome_mes)
-                    data.setdefault('ano_proposta_final', ano[-2:])
-                    data.setdefault('cidade_proposta_final', data.get('cidade_empreendimento', ''))
+                    data['dia_proposta_final'] = dia
+                    data['mes_proposta_final'] = nome_mes.upper()
+                    data['ano_proposta_final'] = ano[-2:]
         except Exception as e:
             print(f"[WARN] Error mapping PDF fields: {e}")
         # -- END MAPPING --
