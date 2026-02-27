@@ -6,39 +6,7 @@ import { useAuth, OBRAS } from '../context/AuthContext';
 import { getClients, getProposals } from '../services/api';
 import './DashboardPage.css';
 
-const AnimatedCounter = ({ end, duration = 2000 }) => {
-    const [count, setCount] = useState(0);
 
-    useEffect(() => {
-        if (end === null || end === undefined) return;
-        let startTime = null;
-        let animationFrame;
-
-        const animate = (currentTime) => {
-            if (!startTime) startTime = currentTime;
-            const progress = Math.min((currentTime - startTime) / duration, 1);
-            const ease = 1 - Math.pow(1 - progress, 4); // easeOutQuart
-
-            setCount(Math.floor(ease * end));
-
-            if (progress < 1) {
-                animationFrame = requestAnimationFrame(animate);
-            } else {
-                setCount(end);
-            }
-        };
-
-        if (end > 0) {
-            animationFrame = requestAnimationFrame(animate);
-        } else {
-            setCount(0);
-        }
-
-        return () => cancelAnimationFrame(animationFrame);
-    }, [end, duration]);
-
-    return <span>{count}</span>;
-};
 
 const DashboardPage = () => {
     const { currentUser, logout, isAdmin } = useAuth();
@@ -77,7 +45,7 @@ const DashboardPage = () => {
     const renderStatValue = (value) => {
         if (stats.loading) return <Loader2 size={32} className="stat-loading-spinner" />;
         if (value === null || value === undefined) return '—';
-        return <AnimatedCounter end={value} />;
+        return <span>{value}</span>;
     };
 
     const getGreeting = () => {
