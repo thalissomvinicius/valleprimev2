@@ -321,6 +321,17 @@
         min-width: 38px;
     }
 
+    .header-title {
+        font-size: 0.95rem;
+        max-width: 140px;
+        /* Constrain title width on mid-size mobiles */
+    }
+
+    .obra-selector-btn {
+        padding: 0.4rem 0.5rem;
+        font-size: 0.8rem;
+    }
+
     .nav-links {
         position: absolute;
         top: 100%;
@@ -367,11 +378,13 @@
 
 @media (max-width: 480px) {
     .logo {
-        height: 30px;
+        height: 24px;
+        /* Slightly smaller logo */
     }
 
     .header-divider {
-        height: 24px;
+        height: 20px;
+        margin: 0 0.5rem;
     }
 
     .system-subtitle {
@@ -379,8 +392,27 @@
     }
 
     .header-title {
-        font-size: 0.9rem;
-        max-width: 200px;
+        font-size: 0.85rem;
+        max-width: 120px;
+        /* Crucial constraint for very small screens */
+    }
+
+    .header-right {
+        gap: 0.2rem;
+    }
+
+    .obra-selector {
+        margin-right: 0.1rem;
+    }
+
+    .obra-selector-btn {
+        padding: 0.3rem 0.4rem;
+        font-size: 0.75rem;
+    }
+
+    .obra-codigo {
+        padding: 0.1rem 0.2rem;
+        font-size: 0.7rem;
     }
 
     .header-user-section {
