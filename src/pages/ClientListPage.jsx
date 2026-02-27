@@ -10,6 +10,7 @@ import { useAuth } from '../context/AuthContext';
 import ClientFormModal from '../components/ClientFormModal';
 import Loader from '../components/Loader';
 import Header from '../components/Header';
+import { LayoutDashboard } from 'lucide-react';
 import './ClientListPage.css';
 
 function ClientListPage() {
@@ -180,13 +181,17 @@ function ClientListPage() {
         <div className="client-list-page">
             <Header title="Gerenciamento de Clientes">
                 <div className="header-actions-desktop">
+                    <button className="btn-back" onClick={() => navigate('/disponibilidade')} title="Tela de Mapa">
+                        <MapPin size={18} />
+                        <span>Disponibilidades</span>
+                    </button>
+                    <button className="btn-back" onClick={() => navigate('/dashboard')} title="Início">
+                        <LayoutDashboard size={18} />
+                        <span>Dashboard</span>
+                    </button>
                     <button className="btn-new-client" onClick={handleNewClient}>
                         <UserPlus size={18} />
                         <span>Novo Cliente</span>
-                    </button>
-                    <button className="btn-back" onClick={() => navigate('/disponibilidade')}>
-                        <ArrowLeft size={18} />
-                        <span>Voltar ao Mapa</span>
                     </button>
                 </div>
             </Header>
@@ -194,13 +199,19 @@ function ClientListPage() {
             <main className="container client-list-container">
                 {/* Mobile Action Buttons (Visible only on mobile) */}
                 <div className="mobile-actions-row">
-                    <button className="btn-new-client full-width" onClick={handleNewClient}>
+                    <div className="mobile-actions-group">
+                        <button className="btn-back full-width" onClick={() => navigate('/disponibilidade')}>
+                            <MapPin size={18} />
+                            <span>Disponibilidades</span>
+                        </button>
+                        <button className="btn-back full-width" onClick={() => navigate('/dashboard')}>
+                            <LayoutDashboard size={18} />
+                            <span>Dashboard</span>
+                        </button>
+                    </div>
+                    <button className="btn-new-client full-width highlight" onClick={handleNewClient}>
                         <UserPlus size={18} />
                         <span>Novo Cliente</span>
-                    </button>
-                    <button className="btn-back full-width" onClick={() => navigate('/disponibilidade')}>
-                        <ArrowLeft size={18} />
-                        <span>Voltar ao Mapa</span>
                     </button>
                 </div>
 
