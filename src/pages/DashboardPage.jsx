@@ -57,30 +57,7 @@ const DashboardPage = () => {
 
     return (
         <div className="dashboard-page">
-            <Header title="Dashboard">
-                <Link to="/disponibilidade" className="btn-clients-header" title="Disponibilidade">
-                    <Home size={18} />
-                    <span className="hide-mobile">Disponibilidade</span>
-                </Link>
-                <Link to="/propostas" className="btn-clients-header" title="Propostas">
-                    <FileText size={18} />
-                    <span className="hide-mobile">Propostas</span>
-                </Link>
-                <Link to="/clientes" className="btn-clients-header" title="Clientes">
-                    <Users size={18} />
-                    <span className="hide-mobile">Clientes</span>
-                </Link>
-                {isAdmin && (
-                    <Link to="/admin" className="btn-clients-header" title="Admin">
-                        <Shield size={18} />
-                        <span className="hide-mobile">Admin</span>
-                    </Link>
-                )}
-                <button className="btn-logout" onClick={logout} title="Sair">
-                    <LogOut size={18} />
-                    <span className="hide-mobile">Sair</span>
-                </button>
-            </Header>
+            <Header title="Dashboard" />
 
             <main className="dashboard-container">
                 <section className="dashboard-hero">

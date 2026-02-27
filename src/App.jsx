@@ -20,7 +20,7 @@ import ProposalHistoryPage from './pages/ProposalHistoryPage';
 import DashboardPage from './pages/DashboardPage';
 
 function MainApp() {
-  const { currentUser, logout, isAdmin } = useAuth();
+  const { currentUser, logout } = useAuth();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerms, setSearchTerms] = useState({ quadra: '', lote: '', status: '0 - Disponível' });
@@ -435,30 +435,6 @@ function MainApp() {
               )}
             </div>
           )}
-
-          <Link to="/dashboard" className="btn-clients-header" title="Dashboard">
-            <LayoutDashboard size={18} />
-            <span className="hide-mobile">Dashboard</span>
-          </Link>
-          <Link to="/propostas" className="btn-clients-header" title="Histórico de Propostas">
-            <FileText size={18} />
-            <span className="hide-mobile">Propostas</span>
-          </Link>
-          <Link to="/clientes" className="btn-clients-header" title="Gerenciar Clientes">
-            <UsersIcon size={18} />
-            <span className="hide-mobile">Clientes</span>
-          </Link>
-
-          {isAdmin && (
-            <Link to="/admin" className="btn-clients-header" title="Painel Administrativo">
-              <Shield size={18} />
-              <span className="hide-mobile">Admin</span>
-            </Link>
-          )}
-          <button className="btn-logout" onClick={logout} title="Sair">
-            <LogOut size={18} />
-            <span className="hide-mobile">Sair</span>
-          </button>
         </div>
       </Header>
 

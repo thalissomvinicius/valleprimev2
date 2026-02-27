@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FileText, RefreshCw, Edit2, AlertCircle, Loader2, LayoutDashboard, Home, Users, Shield, LogOut, Trash2 } from 'lucide-react';
+import { FileText, RefreshCw, Edit2, AlertCircle, Loader2, Trash2 } from 'lucide-react';
 import Header from '../components/Header';
 import ClientFormModal from '../components/ClientFormModal';
 import { getProposals, printProposal, updateProposal, deleteProposal } from '../services/api';
@@ -9,7 +9,6 @@ import { useToast } from '../context/ToastContext';
 import './ProposalHistoryPage.css';
 
 const ProposalHistoryPage = () => {
-    const { logout, isAdmin } = useAuth();
     const { showToast } = useToast();
     const [proposals, setProposals] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -113,30 +112,7 @@ const ProposalHistoryPage = () => {
 
     return (
         <div className="proposal-history-page">
-            <Header title="Histórico de Propostas">
-                <Link to="/dashboard" className="btn-clients-header" title="Dashboard">
-                    <LayoutDashboard size={18} />
-                    <span className="hide-mobile">Dashboard</span>
-                </Link>
-                <Link to="/disponibilidade" className="btn-clients-header" title="Disponibilidades">
-                    <Home size={18} />
-                    <span className="hide-mobile">Disponibilidade</span>
-                </Link>
-                <Link to="/clientes" className="btn-clients-header" title="Clientes">
-                    <Users size={18} />
-                    <span className="hide-mobile">Clientes</span>
-                </Link>
-                {isAdmin && (
-                    <Link to="/admin" className="btn-clients-header" title="Admin">
-                        <Shield size={18} />
-                        <span className="hide-mobile">Admin</span>
-                    </Link>
-                )}
-                <button className="btn-logout" onClick={logout} title="Sair">
-                    <LogOut size={18} />
-                    <span className="hide-mobile">Sair</span>
-                </button>
-            </Header>
+            <Header title="Histórico de Propostas" />
 
             <div className="proposal-history-container">
                 <div className="proposal-history-header">
