@@ -1519,9 +1519,31 @@ def health_check():
 @app.route('/api/debug-env', methods=['GET'])
 def debug_env():
     import os
+    import requests
     env_vars = {k: "SET" if ("KEY" in k or "SECRET" in k or "PASSWORD" in k) else v 
                 for k, v in os.environ.items() if k in ['SUPABASE_URL', 'VERCEL', 'RENDER', 'PYTHONVERSION']}
-    return jsonify({"env": env_vars, "status": "alive"})
+    
+    supabase_url = os.environ.get('SUPABASE_URL', '').rstrip('/')
+    supabase_key = os.environ.get('SUPABASE_SERVICE_ROLE_KEY')
+    proposals_health = "Not tested"
+    
+    if supabase_url and supabase_key:
+        try:
+            url = f"{supabase_url}/rest/v1/proposals?limit=1"
+            headers = {
+                "apikey": supabase_key,
+                "Authorization": f"Bearer {supabase_key}",
+                "Content-Type": "application/json"
+            }
+            resp = requests.get(url, headers=headers, timeout=5)
+            proposals_health = {
+                "status": resp.status_code,
+                "text": resp.text
+            }
+        except Exception as e:
+            proposals_health = str(e)
+
+    return jsonify({"env": env_vars, "status": "alive", "proposals_health": proposals_health})
 
 # Auto-migrate database on startup
 try:
