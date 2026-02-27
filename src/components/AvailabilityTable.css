@@ -239,11 +239,11 @@
 
 @media (max-width: 768px) {
     .table-container {
-        border-radius: var(--radius-lg);
+        border-radius: var(--border-radius-lg);
         margin-bottom: 2rem;
-        width: calc(100% - 2rem);
-        margin: 1rem;
-        padding: 0.5rem;
+        width: 100%;
+        margin: 1rem 0;
+        padding: 0.75rem 0.5rem;
     }
 
     .table-container .data-table thead,
@@ -296,6 +296,11 @@
 }
 
 @media (max-width: 480px) {
+    .table-container {
+        padding: 0.5rem 0.25rem;
+        margin: 0.75rem 0;
+        border-radius: var(--border-radius-md);
+    }
 
     .table-container .data-table thead,
     .table-container .data-table thead th,
@@ -309,29 +314,29 @@
 
     .table-container .data-table th {
         font-size: 0.65rem;
-        padding: 0.5rem 0.25rem;
+        padding: 0.65rem 0.35rem;
         letter-spacing: 0.02em;
         color: var(--primary-color) !important;
     }
 
     .data-table td {
-        font-size: 0.75rem;
-        padding: 0.5rem 0.25rem;
+        font-size: 0.8rem;
+        padding: 0.65rem 0.35rem;
     }
 
     .status-badge {
-        padding: 0.1rem 0.25rem;
-        font-size: 0.6rem;
-        gap: 0.2rem;
+        padding: 0.2rem 0.5rem;
+        font-size: 0.65rem;
+        gap: 0.25rem;
     }
 
     .status-badge::before {
-        width: 4px;
-        height: 4px;
+        width: 6px;
+        height: 6px;
     }
 
     .data-table td:last-child {
-        padding-left: 0.5rem;
+        padding-left: 0.75rem;
     }
 }
 

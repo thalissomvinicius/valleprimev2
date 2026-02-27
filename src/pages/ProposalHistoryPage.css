@@ -134,13 +134,15 @@
     gap: 1.5rem;
     align-items: center;
     padding: 1.25rem 1.5rem;
-    background: white;
-    border-radius: 16px;
-    border: 1px solid var(--border-color);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+    background: var(--glass-bg);
+    border-radius: var(--border-radius-lg);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow-sm);
     font-size: 0.9rem;
     color: var(--text-color);
     transition: all 0.2s ease;
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
 }
 
 .proposal-table-row:hover {
@@ -331,15 +333,30 @@
 
     .proposal-actions {
         flex-direction: row;
-        justify-content: flex-start;
+        justify-content: stretch;
         flex-wrap: wrap;
         margin-top: 0.5rem;
         padding-top: 1rem;
-        border-top: 1px dashed var(--border-color);
+        border-top: 1px dashed var(--glass-border);
+        gap: 0.5rem;
+    }
+
+    .proposal-actions .action-btn {
+        flex: 1;
+        min-width: calc(50% - 0.5rem);
+        padding: 0.65rem 0.5rem;
+        font-size: 0.75rem;
     }
 
     .proposal-delete-confirm {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: stretch;
+        gap: 1rem;
+    }
+
+    .proposal-delete-actions {
+        display: flex;
+        width: 100%;
+        gap: 0.5rem;
     }
 }
