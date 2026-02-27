@@ -22,6 +22,7 @@
     border-radius: 18px;
     padding: 1rem 1.25rem;
     box-shadow: 0 10px 30px rgba(2, 8, 23, 0.08);
+    -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
     margin-bottom: 1.25rem;
 }
@@ -176,8 +177,6 @@
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.8);
     max-height: calc(100vh - 320px);
     overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(2, 132, 199, 0.6) rgba(148, 163, 184, 0.25);
 }
 
 .clients-table-container::-webkit-scrollbar {
