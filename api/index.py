@@ -539,8 +539,10 @@ def auth_me():
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
         
-        # Para admin hardcoded, retorna dados diretamente
-        if payload.get('user_id') == 1 and payload.get('role') == 'admin':
+        user_id = payload.get('user_id')
+        
+        # Admin hardcoded
+        if user_id == 1 and payload.get('role') == 'admin':
             return jsonify({
                 'user': {
                     'id': 1,
@@ -549,16 +551,40 @@ def auth_me():
                     'permissions': {"canViewAllClients": True}
                 }
             })
+            
+        # Buscar usuário no banco
+        user_record = query_db("SELECT id, username, nome, role, permissions, active FROM users WHERE id = ?", (user_id,), one=True)
         
-        # Para outros usuários, buscar no banco (se necessário)
-        return jsonify({
-            'user': {
-                'id': payload.get('user_id'),
-                'username': 'user',
-                'role': payload.get('role', 'user'),
-                'permissions': {}
-            }
-        })
+        if user_record:
+            # Rejeitar se inativo
+            active = user_record.get('active')
+            if active is not None and str(active).lower() in ('false', '0'):
+                return jsonify({'message': 'Usuário inativo ou pendente de aprovação'}), 401
+                
+            perms = user_record.get('permissions')
+            parsed_perms = {}
+            if perms:
+                if isinstance(perms, str):
+                    try:
+                        parsed_perms = json.loads(perms)
+                    except:
+                        pass
+                else:
+                    parsed_perms = perms
+                    
+            return jsonify({
+                'user': {
+                    'id': user_record.get('id'),
+                    'username': user_record.get('username'),
+                    'nome': user_record.get('nome'),
+                    'role': user_record.get('role', 'user'),
+                    'permissions': parsed_perms,
+                    'active': True
+                }
+            })
+            
+        # Fallback (não encontrado)
+        return jsonify({'message': 'User not found in database'}), 401
     except jwt.ExpiredSignatureError:
         return jsonify({'message': 'Token expired'}), 401
     except jwt.InvalidTokenError:
