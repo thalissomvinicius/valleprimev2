@@ -3,16 +3,16 @@
    ========================================== */
 
 :root {
-    --wizard-primary: #1a365d;
-    --wizard-primary-light: #2c5282;
-    --wizard-accent: #3182ce;
-    --wizard-success: #38a169;
-    --wizard-danger: #e53e3e;
-    --wizard-bg: #f7fafc;
-    --wizard-card: #ffffff;
-    --wizard-text: #1a202c;
-    --wizard-text-muted: #718096;
-    --wizard-border: #e2e8f0;
+    --primary-color: #1a365d;
+    --primary-light: #2c5282;
+    --accent-color: #3182ce;
+    --success-color: #38a169;
+    --danger-color: #e53e3e;
+    --bg-secondary: #f7fafc;
+    --glass-bg: #ffffff;
+    --text-color: #1a202c;
+    --text-muted: #718096;
+    --border-color: #e2e8f0;
 }
 
 /* Overlay */
@@ -30,7 +30,7 @@
 .wizard-container {
     width: 100%;
     height: 100%;
-    background: var(--wizard-bg);
+    background: var(--bg-secondary);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -38,7 +38,7 @@
 
 /* Header */
 .wizard-header {
-    background: linear-gradient(135deg, var(--wizard-primary) 0%, var(--wizard-primary-light) 100%);
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
     padding: 0.75rem;
     padding-top: max(1rem, env(safe-area-inset-top));
     display: flex;
@@ -100,13 +100,13 @@
 .wizard-progress-section {
     background: white;
     padding: 0.5rem 0.75rem;
-    border-bottom: 1px solid var(--wizard-border);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .wizard-progress-text {
     font-size: 0.7rem;
     font-weight: 700;
-    color: var(--wizard-text-muted);
+    color: var(--text-muted);
     margin-bottom: 0.35rem;
     text-align: center;
 }
@@ -120,7 +120,7 @@
 
 .wizard-progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--wizard-accent) 0%, var(--wizard-primary-light) 100%);
+    background: linear-gradient(90deg, var(--accent-color) 0%, var(--primary-light) 100%);
     border-radius: 10px;
     transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -153,7 +153,7 @@
 .step-title {
     font-size: 1.1rem;
     font-weight: 800;
-    color: var(--wizard-primary);
+    color: var(--primary-color);
     margin: 0 0 0.75rem 0;
     letter-spacing: -0.01em;
 }
@@ -161,7 +161,7 @@
 /* Value Cards */
 .value-card {
     background: linear-gradient(135deg, #ffffff 0%, #edf2f7 100%);
-    border: 2px solid var(--wizard-accent);
+    border: 2px solid var(--accent-color);
     border-radius: 12px;
     padding: 0.75rem;
     margin-bottom: 0.75rem;
@@ -172,7 +172,7 @@
     display: block;
     font-size: 0.75rem;
     font-weight: 700;
-    color: var(--wizard-text-muted);
+    color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.05em;
     margin-bottom: 0.5rem;
@@ -181,7 +181,7 @@
 .value-display-large {
     font-size: 1.5rem;
     font-weight: 800;
-    color: var(--wizard-primary);
+    color: var(--primary-color);
     letter-spacing: -0.02em;
     margin: 0.15rem 0;
 }
@@ -189,13 +189,13 @@
 .value-display-medium {
     font-size: 1.25rem;
     font-weight: 800;
-    color: var(--wizard-primary);
+    color: var(--primary-color);
     letter-spacing: -0.02em;
 }
 
 .old-price-small {
     font-size: 1rem;
-    color: var(--wizard-text-muted);
+    color: var(--text-muted);
     text-decoration: line-through;
     margin-top: 0.25rem;
 }
@@ -209,25 +209,25 @@
     display: block;
     font-size: 0.7rem;
     font-weight: 700;
-    color: var(--wizard-text);
+    color: var(--text-color);
     margin-bottom: 0.35rem;
 }
 
 .wizard-input {
     width: 100%;
     padding: 0.875rem 1rem;
-    border: 2px solid var(--wizard-border);
+    border: 2px solid var(--border-color);
     border-radius: 12px;
     font-size: 1rem;
     font-weight: 500;
-    color: var(--wizard-text);
+    color: var(--text-color);
     background: white;
     transition: all 0.2s;
 }
 
 .wizard-input:focus {
     outline: none;
-    border-color: var(--wizard-accent);
+    border-color: var(--accent-color);
     box-shadow: 0 0 0 4px rgba(49, 130, 206, 0.1);
 }
 
@@ -239,20 +239,20 @@
     padding: 0.75rem;
     background: white;
     border-radius: 10px;
-    border: 2px solid var(--wizard-border);
+    border: 2px solid var(--border-color);
     cursor: pointer;
     transition: all 0.2s;
 }
 
 .toggle-row:hover {
-    border-color: var(--wizard-accent);
+    border-color: var(--accent-color);
     background: #f7fafc;
 }
 
 .toggle-row span {
     font-size: 0.75rem;
     font-weight: 600;
-    color: var(--wizard-text);
+    color: var(--text-color);
 }
 
 .toggle-switch {
@@ -291,7 +291,7 @@
 }
 
 .toggle-switch input:checked+.toggle-slider {
-    background: var(--wizard-accent);
+    background: var(--accent-color);
 }
 
 .toggle-switch input:checked+.toggle-slider:before {
@@ -308,19 +308,19 @@
 .discount-option-btn {
     flex: 1;
     padding: 0.875rem;
-    border: 2px solid var(--wizard-border);
+    border: 2px solid var(--border-color);
     border-radius: 12px;
     background: white;
     font-weight: 700;
     font-size: 0.9rem;
-    color: var(--wizard-text-muted);
+    color: var(--text-muted);
     cursor: pointer;
     transition: all 0.2s;
 }
 
 .discount-option-btn.active {
-    border-color: var(--wizard-success);
-    background: var(--wizard-success);
+    border-color: var(--success-color);
+    background: var(--success-color);
     color: white;
     transform: scale(1.05);
 }
@@ -331,14 +331,14 @@
     border-radius: 12px;
     padding: 0.75rem;
     margin-bottom: 0.75rem;
-    border: 1px solid var(--wizard-border);
+    border: 1px solid var(--border-color);
 }
 
 .lot-measurements h4 {
     margin: 0 0 0.75rem 0;
     font-size: 0.75rem;
     font-weight: 700;
-    color: var(--wizard-text-muted);
+    color: var(--text-muted);
     text-transform: uppercase;
 }
 
@@ -351,12 +351,12 @@
 .measure-item {
     font-size: 0.9rem;
     font-weight: 600;
-    color: var(--wizard-text);
+    color: var(--text-color);
 }
 
 .measure-item small {
     font-size: 0.75rem;
-    color: var(--wizard-text-muted);
+    color: var(--text-muted);
     font-weight: 500;
     margin-right: 4px;
 }
@@ -364,7 +364,7 @@
 /* Result Card */
 .result-card {
     background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%);
-    border: 2px solid var(--wizard-success);
+    border: 2px solid var(--success-color);
     border-radius: 12px;
     padding: 0.75rem;
     margin-bottom: 1.25rem;
@@ -382,7 +382,7 @@
 .result-value {
     font-size: 1.75rem;
     font-weight: 800;
-    color: var(--wizard-success);
+    color: var(--success-color);
     margin: 0.25rem 0;
 }
 
@@ -401,7 +401,7 @@
 
 .sinal-line-card {
     background: white;
-    border: 2px solid var(--wizard-border);
+    border: 2px solid var(--border-color);
     border-radius: 12px;
     padding: 0.75rem;
     margin-bottom: 1rem;
@@ -413,18 +413,18 @@
     align-items: center;
     margin-bottom: 0.75rem;
     padding-bottom: 0.75rem;
-    border-bottom: 1px solid var(--wizard-border);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .sinal-line-header span {
     font-weight: 700;
-    color: var(--wizard-text);
+    color: var(--text-color);
 }
 
 .remove-line-btn-small {
     background: #fee2e2;
-    border: 1px solid var(--wizard-danger);
-    color: var(--wizard-danger);
+    border: 1px solid var(--danger-color);
+    color: var(--danger-color);
     width: 32px;
     height: 32px;
     border-radius: 8px;
@@ -436,7 +436,7 @@
 }
 
 .remove-line-btn-small:hover {
-    background: var(--wizard-danger);
+    background: var(--danger-color);
     color: white;
 }
 
@@ -459,7 +459,7 @@
     background: #f7fafc;
     border-radius: 8px;
     font-weight: 700;
-    color: var(--wizard-success);
+    color: var(--success-color);
     margin-top: 0.75rem;
 }
 
@@ -480,13 +480,13 @@
 .sinal-difference-alert.error {
     background: #fee2e2;
     color: #7f1d1d;
-    border: 2px solid var(--wizard-danger);
+    border: 2px solid var(--danger-color);
 }
 
 .sinal-difference-alert.success {
     background: #f0fff4;
     color: #22543d;
-    border: 2px solid var(--wizard-success);
+    border: 2px solid var(--success-color);
 }
 
 /* Add Button */
@@ -494,9 +494,9 @@
     width: 100%;
     padding: 0.875rem;
     background: white;
-    border: 2px dashed var(--wizard-border);
+    border: 2px dashed var(--border-color);
     border-radius: 12px;
-    color: var(--wizard-accent);
+    color: var(--accent-color);
     font-weight: 700;
     font-size: 0.9rem;
     display: flex;
@@ -508,7 +508,7 @@
 }
 
 .wizard-btn-add:hover {
-    border-color: var(--wizard-accent);
+    border-color: var(--accent-color);
     border-style: solid;
     background: #ebf8ff;
 }
@@ -519,7 +519,7 @@
     border-radius: 12px;
     padding: 0.75rem;
     margin-bottom: 0.75rem;
-    border: 2px solid var(--wizard-border);
+    border: 2px solid var(--border-color);
 }
 
 .summary-item {
@@ -527,7 +527,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 0.5rem 0;
-    border-bottom: 1px solid var(--wizard-border);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .summary-item:last-child {
@@ -536,14 +536,14 @@
 
 .summary-label {
     font-size: 0.9rem;
-    color: var(--wizard-text-muted);
+    color: var(--text-muted);
     font-weight: 600;
 }
 
 .summary-value {
     font-size: 1rem;
     font-weight: 700;
-    color: var(--wizard-text);
+    color: var(--text-color);
 }
 
 .summary-actions {
@@ -557,9 +557,9 @@
     width: 100%;
     padding: 0.875rem;
     background: white;
-    border: 2px solid var(--wizard-accent);
+    border: 2px solid var(--accent-color);
     border-radius: 12px;
-    color: var(--wizard-accent);
+    color: var(--accent-color);
     font-weight: 700;
     font-size: 0.95rem;
     display: flex;
@@ -571,7 +571,7 @@
 }
 
 .wizard-action-btn:hover {
-    background: var(--wizard-accent);
+    background: var(--accent-color);
     color: white;
 }
 
@@ -580,7 +580,7 @@
     background: white;
     padding: 0.75rem;
     padding-bottom: max(1rem, env(safe-area-inset-bottom));
-    border-top: 2px solid var(--wizard-border);
+    border-top: 2px solid var(--border-color);
     display: flex;
     justify-content: space-between;
     gap: 0.75rem;
@@ -605,8 +605,8 @@
 
 .wizard-btn-secondary {
     background: white;
-    border: 2px solid var(--wizard-border);
-    color: var(--wizard-text);
+    border: 2px solid var(--border-color);
+    color: var(--text-color);
 }
 
 .wizard-btn-secondary:hover {
@@ -614,7 +614,7 @@
 }
 
 .wizard-btn-primary {
-    background: linear-gradient(135deg, var(--wizard-accent) 0%, var(--wizard-primary-light) 100%);
+    background: linear-gradient(135deg, var(--accent-color) 0%, var(--primary-light) 100%);
     color: white;
     box-shadow: 0 4px 12px rgba(49, 130, 206, 0.3);
 }
@@ -631,13 +631,13 @@
 }
 
 .wizard-btn-success {
-    background: linear-gradient(135deg, var(--wizard-success) 0%, #2f855a 100%);
+    background: linear-gradient(135deg, var(--success-color) 0%, #2f855a 100%);
     color: white;
     box-shadow: 0 4px 12px rgba(56, 161, 105, 0.3);
 }
 
 .remove-line-btn-small:hover {
-    background: var(--wizard-danger);
+    background: var(--danger-color);
     color: white;
 }
 
@@ -660,7 +660,7 @@
     background: #f7fafc;
     border-radius: 8px;
     font-weight: 700;
-    color: var(--wizard-success);
+    color: var(--success-color);
     margin-top: 0.75rem;
 }
 
@@ -681,7 +681,7 @@
 .sinal-difference-alert.error {
     background: #fee2e2;
     color: #7f1d1d;
-    border: 2px solid var(--wizard-danger);
+    border: 2px solid var(--danger-color);
 }
 
 /* Add Button */
@@ -689,9 +689,9 @@
     width: 100%;
     padding: 0.875rem;
     background: white;
-    border: 2px dashed var(--wizard-border);
+    border: 2px dashed var(--border-color);
     border-radius: 12px;
-    color: var(--wizard-accent);
+    color: var(--accent-color);
     font-weight: 700;
     font-size: 0.9rem;
     display: flex;
@@ -703,7 +703,7 @@
 }
 
 .wizard-btn-add:hover {
-    border-color: var(--wizard-accent);
+    border-color: var(--accent-color);
     border-style: solid;
     background: #ebf8ff;
 }
@@ -714,7 +714,7 @@
     border-radius: 12px;
     padding: 0.75rem;
     margin-bottom: 0.75rem;
-    border: 2px solid var(--wizard-border);
+    border: 2px solid var(--border-color);
 }
 
 .summary-item {
@@ -722,7 +722,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 0.5rem 0;
-    border-bottom: 1px solid var(--wizard-border);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .summary-item:last-child {
@@ -731,14 +731,14 @@
 
 .summary-label {
     font-size: 0.9rem;
-    color: var(--wizard-text-muted);
+    color: var(--text-muted);
     font-weight: 600;
 }
 
 .summary-value {
     font-size: 1rem;
     font-weight: 700;
-    color: var(--wizard-text);
+    color: var(--text-color);
 }
 
 .summary-actions {
@@ -752,9 +752,9 @@
     width: 100%;
     padding: 0.875rem;
     background: white;
-    border: 2px solid var(--wizard-accent);
+    border: 2px solid var(--accent-color);
     border-radius: 12px;
-    color: var(--wizard-accent);
+    color: var(--accent-color);
     font-weight: 700;
     font-size: 0.95rem;
     display: flex;
@@ -766,7 +766,7 @@
 }
 
 .wizard-action-btn:hover {
-    background: var(--wizard-accent);
+    background: var(--accent-color);
     color: white;
 }
 
@@ -775,7 +775,7 @@
     background: white;
     padding: 0.75rem;
     padding-bottom: max(1rem, env(safe-area-inset-bottom));
-    border-top: 2px solid var(--wizard-border);
+    border-top: 2px solid var(--border-color);
     display: flex;
     justify-content: space-between;
     gap: 0.75rem;
@@ -800,8 +800,8 @@
 
 .wizard-btn-secondary {
     background: white;
-    border: 2px solid var(--wizard-border);
-    color: var(--wizard-text);
+    border: 2px solid var(--border-color);
+    color: var(--text-color);
 }
 
 .wizard-btn-secondary:hover {
@@ -809,7 +809,7 @@
 }
 
 .wizard-btn-primary {
-    background: linear-gradient(135deg, var(--wizard-accent) 0%, var(--wizard-primary-light) 100%);
+    background: linear-gradient(135deg, var(--accent-color) 0%, var(--primary-light) 100%);
     color: white;
     box-shadow: 0 4px 12px rgba(49, 130, 206, 0.3);
 }
@@ -826,7 +826,7 @@
 }
 
 .wizard-btn-success {
-    background: linear-gradient(135deg, var(--wizard-success) 0%, #2f855a 100%);
+    background: linear-gradient(135deg, var(--success-color) 0%, #2f855a 100%);
     color: white;
     box-shadow: 0 4px 12px rgba(56, 161, 105, 0.3);
 }
@@ -1127,7 +1127,7 @@
 .lot-card-obra {
     font-size: 0.75rem;
     font-weight: 800;
-    color: var(--wizard-accent);
+    color: var(--accent-color);
     text-transform: uppercase;
     line-height: 1.1;
 }
@@ -1158,11 +1158,11 @@
 }
 
 .lot-badge strong {
-    color: var(--wizard-accent);
+    color: var(--accent-color);
 }
 
 .lot-badge.area {
-    background: var(--wizard-accent);
+    background: var(--accent-color);
     color: white;
     border: none;
 }

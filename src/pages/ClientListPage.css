@@ -17,13 +17,13 @@
 }
 
 .clients-filters-card {
-    background: rgba(255, 255, 255, 0.86);
-    border: 1px solid rgba(148, 163, 184, 0.25);
-    border-radius: 18px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--border-radius-lg);
     padding: 1rem 1.25rem;
-    box-shadow: 0 10px 30px rgba(2, 8, 23, 0.08);
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
+    box-shadow: var(--shadow-md);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
     margin-bottom: 1.25rem;
 }
 
@@ -32,6 +32,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
+    flex-wrap: wrap;
 }
 
 /* Client Type Tabs - Modern Card Style */
@@ -147,22 +148,22 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.75rem 1.5rem;
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    background: var(--gradient-success);
     color: white;
     border: none;
-    border-radius: 12px;
+    border-radius: var(--border-radius-sm);
     font-weight: 600;
     font-size: 0.95rem;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.25);
+    box-shadow: var(--shadow-glow-success);
     white-space: nowrap;
 }
 
 .btn-new-client:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
-    background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+    background: var(--gradient-success-hover);
 }
 
 .btn-new-client:active {
@@ -174,17 +175,17 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.75rem 1.25rem;
-    background: rgba(255, 255, 255, 0.8);
-    color: #475569;
-    border: 1px solid rgba(148, 163, 184, 0.3);
-    border-radius: 12px;
+    background: var(--glass-bg);
+    color: var(--text-secondary);
+    border: 1px solid var(--glass-border-light);
+    border-radius: var(--border-radius-sm);
     font-weight: 600;
     font-size: 0.95rem;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
-    -webkit-backdrop-filter: blur(8px);
-    backdrop-filter: blur(8px);
+    box-shadow: var(--shadow-sm);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
     white-space: nowrap;
 }
 
@@ -193,7 +194,7 @@
     color: var(--primary-color);
     border-color: rgba(2, 132, 199, 0.4);
     transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(2, 132, 199, 0.1);
+    box-shadow: var(--shadow-md);
 }
 
 .btn-back:active {
@@ -202,13 +203,13 @@
 
 /* Table Styles - Premium Transparent Layout */
 .clients-table-container {
-    background: rgba(255, 255, 255, 0.7);
-    -webkit-backdrop-filter: blur(12px);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    border-radius: 20px;
+    background: var(--glass-bg);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--border-radius-lg);
     overflow: hidden;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    box-shadow: var(--shadow-lg);
     max-height: calc(100vh - 320px);
     overflow-y: auto;
 }
@@ -519,10 +520,8 @@
    MOBILE RESPONSIVE STYLES
    ========================================== */
 
-/* Buttons Management - Desktop vs Mobile */
 .mobile-actions-row {
     display: none;
-    /* Hidden by default on desktop */
 }
 
 @media (max-width: 1024px) {
@@ -549,40 +548,28 @@
     .btn-back.full-width {
         width: 100%;
         justify-content: center;
-    }
-
-    .mobile-actions-group button {
-        padding: 0.5rem;
-        border-radius: 8px;
-        font-size: 0.8rem;
-        min-height: 38px;
-        gap: 0.4rem;
-    }
-
-    .mobile-actions-group button svg {
-        width: 16px;
-        height: 16px;
+        box-shadow: var(--shadow-sm);
     }
 }
 
 @media (max-width: 768px) {
     .client-list-container {
-        padding: 1rem;
-    }
-
-    .client-list-container {
         padding: 0.75rem;
         padding-top: 1rem;
     }
 
-    /* Enhance mobile buttons look */
-    .btn-new-client.full-width,
-    .btn-back.full-width {
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    .clients-filters-card {
+        padding: 0.9rem 0.75rem;
     }
 
-    .list-header {
-        margin-bottom: 1rem;
+    .filters-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+
+    .search-bar-wrapper {
+        max-width: 100%;
     }
 
     .client-type-tabs {
@@ -594,54 +581,35 @@
         flex: 1;
         min-width: unset;
         font-size: 0.8rem;
-        padding: 6px 8px;
+        padding: 8px 12px;
         white-space: nowrap;
     }
 
-    /* Remove Scroll and fit to screen */
+    /* Table Mobile Optimizations */
     .clients-table-container {
         overflow-x: hidden;
-        /* Disable horizontal scroll */
         background: white;
         box-shadow: none;
         border: 1px solid var(--border-color);
-        border-radius: 8px;
+        border-radius: var(--border-radius-sm);
         max-height: calc(100vh - 300px);
     }
 
-    /* Allow table to shrink */
     .clients-table {
         min-width: 100%;
         width: 100%;
         table-layout: fixed;
-        /* Strict column sizing */
     }
 
-    .clients-table thead {
-        display: table-header-group;
-    }
-
-    .clients-table tbody {
-        display: table-row-group;
-    }
-
-    .clients-table tr.client-row {
-        display: table-row;
-        border-bottom: 1px solid var(--border-color);
-    }
-
-    /* Header Styles - Tiny */
     .clients-table th {
-        padding: 0.5rem 0.25rem;
-        font-size: 0.7rem;
+        padding: 0.5rem;
+        font-size: 0.75rem;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
 
-    /* Show only Name (1), CPF (2) and Actions (6) 
-       Hide Phone (3), City (4), Date (5) */
-
+    /* Hide less important columns on mobile */
     .clients-table th:nth-child(3),
     .clients-table td:nth-child(3),
     .clients-table th:nth-child(4),
@@ -651,152 +619,49 @@
         display: none;
     }
 
-    /* Cell Styles - Compact */
     .clients-table td {
-        display: table-cell;
-        padding: 0.5rem 0.25rem;
-        border-bottom: 1px solid var(--border-color);
-        text-align: left;
-        font-size: 0.75rem;
-        /* Small font requested */
-        vertical-align: middle;
+        padding: 0.6rem 0.5rem;
+        font-size: 0.8rem;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
 
-    .clients-table td:last-child {
-        border-bottom: none;
-    }
-
-    /* Name Column specific */
     .clients-table td.client-name {
-        width: 40%;
+        width: 45%;
     }
 
-    /* Remove Avatar Icon for simplicity */
-    .client-avatar-small {
-        display: none;
-    }
-
-    .name-cell {
-        gap: 0;
-        display: block;
-        /* Just text */
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    /* CPF Column specific */
     .clients-table td.cpf-cell {
         width: 35%;
-        font-size: 0.7rem;
-        text-align: left;
-        vertical-align: middle;
+        font-size: 0.75rem;
     }
 
-    /* Actions Column specific */
     .clients-table th.actions-column,
     .clients-table td.actions-cell {
-        width: 25%;
+        width: 20%;
         text-align: right;
         padding-right: 0.5rem;
     }
 
+    .client-avatar-small {
+        display: none;
+        /* Hide avatars for space */
+    }
+
     .action-buttons-group {
         justify-content: flex-end;
-        gap: 0.25rem;
-    }
-
-    /* Smaller action buttons */
-    .btn-action {
-        width: 28px;
-        height: 28px;
-        border-radius: 6px;
-    }
-
-    .btn-action svg {
-        width: 14px;
-        height: 14px;
-    }
-
-    /* =======================================
-       Header Button Optimizations 
-       ======================================= */
-    .btn-new-client {
-        padding: 0.4rem 0.6rem;
-        font-size: 0.75rem;
-        gap: 0.25rem;
-        border-radius: 6px;
-        min-height: 32px;
-    }
-
-    .btn-new-client svg {
-        width: 14px;
-        height: 14px;
-    }
-
-    .btn-back {
-        padding: 0.4rem 0.6rem;
-        font-size: 0.75rem;
-        gap: 0.25rem;
-        border-radius: 6px;
-        min-height: 32px;
-    }
-
-    .btn-back svg {
-        width: 14px;
-        height: 14px;
-    }
-}
-
-/* Smartphones compactos (< 360px) */
-@media (max-width: 360px) {
-    .client-list-container {
-        padding: 0.5rem;
-    }
-
-    .client-type-tabs {
-        padding: 4px;
-        border-radius: 12px;
-    }
-
-    .client-tab-btn {
-        padding: 8px 12px;
-        font-size: 0.75rem;
-        border-radius: 8px;
-        gap: 6px;
-    }
-
-    .client-tab-btn svg {
-        width: 14px;
-        height: 14px;
-    }
-
-    .clients-table th {
-        padding: 0.4rem 0.15rem;
-        font-size: 0.65rem;
-    }
-
-    .clients-table td {
-        padding: 0.4rem 0.15rem;
-        font-size: 0.7rem;
+        gap: 0.35rem;
     }
 
     .btn-action {
         width: 32px;
         height: 32px;
-        min-width: 32px;
-        min-height: 32px;
+        border-radius: 8px;
     }
 
-    .action-buttons-group {
-        gap: 0.15rem;
-    }
-
-    .mobile-actions-row button {
-        min-height: 40px;
-        font-size: 0.75rem;
+    .btn-action svg {
+        width: 16px;
+        height: 16px;
     }
 }
 
