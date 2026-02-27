@@ -1,22 +1,26 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import logo from '../assets/Valle-logo-azul.png';
 import './Header.css';
 
 const Header = ({ children, title }) => {
     return (
         <header className="app-header">
-            <div className="container header-content">
+            <div className="header-container">
                 <div className="header-left">
-                    <img src={logo} alt="Valle do Ipitinga" className="logo" />
-                </div>
-
-                <div className="header-center">
-                    <h1 className="system-title">SISTEMA DE DISPONIBILIDADES</h1>
+                    <Link to="/dashboard" className="logo-link">
+                        <img src={logo} alt="Valle" className="logo" />
+                    </Link>
                     {title && (
-                        <h2 className="lot-title">
-                            <span className="hide-mobile">{title}</span>
-                            <span className="show-mobile">{title.replace('RESIDENCIAL ', '')}</span>
-                        </h2>
+                        <>
+                            <div className="header-divider"></div>
+                            <div className="header-title-wrapper">
+                                <span className="system-subtitle">SISTEMA VALLE</span>
+                                <h1 className="header-title" title={title}>
+                                    {title.replace('RESIDENCIAL ', '')}
+                                </h1>
+                            </div>
+                        </>
                     )}
                 </div>
 
