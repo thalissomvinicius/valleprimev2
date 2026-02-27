@@ -559,12 +559,11 @@ function App() {
 
   if (loading) {
     return (
-      <div className="loading-screen animate-fade-in">
-        <div className="loading-spinner-container">
-          <div className="loading-spinner-large"></div>
-          <div className="loading-logo-glow"></div>
+      <div className="global-loading-screen animate-fade-in">
+        <div className="global-loading-content">
+          <img src={logo} alt="Valle Prime" className="global-loading-logo pulse-animation" />
+          <p className="global-loading-text fade-in-up-delay">Acessando Sistema...</p>
         </div>
-        <p className="loading-text">Sincronizando Disponibilidades...</p>
       </div>
     );
   }
