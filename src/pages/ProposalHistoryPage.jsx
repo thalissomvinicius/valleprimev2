@@ -47,7 +47,24 @@ const ProposalHistoryPage = () => {
         try {
             const blob = await printProposal(proposal.id);
             const url = window.URL.createObjectURL(blob);
-            window.open(url, '_blank');
+
+            // Extract filename data
+            const payload = proposal.payload || {};
+            const lot = payload.lot || {};
+            const qdStr = String(proposal.quadra || lot.QD || '').padStart(3, '0');
+            const ltStr = String(proposal.lote || lot.LT || '').padStart(3, '0');
+            const obra = (proposal.obra_nome || payload.obraName || 'EMPREENDIMENTO').substring(0, 15).toUpperCase();
+            const cliente = (payload.nome_proponente || payload.nome || 'CLIENTE').toUpperCase().substring(0, 30);
+
+            // Forçar download para evitar bloqueio de pop-up
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${obra} - QD${qdStr} - LT${ltStr} - ${cliente}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            showToast('✅ Proposta reimpressa com sucesso! Download iniciado.', 'success');
         } catch {
             showToast('Erro ao reimprimir proposta.', 'error');
         }

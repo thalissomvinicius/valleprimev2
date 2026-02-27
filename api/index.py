@@ -1373,13 +1373,6 @@ def generate_proposal():
         
         print(f"[DEBUG] Generating proposal with data keys: {list(data.keys())}")
         user_id, _ = get_optional_user_from_token()
-        if user_id:
-            try:
-                store_proposal(data, user_id)
-            except Exception as e:
-                print(f"[WARN] Failed to store proposal history: {e}")
-        else:
-            print("[WARN] No user_id provided for proposal. Skipping history retention.")
         
         # Check if PDF generator is available
         if not generate_pdf_reportlab:
@@ -1491,6 +1484,15 @@ def generate_proposal():
         except Exception as e:
             print(f"[WARN] Error mapping PDF fields: {e}")
         # -- END MAPPING --
+        
+        # Store formatted proposal history
+        if user_id:
+            try:
+                store_proposal(data, user_id)
+            except Exception as e:
+                print(f"[WARN] Failed to store proposal history: {e}")
+        else:
+            print("[WARN] No user_id provided for proposal. Skipping history retention.")
 
         # Generate PDF
         generate_pdf_reportlab(data, background_path, positions_path, output_path)
