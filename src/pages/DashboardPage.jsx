@@ -177,6 +177,19 @@ const DashboardPage = () => {
                     )}
                 </section>
             </main>
+
+            <footer style={{
+                textAlign: 'center',
+                padding: '2rem 1rem 1rem',
+                color: 'var(--text-muted)',
+                fontSize: '0.85rem'
+            }}>
+                <p style={{ margin: 0 }}>
+                    <a href="https://wa.me/5591991697664" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>
+                        Desenvolvido por <strong>Vinicius Dev</strong>
+                    </a>
+                </p>
+            </footer>
         </div>
     );
 };

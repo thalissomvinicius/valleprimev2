@@ -385,7 +385,7 @@ function MainApp() {
               </a>
             </div>
 
-            <p className="no-permission-footer">© 2025 Desenvolvido por Vinicius Dev</p>
+            <p className="no-permission-footer"><a href="https://wa.me/5591991697664" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>© 2025 Desenvolvido por Vinicius Dev</a></p>
           </div>
         </div>
       </div>
@@ -519,7 +519,7 @@ function MainApp() {
         color: 'var(--text-muted)',
         fontSize: '0.85rem'
       }}>
-        <p style={{ marginBottom: '0.5rem' }}>Desenvolvido por <strong>Vinicius Dev</strong> (v1.1)</p>
+        <p style={{ marginBottom: '0.5rem' }}><a href="https://wa.me/5591991697664" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>Desenvolvido por <strong>Vinicius Dev</strong></a> (v1.1)</p>
         {(() => {
           const lastUpdate = computeLastUpdate();
           if (!lastUpdate) return null;
