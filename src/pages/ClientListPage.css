@@ -531,23 +531,25 @@
 
     .mobile-actions-row {
         display: flex;
-        flex-direction: column;
+        flex-direction: row;
+        justify-content: flex-end;
         gap: 0.75rem;
-        margin-bottom: 1.5rem;
+        margin-bottom: 1rem;
         width: 100%;
         animation: fadeIn 0.4s ease-out;
     }
 
     .mobile-actions-group {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
+        display: flex;
+        flex-wrap: wrap;
         gap: 0.75rem;
     }
 
     .btn-new-client.full-width,
     .btn-back.full-width {
-        width: 100%;
-        justify-content: center;
+        width: auto;
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
         box-shadow: var(--shadow-sm);
     }
 }

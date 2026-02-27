@@ -79,6 +79,22 @@
     gap: 0.5rem;
 }
 
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.mobile-menu-btn {
+    display: none;
+    background: transparent;
+    border: none;
+    color: var(--primary-color);
+    cursor: pointer;
+    padding: 0.5rem;
+    z-index: 200;
+}
+
 .header-user-section {
     display: flex;
     align-items: center;
@@ -261,8 +277,9 @@
         display: none;
     }
 
-    .hide-mobile {
+    .nav-links:not(.open) .nav-text {
         display: none;
+        /* Only hide text on medium screens if not in open mobile menu */
     }
 
     .btn-clients-header,
@@ -289,35 +306,62 @@
         width: auto;
         flex: 1;
         justify-content: flex-end;
-        overflow-x: auto;
-        -ms-overflow-style: none;
-        /* IE and Edge */
-        padding-bottom: 2px;
-        gap: 0.35rem;
+        position: static;
     }
 
-    .header-right::-webkit-scrollbar {
-        display: none;
+    .mobile-menu-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.45rem;
+        background: rgba(255, 255, 255, 0.5);
+        border: 1px solid var(--glass-border);
+        border-radius: 8px;
+        min-height: 38px;
+        min-width: 38px;
     }
 
-    .header-user-section {
-        width: auto;
-        justify-content: flex-end;
-        gap: 0.35rem;
+    .nav-links {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        left: 0;
+        flex-direction: column;
+        background: var(--glass-bg);
+        -webkit-backdrop-filter: var(--glass-blur);
+        backdrop-filter: var(--glass-blur);
+        border-bottom: 1px solid var(--glass-border);
+        padding: 1rem;
+        gap: 0.5rem;
+        box-shadow: var(--shadow-md);
+        transform: translateY(-10px);
+        opacity: 0;
+        pointer-events: none;
+        transition: all 0.3s ease;
+        z-index: 150;
     }
 
-    .header-title {
-        font-size: 0.95rem;
+    .nav-links.open {
+        transform: translateY(0);
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .nav-links .nav-text {
+        display: inline;
+        /* Show text inside mobile menu */
     }
 
     .btn-clients-header,
     .btn-logout,
     .btn-pdf-header {
-        padding: 0.45rem;
-        background: rgba(255, 255, 255, 0.5);
+        width: 100%;
+        justify-content: flex-start;
+        padding: 0.75rem 1rem;
+        background: rgba(255, 255, 255, 0.4);
         border: 1px solid var(--glass-border);
-        min-height: 38px;
-        min-width: 38px;
+        min-height: 44px;
+        font-size: 0.95rem;
     }
 }
 
