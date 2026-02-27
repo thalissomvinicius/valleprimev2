@@ -613,6 +613,22 @@ html {
   z-index: 9999;
 }
 
+.animate-fade-out {
+  animation: fadeOut 0.4s ease-out forwards;
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
 .global-loading-content {
   display: flex;
   flex-direction: column;

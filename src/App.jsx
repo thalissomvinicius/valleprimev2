@@ -556,37 +556,51 @@ function MainApp() {
 function App() {
   const { isAuthenticated, isAdmin, loading } = useAuth();
   const location = useLocation();
+  const [showLoading, setShowLoading] = useState(true);
 
-  if (loading) {
-    return (
-      <div className="global-loading-screen animate-fade-in">
-        <div className="global-loading-content">
-          <img src={logo} alt="Valle Prime" className="global-loading-logo pulse-animation" />
-          <p className="global-loading-text fade-in-up-delay">Acessando Sistema...</p>
-        </div>
-      </div>
-    );
-  }
+  // Gracefully fade out the loading screen
+  useEffect(() => {
+    if (!loading) {
+      const timer = setTimeout(() => setShowLoading(false), 400); // 400ms matches CSS exit transition
+      return () => clearTimeout(timer);
+    }
+  }, [loading]);
 
-  if (!isAuthenticated) {
+  const renderRoutes = () => {
+    if (!isAuthenticated) {
+      return (
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="*" element={<Navigate to="/login" state={{ from: location }} replace />} />
+        </Routes>
+      );
+    }
+
     return (
       <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="*" element={<Navigate to="/login" state={{ from: location }} replace />} />
+        <Route path="/admin" element={isAdmin ? <AdminPanel /> : <Navigate to="/dashboard" replace />} />
+        <Route path="/clientes" element={<ClientListPage />} />
+        <Route path="/propostas" element={<ProposalHistoryPage />} />
+        <Route path="/disponibilidade" element={<MainApp />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     );
-  }
+  };
 
   return (
-    <Routes>
-      <Route path="/admin" element={isAdmin ? <AdminPanel /> : <Navigate to="/dashboard" replace />} />
-      <Route path="/clientes" element={<ClientListPage />} />
-      <Route path="/propostas" element={<ProposalHistoryPage />} />
-      <Route path="/disponibilidade" element={<MainApp />} />
-      <Route path="/dashboard" element={<DashboardPage />} />
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
-    </Routes>
+    <>
+      {renderRoutes()}
+      {showLoading && (
+        <div className={`global-loading-screen ${!loading ? 'animate-fade-out' : 'animate-fade-in'}`}>
+          <div className="global-loading-content">
+            <img src={logo} alt="Valle Prime" className="global-loading-logo pulse-animation" />
+            <p className="global-loading-text fade-in-up-delay">Acessando Sistema...</p>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
