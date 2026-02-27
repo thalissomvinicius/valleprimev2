@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { LayoutDashboard, Home, FileText, Users, Shield, LogOut, MapPin } from 'lucide-react';
+import { LayoutDashboard, Home, FileText, Users, Shield, LogOut, MapPin, Loader2 } from 'lucide-react';
 import Header from '../components/Header';
 import { useAuth, OBRAS } from '../context/AuthContext';
 import { getClients, getProposals } from '../services/api';
@@ -75,7 +75,7 @@ const DashboardPage = () => {
     }, [currentUser?.id]);
 
     const renderStatValue = (value) => {
-        if (stats.loading) return <span className="stat-loading-pulse">...</span>;
+        if (stats.loading) return <Loader2 size={32} className="stat-loading-spinner" />;
         if (value === null || value === undefined) return '—';
         return <AnimatedCounter end={value} />;
     };

@@ -161,9 +161,20 @@
     letter-spacing: -0.02em;
 }
 
-.stat-loading-pulse {
-    animation: pulse 1.5s infinite ease-in-out;
-    color: var(--text-muted);
+.stat-loading-spinner {
+    animation: spin 1.2s linear infinite;
+    color: var(--accent-color);
+    opacity: 0.8;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .stat-label {
