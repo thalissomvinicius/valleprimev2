@@ -141,8 +141,8 @@
     font-size: 0.9rem;
     color: var(--text-color);
     transition: all 0.2s ease;
-    backdrop-filter: var(--glass-blur);
     -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
 }
 
 .proposal-table-row:hover {
