@@ -165,190 +165,179 @@
     transform: translateY(0);
 }
 
-/* Grid Layout Styles */
-.client-grid-container {
-    width: 100%;
-}
-
-.client-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 1.5rem;
-    padding-bottom: 2rem;
-}
-
-/* Client Card */
-.client-card {
-    background: rgba(255, 255, 255, 0.75);
-    backdrop-filter: blur(12px);
+/* Table Styles - Premium Transparent Layout */
+.clients-table-container {
+    background: rgba(255, 255, 255, 0.7);
     -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.5);
     border-radius: 20px;
-    padding: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.8);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    cursor: pointer;
-    position: relative;
     overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    max-height: calc(100vh - 320px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(2, 132, 199, 0.6) rgba(148, 163, 184, 0.25);
 }
 
-.client-card::before {
-    content: '';
-    position: absolute;
+.clients-table-container::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.clients-table-container::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.5);
+    border-radius: 999px;
+}
+
+.clients-table-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.clients-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.clients-table thead {
+    background: linear-gradient(135deg, rgba(248, 250, 252, 0.9) 0%, rgba(241, 245, 249, 0.9) 100%);
+    position: sticky;
     top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
-    opacity: 0;
-    transition: opacity 0.3s ease;
+    z-index: 10;
 }
 
-.client-card:hover {
-    transform: translateY(-4px) scale(1.01);
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-    background: rgba(255, 255, 255, 0.95);
+.clients-table th {
+    padding: 1.25rem 1rem;
+    text-align: left;
+    font-weight: 700;
+    font-size: 0.8rem;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 2px solid rgba(226, 232, 240, 0.8);
 }
 
-.client-card:hover::before {
-    opacity: 1;
+.clients-table th.actions-column {
+    text-align: center;
+    width: 120px;
 }
 
-/* Card Header */
-.client-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.15);
-    padding-bottom: 1rem;
+.clients-table tbody tr {
+    border-bottom: 1px solid rgba(241, 245, 249, 0.8);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+}
+
+.clients-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.9);
+    transform: scale(1.002);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.clients-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.clients-table td {
+    padding: 1.25rem 1rem;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    vertical-align: middle;
 }
 
 .name-cell {
     display: flex;
     align-items: center;
     gap: 1rem;
-    width: 100%;
 }
 
-.client-avatar {
-    width: 48px;
-    height: 48px;
-    border-radius: 14px;
+.client-avatar-small {
+    width: 42px;
+    height: 42px;
+    background: linear-gradient(135deg, #1e3a5f 0%, #0f2744 100%);
+    color: white;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
-    flex-shrink: 0;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-}
-
-.client-name-wrap {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    overflow: hidden;
-}
-
-.client-name {
-    margin: 0;
     font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--text-primary);
+    font-weight: bold;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(30, 58, 95, 0.25);
+    transition: all 0.3s ease;
+}
+
+.clients-table tbody tr:hover .client-avatar-small {
+    transform: scale(1.08);
+    box-shadow: 0 4px 12px rgba(30, 58, 95, 0.35);
+}
+
+.client-name span {
+    font-weight: 600;
+    display: inline-block;
+    max-width: 520px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.client-cpf {
-    font-family: 'SF Mono', 'Fira Code', monospace;
-    font-size: 0.85rem;
-    color: var(--text-muted);
+.clients-table td.cpf-cell {
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    color: #64748b;
+    font-size: 0.88rem;
+    letter-spacing: 0.02em;
+    text-align: left;
+    vertical-align: middle;
+    width: 180px;
 }
 
-/* Card Body */
-.client-card-body {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.info-row {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    color: #475569;
-    font-size: 0.9rem;
-}
-
-.info-icon {
-    color: var(--primary-color);
-    opacity: 0.7;
-    flex-shrink: 0;
-}
-
-.info-row.date-row {
-    margin-top: 0.25rem;
-    padding-top: 0.75rem;
-    border-top: 1px dashed rgba(148, 163, 184, 0.3);
+.date-cell {
     color: var(--text-muted);
     font-size: 0.85rem;
 }
 
-/* Card Footer */
-.client-card-footer {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: auto;
+.actions-cell {
+    text-align: center;
 }
 
 .action-buttons-group {
     display: flex;
-    gap: 0.5rem;
+    gap: 0.75rem;
+    justify-content: center;
 }
 
 .btn-action {
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    border: none;
-    border-radius: 8px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    background: #f1f5f9;
+    justify-content: center;
+    background: linear-gradient(145deg, #f8fafc, #e2e8f0);
     color: #64748b;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .btn-action:hover {
-    transform: translateY(-2px);
-}
-
-.btn-edit {
-    background: rgba(59, 130, 246, 0.1);
-    color: #2563eb;
+    transform: translateY(-3px) scale(1.05);
 }
 
 .btn-edit:hover {
-    background: #3b82f6;
-    color: white;
-}
-
-.btn-delete {
-    background: rgba(239, 68, 68, 0.1);
-    color: #ef4444;
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    color: #1d4ed8;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 .btn-delete:hover {
-    background: #ef4444;
-    color: white;
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    color: #dc2626;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
 }
 
-/* States */
 .loading-state,
 .empty-state,
 .error-state {
@@ -562,49 +551,120 @@
     }
 
     /* Remove Scroll and fit to screen */
-    .client-grid-container {
+    .clients-table-container {
         overflow-x: hidden;
+        /* Disable horizontal scroll */
+        background: white;
+        box-shadow: none;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        max-height: calc(100vh - 300px);
     }
 
-    .client-grid {
-        grid-template-columns: 1fr;
-        gap: 1rem;
+    /* Allow table to shrink */
+    .clients-table {
+        min-width: 100%;
+        width: 100%;
+        table-layout: fixed;
+        /* Strict column sizing */
     }
 
-    .client-card {
-        padding: 1.25rem;
-        border-radius: 16px;
+    .clients-table thead {
+        display: table-header-group;
     }
 
-    .client-avatar {
-        width: 40px;
-        height: 40px;
-        border-radius: 12px;
+    .clients-table tbody {
+        display: table-row-group;
     }
 
-    .client-name {
-        font-size: 1.05rem;
+    .clients-table tr.client-row {
+        display: table-row;
+        border-bottom: 1px solid var(--border-color);
     }
 
-    .info-row {
-        font-size: 0.85rem;
+    /* Header Styles - Tiny */
+    .clients-table th {
+        padding: 0.5rem 0.25rem;
+        font-size: 0.7rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Show only Name (1), CPF (2) and Actions (6) 
+       Hide Phone (3), City (4), Date (5) */
+
+    .clients-table th:nth-child(3),
+    .clients-table td:nth-child(3),
+    .clients-table th:nth-child(4),
+    .clients-table td:nth-child(4),
+    .clients-table th:nth-child(5),
+    .clients-table td:nth-child(5) {
+        display: none;
+    }
+
+    /* Cell Styles - Compact */
+    .clients-table td {
+        display: table-cell;
+        padding: 0.5rem 0.25rem;
+        border-bottom: 1px solid var(--border-color);
+        text-align: left;
+        font-size: 0.75rem;
+        /* Small font requested */
+        vertical-align: middle;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .clients-table td:last-child {
+        border-bottom: none;
+    }
+
+    /* Name Column specific */
+    .clients-table td.client-name {
+        width: 40%;
+    }
+
+    /* Remove Avatar Icon for simplicity */
+    .client-avatar-small {
+        display: none;
+    }
+
+    .name-cell {
+        gap: 0;
+        display: block;
+        /* Just text */
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* CPF Column specific */
+    .clients-table td.cpf-cell {
+        width: 35%;
+        font-size: 0.7rem;
+        text-align: left;
+        vertical-align: middle;
+    }
+
+    /* Actions Column specific */
+    .clients-table th.actions-column,
+    .clients-table td.actions-cell {
+        width: 25%;
+        text-align: right;
+        padding-right: 0.5rem;
     }
 
     .action-buttons-group {
-        width: 100%;
+        justify-content: flex-end;
+        gap: 0.25rem;
     }
 
+    /* Smaller action buttons */
     .btn-action {
-        flex: 1;
-        justify-content: center;
-        padding: 0.6rem;
-    }
-
-    /* Smaller action buttons for mobile top row */
-    .btn-action {
-        height: auto;
-        min-height: 38px;
-        border-radius: 8px;
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
     }
 
     .btn-action svg {
@@ -665,16 +725,25 @@
         height: 14px;
     }
 
-    .client-grid {
-        gap: 0.75rem;
+    .clients-table th {
+        padding: 0.4rem 0.15rem;
+        font-size: 0.65rem;
     }
 
-    .client-card {
-        padding: 1rem;
+    .clients-table td {
+        padding: 0.4rem 0.15rem;
+        font-size: 0.7rem;
     }
 
     .btn-action {
-        font-size: 0.8rem;
+        width: 32px;
+        height: 32px;
+        min-width: 32px;
+        min-height: 32px;
+    }
+
+    .action-buttons-group {
+        gap: 0.15rem;
     }
 
     .mobile-actions-row button {

@@ -252,68 +252,65 @@ function ClientListPage() {
                         <p>{searchTerm ? 'Tente outros termos de pesquisa' : 'Os clientes serão salvos automaticamente ao gerar propostas.'}</p>
                     </div>
                 ) : (
-                    <div className="client-grid-container animate-fade-in-up">
-                        <div className="client-grid">
-                            {clients.map(client => (
-                                <div
-                                    key={client.id}
-                                    className="client-card"
-                                    onClick={() => handleEdit(client)}
-                                >
-                                    <div className="client-card-header">
-                                        <div className="name-cell">
-                                            <div className="client-avatar" style={{ background: clientTab === 'pj' ? 'var(--accent-color)' : 'var(--primary-color)' }}>
-                                                {clientTab === 'pj' ? <Building2 size={20} /> : <User size={20} />}
+                    <div className="clients-table-container animate-fade-in-up">
+                        <table className="clients-table">
+                            <thead>
+                                <tr>
+                                    <th>{clientTab === 'pf' ? 'Nome' : 'Razão Social'}</th>
+                                    <th>{clientTab === 'pf' ? 'CPF' : 'CNPJ'}</th>
+                                    <th>Telefone</th>
+                                    <th>Cidade</th>
+                                    <th>Última Atualização</th>
+                                    <th className="actions-column">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {clients.map(client => (
+                                    <tr
+                                        key={client.id}
+                                        className="client-row"
+                                        onClick={() => handleEdit(client)}
+                                    >
+                                        <td className="client-name">
+                                            <div className="name-cell">
+                                                <div className="client-avatar-small" style={{ background: clientTab === 'pj' ? 'var(--accent-color)' : 'var(--primary-color)' }}>
+                                                    {clientTab === 'pj' ? <Building2 size={14} /> : <User size={14} />}
+                                                </div>
+                                                <span>{client.nome}</span>
                                             </div>
-                                            <div className="client-name-wrap">
-                                                <h4 className="client-name">{client.nome}</h4>
-                                                <span className="client-cpf">{formatCpfCnpj(client.cpf_cnpj)}</span>
+                                        </td>
+                                        <td className="cpf-cell">{formatCpfCnpj(client.cpf_cnpj)}</td>
+                                        <td>{formatPhone(client.data?.fone1_ddd_proponente, client.data?.fone1_numero_proponente)}</td>
+                                        <td>
+                                            {client.data?.cidade_proponente && client.data?.uf_endereco_proponente
+                                                ? `${client.data.cidade_proponente} - ${client.data.uf_endereco_proponente}`
+                                                : '-'}
+                                        </td>
+                                        <td className="date-cell">
+                                            {client.updated_at ? new Date(client.updated_at).toLocaleDateString('pt-BR') : '-'}
+                                        </td>
+                                        <td className="actions-cell">
+                                            <div className="action-buttons-group">
+                                                <button
+                                                    className="btn-action btn-edit"
+                                                    title="Editar"
+                                                    onClick={(e) => { e.stopPropagation(); handleEdit(client); }}
+                                                >
+                                                    <Edit2 size={16} />
+                                                </button>
+                                                <button
+                                                    className="btn-action btn-delete"
+                                                    title="Excluir"
+                                                    onClick={(e) => { e.stopPropagation(); setDeleteConfirm(client.id); }}
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
                                             </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="client-card-body">
-                                        <div className="info-row">
-                                            <Phone size={14} className="info-icon" />
-                                            <span>{formatPhone(client.data?.fone1_ddd_proponente, client.data?.fone1_numero_proponente)}</span>
-                                        </div>
-                                        <div className="info-row">
-                                            <MapPin size={14} className="info-icon" />
-                                            <span>
-                                                {client.data?.cidade_proponente && client.data?.uf_endereco_proponente
-                                                    ? `${client.data.cidade_proponente} - ${client.data.uf_endereco_proponente}`
-                                                    : 'Endereço não informado'}
-                                            </span>
-                                        </div>
-                                        <div className="info-row date-row">
-                                            <Calendar size={14} className="info-icon" />
-                                            <span>Atualizado: {client.updated_at ? new Date(client.updated_at).toLocaleDateString('pt-BR') : '-'}</span>
-                                        </div>
-                                    </div>
-
-                                    <div className="client-card-footer">
-                                        <div className="action-buttons-group">
-                                            <button
-                                                className="btn-action btn-edit"
-                                                title="Editar"
-                                                onClick={(e) => { e.stopPropagation(); handleEdit(client); }}
-                                            >
-                                                <Edit2 size={16} />
-                                                <span>Editar</span>
-                                            </button>
-                                            <button
-                                                className="btn-action btn-delete"
-                                                title="Excluir"
-                                                onClick={(e) => { e.stopPropagation(); setDeleteConfirm(client.id); }}
-                                            >
-                                                <Trash2 size={16} />
-                                                <span>Excluir</span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
 
                         {hasMore && (
                             <div className="load-more-container">
