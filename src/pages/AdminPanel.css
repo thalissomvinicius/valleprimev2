@@ -58,44 +58,7 @@
     font-size: 0.875rem;
 }
 
-.btn-logout {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.6rem 1.25rem;
-    background: rgba(255, 255, 255, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    color: white;
-    border-radius: 12px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 600;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    -webkit-backdrop-filter: blur(8px);
-    backdrop-filter: blur(8px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
 
-.btn-logout:hover {
-    background: rgba(255, 255, 255, 0.25);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
-}
-
-.btn-admin-home {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.05) 100%) !important;
-    border-color: rgba(255, 255, 255, 0.4) !important;
-}
-
-.btn-admin-home:hover {
-    background: rgba(255, 255, 255, 0.3) !important;
-    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2) !important;
-}
-
-.admin-actions a.btn-logout {
-    text-decoration: none;
-    color: white;
-}
 
 .admin-content {
     max-width: 1200px;
