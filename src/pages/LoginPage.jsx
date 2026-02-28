@@ -13,11 +13,20 @@ function LoginPage() {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [longLoading, setLongLoading] = useState(false);
     const isLoggingIn = useRef(false); // Controla se está no fluxo de login
 
     const { login, isAuthenticated } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
+
+    useEffect(() => {
+        const originalBg = document.body.style.backgroundColor;
+        document.body.style.backgroundColor = '#020617';
+        return () => {
+            document.body.style.backgroundColor = originalBg;
+        };
+    }, []);
 
     useEffect(() => {
         // Só redireciona automaticamente se já estava autenticado ao carregar a página
@@ -53,10 +62,18 @@ function LoginPage() {
         e.preventDefault();
         setError('');
         setLoading(true);
+        setLongLoading(false);
         isLoggingIn.current = true; // Marca que estamos no fluxo de login
+
+        const timer = setTimeout(() => {
+            setLongLoading(true);
+        }, 5000);
 
         try {
             const result = await login(username, password);
+            clearTimeout(timer);
+            setLongLoading(false);
+
             if (result?.success) {
                 setSuccess(true);
                 setLoading(false);
@@ -165,6 +182,12 @@ function LoginPage() {
                                 'Entrar'
                             )}
                         </button>
+
+                        {longLoading && (
+                            <div style={{ marginTop: '16px', fontSize: '0.85rem', color: '#60a5fa', textAlign: 'center', lineHeight: '1.4' }}>
+                                Servidor despertando.<br />Isso pode levar até 1 minuto. Aguarde...
+                            </div>
+                        )}
                     </form>
                 )}
 

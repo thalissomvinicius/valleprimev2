@@ -93,9 +93,9 @@ export const authLogin = async (username, password) => {
     {
       responseType: 'text',
       transformResponse: [data => data],
-      timeout: 60000 // 60 segundos para suportar o cold start do Render
+      timeout: 120000 // 120 seconds to bear with Render's hard cold start
     }
-  ), { retries: 2, baseDelay: 1000 });
+  ), { retries: 1, baseDelay: 1000 });
   return parseJsonResponse(response.data);
 };
 
