@@ -65,10 +65,7 @@
     font-weight: 800;
     color: var(--primary-color, #0f172a);
     margin: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 350px;
+    line-height: 1.2;
 }
 
 .header-right {
@@ -269,9 +266,6 @@
 }
 
 @media (max-width: 1024px) {
-    .header-title {
-        max-width: 250px;
-    }
 
     .nav-links:not(.open) .nav-text {
         display: none;
@@ -323,8 +317,6 @@
 
     .header-title {
         font-size: 0.95rem;
-        max-width: 140px;
-        /* Constrain title width on mid-size mobiles */
     }
 
     .obra-selector-btn {
@@ -398,8 +390,6 @@
 
     .header-title {
         font-size: 0.85rem;
-        max-width: 120px;
-        /* Crucial constraint for very small screens */
     }
 
     .header-right {

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import Header from '../components/Header';
 import { useAuth } from '../context/AuthContext';
 import { OBRAS, STATUS_LOTES } from '../context/authConstants';
 import {
@@ -9,7 +10,7 @@ import {
 import './AdminPanel.css';
 
 function AdminPanel() {
-    const { users, currentUser, logout, addUser, updateUserPermissions, deleteUser, approveUser, changePassword } = useAuth();
+    const { users, addUser, updateUserPermissions, deleteUser, approveUser, changePassword } = useAuth();
     const [editingUser, setEditingUser] = useState(null);
     const [editData, setEditData] = useState({});
     const [expandedUser, setExpandedUser] = useState(null);
@@ -160,31 +161,7 @@ function AdminPanel() {
 
     return (
         <div className="admin-panel">
-            <header className="admin-header">
-                <div className="admin-header-content">
-                    <div className="admin-title">
-                        <Shield size={32} />
-                        <div>
-                            <h1>Painel Administrativo</h1>
-                            <p>Gerenciamento de Usuários e Permissões</p>
-                        </div>
-                    </div>
-                    <div className="admin-actions">
-                        <Link to="/dashboard" className="btn-logout btn-admin-home" title="Voltar ao sistema">
-                            <Home size={18} />
-                            Início
-                        </Link>
-                        <span className="admin-user">
-                            <Settings size={18} />
-                            {currentUser?.nome}
-                        </span>
-                        <button className="btn-logout" onClick={logout}>
-                            <LogOut size={18} />
-                            Sair
-                        </button>
-                    </div>
-                </div>
-            </header>
+            <Header title="Painel Administrativo" />
 
             <main className="admin-content">
                 <div className="stats-cards">

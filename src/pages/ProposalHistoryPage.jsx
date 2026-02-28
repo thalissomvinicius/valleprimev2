@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FileText, RefreshCw, Edit2, AlertCircle, Loader2, Trash2 } from 'lucide-react';
+import { FileText, RefreshCw, Edit2, AlertCircle, Loader2, Trash2, Search } from 'lucide-react';
 import Header from '../components/Header';
 import ClientFormModal from '../components/ClientFormModal';
 import { getProposals, printProposal, updateProposal, deleteProposal } from '../services/api';
-import { useAuth } from '../context/AuthContext';
+// import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import './ProposalHistoryPage.css';
 
@@ -99,7 +99,25 @@ const ProposalHistoryPage = () => {
         }
     };
 
-    const rows = useMemo(() => proposals.map((proposal) => {
+    const [searchTerms, setSearchTerms] = useState({ quadra: '', lote: '', cliente: '' });
+
+    const filteredProposals = useMemo(() => {
+        return proposals.filter(proposal => {
+            const payload = proposal.payload || {};
+            const lot = payload.lot || {};
+            const quadra = (proposal.quadra || lot.QD || '').toLowerCase();
+            const lote = (proposal.lote || lot.LT || '').toLowerCase();
+            const cliente = (payload.nome_proponente || payload.nome || '').toLowerCase();
+
+            if (searchTerms.quadra && !quadra.includes(searchTerms.quadra.toLowerCase())) return false;
+            if (searchTerms.lote && !lote.includes(searchTerms.lote.toLowerCase())) return false;
+            if (searchTerms.cliente && !cliente.includes(searchTerms.cliente.toLowerCase())) return false;
+
+            return true;
+        });
+    }, [proposals, searchTerms]);
+
+    const rows = useMemo(() => filteredProposals.map((proposal) => {
         const payload = proposal.payload || {};
         const lot = payload.lot || {};
         const obra = proposal.obra_nome || payload.obraName || '—';
@@ -108,7 +126,7 @@ const ProposalHistoryPage = () => {
         const cliente = payload.nome_proponente || payload.nome || '—';
         const data = payload.proposta_data || '—';
         return { proposal, obra, quadra, lote, cliente, data };
-    }), [proposals]);
+    }), [filteredProposals]);
 
     return (
         <div className="proposal-history-page">
@@ -124,6 +142,36 @@ const ProposalHistoryPage = () => {
                         <RefreshCw size={16} />
                         Atualizar
                     </button>
+                </div>
+
+                <div className="proposal-filters">
+                    <div className="search-input-wrapper">
+                        <Search size={16} />
+                        <input
+                            type="text"
+                            placeholder="Buscar quadra..."
+                            value={searchTerms.quadra}
+                            onChange={(e) => setSearchTerms(prev => ({ ...prev, quadra: e.target.value }))}
+                        />
+                    </div>
+                    <div className="search-input-wrapper">
+                        <Search size={16} />
+                        <input
+                            type="text"
+                            placeholder="Buscar lote..."
+                            value={searchTerms.lote}
+                            onChange={(e) => setSearchTerms(prev => ({ ...prev, lote: e.target.value }))}
+                        />
+                    </div>
+                    <div className="search-input-wrapper client-search">
+                        <Search size={16} />
+                        <input
+                            type="text"
+                            placeholder="Buscar cliente..."
+                            value={searchTerms.cliente}
+                            onChange={(e) => setSearchTerms(prev => ({ ...prev, cliente: e.target.value }))}
+                        />
+                    </div>
                 </div>
 
                 {loading && (
@@ -148,55 +196,57 @@ const ProposalHistoryPage = () => {
                 )}
 
                 {!loading && !error && rows.length > 0 && (
-                    <div className="proposal-table">
-                        <div className="proposal-table-head">
-                            <span>Cliente</span>
-                            <span>Obra</span>
-                            <span>Quadra</span>
-                            <span>Lote</span>
-                            <span>Data</span>
-                            <span>Ações</span>
+                    <div className="table-responsive-wrapper">
+                        <div className="proposal-table">
+                            <div className="proposal-table-head">
+                                <span>Cliente</span>
+                                <span>Obra</span>
+                                <span>Quadra</span>
+                                <span>Lote</span>
+                                <span>Data</span>
+                                <span>Ações</span>
+                            </div>
+                            {deleteTarget && (
+                                <div className="proposal-delete-confirm">
+                                    <div>
+                                        <strong>Excluir proposta?</strong>
+                                        <span>Essa ação não pode ser desfeita.</span>
+                                    </div>
+                                    <div className="proposal-delete-actions">
+                                        <button className="action-btn" onClick={() => setDeleteTarget(null)}>
+                                            Cancelar
+                                        </button>
+                                        <button className="action-btn danger" onClick={handleDelete}>
+                                            <Trash2 size={16} />
+                                            Excluir
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                            {rows.map(({ proposal, obra, quadra, lote, cliente, data }) => (
+                                <div key={proposal.id} className="proposal-table-row">
+                                    <span className="proposal-client" data-label="Cliente">{cliente}</span>
+                                    <span className="proposal-obra" data-label="Obra">{obra}</span>
+                                    <span data-label="Quadra">{quadra}</span>
+                                    <span data-label="Lote">{lote}</span>
+                                    <span data-label="Data">{data}</span>
+                                    <div className="proposal-actions">
+                                        <button className="action-btn primary" onClick={() => handlePrint(proposal)}>
+                                            <FileText size={16} />
+                                            Reimprimir
+                                        </button>
+                                        <button className="action-btn" onClick={() => handleEditClient(proposal)}>
+                                            <Edit2 size={16} />
+                                            Editar
+                                        </button>
+                                        <button className="action-btn danger" onClick={() => setDeleteTarget(proposal)}>
+                                            <Trash2 size={16} />
+                                            Excluir
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                        {deleteTarget && (
-                            <div className="proposal-delete-confirm">
-                                <div>
-                                    <strong>Excluir proposta?</strong>
-                                    <span>Essa ação não pode ser desfeita.</span>
-                                </div>
-                                <div className="proposal-delete-actions">
-                                    <button className="action-btn" onClick={() => setDeleteTarget(null)}>
-                                        Cancelar
-                                    </button>
-                                    <button className="action-btn danger" onClick={handleDelete}>
-                                        <Trash2 size={16} />
-                                        Excluir
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                        {rows.map(({ proposal, obra, quadra, lote, cliente, data }) => (
-                            <div key={proposal.id} className="proposal-table-row">
-                                <span className="proposal-client" data-label="Cliente">{cliente}</span>
-                                <span className="proposal-obra" data-label="Obra">{obra}</span>
-                                <span data-label="Quadra">{quadra}</span>
-                                <span data-label="Lote">{lote}</span>
-                                <span data-label="Data">{data}</span>
-                                <div className="proposal-actions">
-                                    <button className="action-btn primary" onClick={() => handlePrint(proposal)}>
-                                        <FileText size={16} />
-                                        Reimprimir
-                                    </button>
-                                    <button className="action-btn" onClick={() => handleEditClient(proposal)}>
-                                        <Edit2 size={16} />
-                                        Editar
-                                    </button>
-                                    <button className="action-btn danger" onClick={() => setDeleteTarget(proposal)}>
-                                        <Trash2 size={16} />
-                                        Excluir
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
                     </div>
                 )}
             </div>

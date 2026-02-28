@@ -1,16 +1,35 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { LayoutDashboard, Home, FileText, Users, Shield, LogOut, MapPin, Loader2 } from 'lucide-react';
+import { LayoutDashboard, Home, FileText, Users, Shield, LogOut, MapPin, Loader2, Quote } from 'lucide-react';
 import Header from '../components/Header';
 import { useAuth, OBRAS } from '../context/AuthContext';
 import { getClients, getProposals } from '../services/api';
 import './DashboardPage.css';
 
-
+const MOTIVATIONAL_QUOTES = [
+    { text: "Tudo posso naquele que me fortalece.", author: "Filipenses 4:13" },
+    { text: "Consagre ao Senhor tudo o que você faz, e os seus planos serão bem-sucedidos.", author: "Provérbios 16:3" },
+    { text: "Não fui eu que ordenei a você? Seja forte e corajoso! Não se apavore nem desanime.", author: "Josué 1:9" },
+    { text: "O sucesso é a soma de pequenos esforços repetidos dia após dia.", author: "Robert Collier" },
+    { text: "A única maneira de fazer um excelente trabalho é amar o que você faz.", author: "Steve Jobs" },
+    { text: "O Senhor é o meu pastor; de nada me faltará.", author: "Salmos 23:1" },
+    { text: "Acredite em si próprio e chegará um dia em que os outros não terão outra escolha senão acreditar com você.", author: "Cynthia Kersey" },
+    { text: "Porque sou eu que conheço os planos que tenho para vocês, diz o Senhor, planos de fazê-los prosperar.", author: "Jeremias 29:11" },
+    { text: "O futuro pertence àqueles que acreditam na beleza de seus sonhos.", author: "Eleanor Roosevelt" },
+    { text: "Entregue o seu caminho ao Senhor; confie nele, e ele o fará.", author: "Salmos 37:5" },
+    { text: "A persistência é o caminho do êxito.", author: "Charles Chaplin" },
+    { text: "Peçam, e lhes será dado; busquem, e encontrarão; batam, e a porta lhes será aberta.", author: "Mateus 7:7" }
+];
 
 const DashboardPage = () => {
-    const { currentUser, logout, isAdmin } = useAuth();
+    const { currentUser, isAdmin } = useAuth();
     const [stats, setStats] = useState({ clients: null, proposals: null, loading: true });
+    const [quote, setQuote] = useState(MOTIVATIONAL_QUOTES[0]);
+
+    useEffect(() => {
+        const randomQuote = MOTIVATIONAL_QUOTES[Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length)];
+        setQuote(randomQuote);
+    }, []);
     const allowedObras = useMemo(() => {
         if (!currentUser?.obrasPermitidas?.length) return [];
         return OBRAS.filter(obra => currentUser.obrasPermitidas.includes(obra.codigo));
@@ -67,6 +86,16 @@ const DashboardPage = () => {
                     <div>
                         <h1>{getGreeting()}, <span className="hero-name">{currentUser?.nome || currentUser?.username || 'Usuário'}</span></h1>
                         <p>Acesse rapidamente as principais áreas do seu sistema e gerencie suas vendas.</p>
+                    </div>
+                </section>
+
+                <section className="motivational-quote-section">
+                    <div className="quote-container">
+                        <Quote className="quote-icon" size={24} />
+                        <div className="quote-content">
+                            <p className="quote-text">"{quote.text}"</p>
+                            <span className="quote-author">— {quote.author}</span>
+                        </div>
                     </div>
                 </section>
 

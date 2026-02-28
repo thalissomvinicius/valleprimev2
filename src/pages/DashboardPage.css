@@ -83,6 +83,70 @@
     box-shadow: inset 0 0 0 1px rgba(2, 132, 199, 0.2);
 }
 
+/* Motivational Quote */
+.motivational-quote-section {
+    display: flex;
+    justify-content: center;
+}
+
+.quote-container {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.4));
+    border-radius: var(--border-radius-xl);
+    padding: 1.5rem 2.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow-sm);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    max-width: 900px;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+.quote-container::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 4px;
+    background: var(--gradient-success);
+}
+
+.quote-icon {
+    color: var(--primary-light);
+    flex-shrink: 0;
+    opacity: 0.9;
+    transform: scaleX(-1);
+    /* Flips the quote icon to face the text */
+}
+
+.quote-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.quote-text {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 500;
+    color: var(--text-color);
+    line-height: 1.5;
+    font-style: italic;
+}
+
+.quote-author {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
 .dashboard-stats {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -387,6 +451,17 @@
     .hero-icon {
         width: 52px;
         height: 52px;
+    }
+
+    .quote-container {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 1.25rem;
+        gap: 1rem;
+    }
+
+    .quote-icon {
+        display: none;
     }
 
     .stat-value {
