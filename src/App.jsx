@@ -394,19 +394,46 @@ function MainApp() {
 
   return (
     <div className="app">
-      <Header title={currentObraInfo?.descricao}>
-        <div className="header-user-section">
-          <button
-            onClick={handleExportPDF}
-            className="btn-pdf-header"
-            title="Exportar PDF"
-          >
-            <FileDown size={18} />
-            <span className="hide-mobile">Exportar PDF</span>
-          </button>
+      <Header title={currentObraInfo?.descricao} />
+      {
+        data.length > 0 && (
+          <div className="stats-container animate-fade-in-up">
+            <div className="stat-card total">
+              <div className="stat-icon-wrapper">
+                <Building2 size={24} />
+              </div>
+              <div className="stat-info">
+                <span className="stat-value">{data.length}</span>
+                <span className="stat-label">Total de Lotes</span>
+              </div>
+            </div>
 
+            <div className="stat-card available">
+              <div className="stat-icon-wrapper">
+                <CheckCircle size={24} />
+              </div>
+              <div className="stat-info">
+                <span className="stat-value">
+                  {data.filter(item => item.Status_Terreno.includes('0 - Disponível')).length}
+                </span>
+                <span className="stat-label">Disponíveis</span>
+              </div>
+            </div>
+
+          </div>
+        )
+      }
+
+      < main className="container" >
+        <div className="availability-actions-bar animate-fade-in-up" style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          gap: '1rem',
+          marginBottom: '1.5rem',
+          flexWrap: 'wrap'
+        }}>
           {allowedObras.length > 1 && (
-            <div className="obra-selector">
+            <div className="obra-selector" style={{ margin: 0 }}>
               <button
                 className="obra-selector-btn"
                 onClick={() => setObraDropdownOpen(!obraDropdownOpen)}
@@ -435,57 +462,40 @@ function MainApp() {
               )}
             </div>
           )}
+
+          <button
+            onClick={handleExportPDF}
+            className="btn-pdf-header"
+            style={{ marginLeft: 'auto' }}
+            title="Exportar PDF"
+          >
+            <FileDown size={18} />
+            <span>Exportar PDF</span>
+          </button>
         </div>
-      </Header>
 
-      {data.length > 0 && (
-        <div className="stats-container animate-fade-in-up">
-          <div className="stat-card total">
-            <div className="stat-icon-wrapper">
-              <Building2 size={24} />
-            </div>
-            <div className="stat-info">
-              <span className="stat-value">{data.length}</span>
-              <span className="stat-label">Total de Lotes</span>
-            </div>
-          </div>
-
-          <div className="stat-card available">
-            <div className="stat-icon-wrapper">
-              <CheckCircle size={24} />
-            </div>
-            <div className="stat-info">
-              <span className="stat-value">
-                {data.filter(item => item.Status_Terreno.includes('0 - Disponível')).length}
-              </span>
-              <span className="stat-label">Disponíveis</span>
-            </div>
-          </div>
-
-        </div>
-      )}
-
-      <main className="container">
         <SearchBar
           onSearch={setSearchTerms}
           allowedStatus={allowedStatus}
           currentStatus={searchTerms.status}
         />
 
-        {error ? (
-          <div className="error-message" style={{ textAlign: 'center', color: 'var(--danger-color)', padding: '2rem' }}>
-            {error}
-          </div>
-        ) : (
-          <AvailabilityTable
-            data={filteredData}
-            loading={loading}
-            onRowClick={handleLotClick}
-            onSort={handleSort}
-            sortConfig={sortConfig}
-          />
-        )}
-      </main>
+        {
+          error ? (
+            <div className="error-message" style={{ textAlign: 'center', color: 'var(--danger-color)', padding: '2rem' }}>
+              {error}
+            </div>
+          ) : (
+            <AvailabilityTable
+              data={filteredData}
+              loading={loading}
+              onRowClick={handleLotClick}
+              onSort={handleSort}
+              sortConfig={sortConfig}
+            />
+          )
+        }
+      </main >
 
       <footer style={{
         textAlign: 'center',
@@ -507,25 +517,29 @@ function MainApp() {
         })()}
       </footer>
 
-      {selectedLot && (
-        <BudgetModal
-          lot={selectedLot}
-          onClose={() => setSelectedLot(null)}
-          obraName={currentObraInfo?.descricao}
-        />
-      )}
+      {
+        selectedLot && (
+          <BudgetModal
+            lot={selectedLot}
+            onClose={() => setSelectedLot(null)}
+            obraName={currentObraInfo?.descricao}
+          />
+        )
+      }
 
-      {showStatusWarning && (
-        <StatusWarningModal
-          lot={pendingLot}
-          onClose={() => {
-            setShowStatusWarning(false);
-            setPendingLot(null);
-          }}
-          onConfirm={handleConfirmStatusWarning}
-        />
-      )}
-    </div>
+      {
+        showStatusWarning && (
+          <StatusWarningModal
+            lot={pendingLot}
+            onClose={() => {
+              setShowStatusWarning(false);
+              setPendingLot(null);
+            }}
+            onConfirm={handleConfirmStatusWarning}
+          />
+        )
+      }
+    </div >
   );
 }
 
