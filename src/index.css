@@ -479,6 +479,13 @@ body {
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
+.availability-actions-bar .obra-dropdown {
+  left: 0;
+  right: auto;
+  min-width: 250px;
+  max-width: calc(100vw - 2rem);
+}
+
 .availability-actions-bar .btn-pdf-export {
   background: var(--primary-gradient);
   color: white;
