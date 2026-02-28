@@ -25,13 +25,14 @@
     justify-content: center;
     padding: 16px;
     position: relative;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
     background: radial-gradient(circle at center, #020617 0%, #0f172a 100%);
 }
 
 /* Background animado com blobs */
 .login-bg {
-    position: absolute;
+    position: fixed;
     inset: 0;
     z-index: 0;
     pointer-events: none;
@@ -505,12 +506,11 @@
     margin: 0;
 }
 
-/* Footer */
+/* Footer interno */
 .login-footer {
     text-align: center;
-    margin-top: 40px;
-    padding-top: 24px;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    margin-top: 24px;
+    padding-top: 16px;
 }
 
 .login-footer p {
@@ -518,6 +518,25 @@
     color: rgba(255, 255, 255, 0.4);
     margin: 0;
     letter-spacing: 0.02em;
+}
+
+/* Sobrescrevendo o Footer Global na tela de login */
+.login-wrapper .global-footer {
+    border-top: none;
+    margin-top: 2rem;
+    padding-bottom: 1rem;
+}
+
+.login-wrapper .global-footer * {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.login-wrapper .global-footer a {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.login-wrapper .global-footer a:hover {
+    color: white;
 }
 
 .whatsapp-request {
