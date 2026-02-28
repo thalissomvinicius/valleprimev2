@@ -775,53 +775,65 @@ def login():
                 }
             })
         
-        # For any other user, try database
-        conn = None
-        conn, db_type = get_db_connection()
-        
-        cur = conn.cursor()
-        # Use simple string interpolation for pg8000 safely
-        sql = "SELECT * FROM users WHERE username = %s AND active = %s" if db_type == 'postgres' else "SELECT * FROM users WHERE username = ? AND active = ?"
-        cur.execute(sql, (username, True))
-        rv = cur.fetchone()
-        
         user = None
-        if rv:
-            col_names = [desc[0] for desc in cur.description]
-            user = dict(zip(col_names, rv))
         
-        # If user not found and table might be empty, try to create admin once
-        if not user and username == 'admin' and password == 'admin123':
-             # We need to re-query count using the same cursor
-             cnt_sql = "SELECT count(*) as cnt FROM users"
-             cur.execute(cnt_sql)
-             res = cur.fetchone()
-             # handle result mapping manually since we are raw
-             cnt = res[0] if res else 0
-             
-             if cnt == 0:
-                 pw_hash = hash_password('admin123')
-                 # Insert
-                 ins_sql = "INSERT INTO users (username, password_hash, nome, role, active, permissions) VALUES (%s, %s, %s, %s, %s, %s)" if db_type == 'postgres' else "INSERT INTO users (username, password_hash, nome, role, active, permissions) VALUES (?, ?, ?, ?, ?, ?)"
-                 cur.execute(ins_sql, ('admin', pw_hash, 'Admin', 'admin', True, json.dumps({"canViewAllClients": True})))
-                 conn.commit()
-                 
-                 # Re-fetch
-                 cur.execute(sql, ('admin', True))
-                 rv = cur.fetchone()
-                 if rv:
+        # Try Supabase REST API first (production)
+        if SUPABASE_URL and SUPABASE_KEY:
+            try:
+                rest_params = f"username=eq.{username}&active=eq.true&select=*"
+                res = query_supabase_rest('users', 'GET', params=rest_params)
+                if isinstance(res, list) and len(res) > 0:
+                    user = res[0]
+                    print(f"[LOGIN POST] Found user via Supabase: {user.get('username')}")
+            except Exception as e:
+                print(f"[LOGIN POST] Supabase lookup failed: {e}")
+        
+        # Fallback to SQLite if Supabase not configured or user not found
+        if not user:
+            conn = None
+            try:
+                conn, db_type = get_db_connection()
+                
+                cur = conn.cursor()
+                sql = "SELECT * FROM users WHERE username = %s AND active = %s" if db_type == 'postgres' else "SELECT * FROM users WHERE username = ? AND active = ?"
+                cur.execute(sql, (username, True))
+                rv = cur.fetchone()
+                
+                if rv:
                     col_names = [desc[0] for desc in cur.description]
                     user = dict(zip(col_names, rv))
+                
+                # If user not found and table might be empty, try to create admin once
+                if not user and username == 'admin' and password == 'admin123':
+                     cnt_sql = "SELECT count(*) as cnt FROM users"
+                     cur.execute(cnt_sql)
+                     res = cur.fetchone()
+                     cnt = res[0] if res else 0
+                     
+                     if cnt == 0:
+                         pw_hash = hash_password('admin123')
+                         ins_sql = "INSERT INTO users (username, password_hash, nome, role, active, permissions) VALUES (%s, %s, %s, %s, %s, %s)" if db_type == 'postgres' else "INSERT INTO users (username, password_hash, nome, role, active, permissions) VALUES (?, ?, ?, ?, ?, ?)"
+                         cur.execute(ins_sql, ('admin', pw_hash, 'Admin', 'admin', True, json.dumps({"canViewAllClients": True})))
+                         conn.commit()
+                         
+                         cur.execute(sql, ('admin', True))
+                         rv = cur.fetchone()
+                         if rv:
+                            col_names = [desc[0] for desc in cur.description]
+                            user = dict(zip(col_names, rv))
+                
+                if conn: conn.close()
+            except Exception as e:
+                if conn:
+                    try: conn.close()
+                    except: pass
+                print(f"[LOGIN POST] SQLite lookup failed: {e}")
 
         if not user:
-            conn.close()
             return jsonify({'message': 'Invalid credentials (User not found)'}), 401
             
         if not verify_password(user['password_hash'], password):
-            conn.close()
             return jsonify({'message': 'Invalid credentials (Password mismatch)'}), 401
-        
-        conn.close()
         
         try:
             token = jwt.encode({
