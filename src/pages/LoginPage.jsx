@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import logo from '../assets/Valle-logo-azul.png';
+import Footer from '../components/Footer';
 import { Eye, EyeOff } from 'lucide-react';
 import './LoginPage.css';
 import { useAuth } from '../context/AuthContext';
@@ -171,9 +172,10 @@ function LoginPage() {
                     <p className="whatsapp-request">
                         Adquira seu acesso <a href="https://wa.me/559191697664" target="_blank" rel="noopener noreferrer">clicando aqui!</a>
                     </p>
-                    <p>© 2025 <a href="https://wa.me/5591991697664" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>Desenvolvido por Vinicius Dev</a></p>
                 </div>
             </div>
+
+            <Footer />
         </div>
     );
 }

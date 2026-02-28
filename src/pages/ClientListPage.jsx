@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+
 import {
     Users, Search, Edit2, Trash2, UserPlus,
     ArrowLeft, Loader2, AlertCircle, FileText,
@@ -10,6 +10,7 @@ import { useAuth } from '../context/AuthContext';
 import ClientFormModal from '../components/ClientFormModal';
 import Loader from '../components/Loader';
 import Header from '../components/Header';
+import Footer from '../components/Footer';
 import { LayoutDashboard } from 'lucide-react';
 import './ClientListPage.css';
 
@@ -351,6 +352,7 @@ function ClientListPage() {
                     clientId={editingClient?.id}
                 />
             )}
+            <Footer />
         </div>
     );
 }

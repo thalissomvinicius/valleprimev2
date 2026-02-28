@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth, OBRAS } from './context/AuthContext';
 import LoginPage from './pages/LoginPage';
 import Header from './components/Header';
+import Footer from './components/Footer';
 import SearchBar from './components/SearchBar';
 import AvailabilityTable from './components/AvailabilityTable';
 import AdminPanel from './pages/AdminPanel';
@@ -318,7 +319,7 @@ function MainApp() {
           doc.setFontSize(8);
 
           // Left Footer
-          doc.text("Viva Bem, Viva Valle...", 14, pageHeight - 10);
+          doc.text("Viva Bem, Viva Valle... | Desenvolvido por Vinicius Dev (91) 99169-7664", 14, pageHeight - 10);
 
           // Right: "Emissão: dd/mm/yyyy hh:mm"
           const date = new Date();
@@ -490,25 +491,7 @@ function MainApp() {
         }
       </main >
 
-      <footer style={{
-        textAlign: 'center',
-        padding: '2rem 1rem',
-        marginTop: '2rem',
-        borderTop: '1px solid var(--border-color)',
-        color: 'var(--text-muted)',
-        fontSize: '0.85rem'
-      }}>
-        <p style={{ marginBottom: '0.5rem' }}><a href="https://wa.me/5591991697664" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>Desenvolvido por <strong>Vinicius Dev</strong></a> (v1.1)</p>
-        {(() => {
-          const lastUpdate = computeLastUpdate();
-          if (!lastUpdate) return null;
-          return (
-            <p style={{ fontSize: '0.75rem', opacity: 0.8 }}>
-              Última atualização: {lastUpdate}
-            </p>
-          );
-        })()}
-      </footer>
+      <Footer lastUpdate={computeLastUpdate()} />
 
       {
         selectedLot && (

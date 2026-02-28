@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { FileText, RefreshCw, Edit2, AlertCircle, Loader2, Trash2, Search } from 'lucide-react';
 import Header from '../components/Header';
 import ClientFormModal from '../components/ClientFormModal';
+import Footer from '../components/Footer';
 import { getProposals, printProposal, updateProposal, deleteProposal } from '../services/api';
 // import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -263,6 +264,7 @@ const ProposalHistoryPage = () => {
                     obraName={editingProposal.payload?.obraName}
                 />
             )}
+            <Footer />
         </div>
     );
 };

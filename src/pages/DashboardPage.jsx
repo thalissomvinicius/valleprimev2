@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { LayoutDashboard, Home, FileText, Users, Shield, LogOut, MapPin, Loader2, Quote } from 'lucide-react';
 import Header from '../components/Header';
+import Footer from '../components/Footer';
 import { useAuth, OBRAS } from '../context/AuthContext';
 import { getClients, getProposals } from '../services/api';
 import './DashboardPage.css';
@@ -184,18 +185,7 @@ const DashboardPage = () => {
                 </section>
             </main>
 
-            <footer style={{
-                textAlign: 'center',
-                padding: '2rem 1rem 1rem',
-                color: 'var(--text-muted)',
-                fontSize: '0.85rem'
-            }}>
-                <p style={{ margin: 0 }}>
-                    <a href="https://wa.me/5591991697664" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>
-                        Desenvolvido por <strong>Vinicius Dev</strong>
-                    </a>
-                </p>
-            </footer>
+            <Footer />
         </div>
     );
 };
