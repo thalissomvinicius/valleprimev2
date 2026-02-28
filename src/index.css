@@ -81,6 +81,7 @@ body {
   color: var(--text-color);
   margin: 0;
   min-height: 100vh;
+  overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -587,6 +588,20 @@ body {
 /* ==========================================
    GLOBAL MOBILE OPTIMIZATIONS
    ========================================== */
+
+.show-mobile {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .hide-mobile {
+    display: none !important;
+  }
+
+  .show-mobile {
+    display: inline-block;
+  }
+}
 
 /* Smartphones compactos (< 360px) */
 @media (max-width: 360px) {
