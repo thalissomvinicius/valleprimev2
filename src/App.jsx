@@ -425,17 +425,11 @@ function MainApp() {
       }
 
       < main className="container" >
-        <div className="availability-actions-bar animate-fade-in-up" style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          gap: '1rem',
-          marginBottom: '1.5rem',
-          flexWrap: 'wrap'
-        }}>
+        <div className="availability-actions-bar animate-fade-in-up">
           {allowedObras.length > 1 && (
-            <div className="obra-selector" style={{ margin: 0 }}>
+            <div className="obra-selector">
               <button
-                className="obra-selector-btn"
+                className="availability-action-btn obra-selector-btn"
                 onClick={() => setObraDropdownOpen(!obraDropdownOpen)}
               >
                 <Building2 size={18} />
@@ -465,8 +459,7 @@ function MainApp() {
 
           <button
             onClick={handleExportPDF}
-            className="btn-pdf-header"
-            style={{ marginLeft: 'auto' }}
+            className="availability-action-btn btn-pdf-export"
             title="Exportar PDF"
           >
             <FileDown size={18} />
