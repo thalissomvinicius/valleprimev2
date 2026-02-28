@@ -440,6 +440,8 @@ body {
   padding: 1rem;
   border-radius: var(--border-radius-lg);
   box-shadow: var(--shadow-sm);
+  position: relative;
+  z-index: 10;
 }
 
 .availability-action-btn {
