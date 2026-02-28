@@ -28,6 +28,7 @@
     position: fixed;
     inset: 0;
     background: rgba(15, 36, 66, 0.6);
+    -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
     display: flex;
     align-items: flex-start;
@@ -37,6 +38,7 @@
     padding-top: max(1rem, env(safe-area-inset-top));
     padding-bottom: max(1rem, env(safe-area-inset-bottom));
     overflow-y: auto;
+    overflow-x: hidden;
     animation: vmFadeIn 0.25s ease-out;
 }
 
@@ -1646,8 +1648,8 @@ input:checked+.slider:before {
     /* Value Display Polish */
     .value-display {
         background: linear-gradient(90deg, #2c5282 0%, #1a365d 100%);
-        background-clip: text;
         -webkit-background-clip: text;
+        background-clip: text;
         -webkit-text-fill-color: transparent;
         font-weight: 800;
         text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);

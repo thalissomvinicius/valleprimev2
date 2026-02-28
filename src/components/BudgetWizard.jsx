@@ -474,6 +474,7 @@ ${sinalSection}
                     handleCopyMessage={handleCopyMessage}
                     handleWhatsAppShare={handleWhatsAppShare}
                     copied={copied}
+                    getPlanType={getPlanType}
                 />;
             default:
                 return null;
@@ -949,7 +950,7 @@ const Step4Saldo = ({ formData, updateFormData, formatCurrency, effectiveRemaini
 const Step5Summary = ({
     lot, obraName, formData, updateFormData, formatCurrency, lotValue, totalWithDiscount,
     downPaymentTotal, entradaAmount, effectiveRemainingBalance, effectiveBalanceInstallmentValue,
-    handleCopyMessage, handleWhatsAppShare, copied
+    handleCopyMessage, handleWhatsAppShare, copied, getPlanType
 }) => {
     const subdivisionName = obraName || lot.Descricao_Empreendimento || 'VALLE';
     const currentObra = OBRAS.find(o => o.descricao === subdivisionName || o.codigo === lot.Obra);
@@ -995,7 +996,12 @@ const Step5Summary = ({
 
                 <div className="summary-item">
                     <span className="summary-label">Sinal ({formData.downPaymentPercent}%)</span>
-                    <span className="summary-value">{formatCurrency(downPaymentTotal)}</span>
+                    <span className="summary-value">
+                        {formatCurrency(downPaymentTotal)}
+                        {formData.sinalLines && formData.sinalLines.length > 0 && (
+                            ` (${formData.sinalLines.reduce((acc, line) => acc + (parseInt(line.qtd) || 1), 0)}x)`
+                        )}
+                    </span>
                 </div>
 
                 <div className="summary-item">
@@ -1005,8 +1011,11 @@ const Step5Summary = ({
 
                 <div className="summary-item">
                     <span className="summary-label">Parcelas do Saldo</span>
-                    <span className="summary-value">
-                        {formData.balanceInstallments}x de {formatCurrency(effectiveBalanceInstallmentValue)}
+                    <span className="summary-value" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                        <span>{formData.balanceInstallments}x de {formatCurrency(effectiveBalanceInstallmentValue)}</span>
+                        <small style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                            {getPlanType ? getPlanType(formData.balanceInstallments) : ''}
+                        </small>
                     </span>
                 </div>
             </div>

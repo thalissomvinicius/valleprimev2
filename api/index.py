@@ -1493,7 +1493,15 @@ def generate_proposal():
                         val_parc = (rem_bal / installments) if installments > 0 else 0
                         data.setdefault('saldo_valor_parcela', format_currency(val_parc))
                     data.setdefault('saldo_periodicidade', 'MENSAL')
-                    data.setdefault('saldo_tipo_parcela', "REAJUSTÁVEIS" if installments > 36 else "FIXA")
+                    
+                    if installments <= 36:
+                        tipo = "FIXA"
+                    elif installments <= 72:
+                        tipo = "CORRIGIDA"
+                    else:
+                        tipo = "REAJUSTÁVEL"
+                        
+                    data.setdefault('saldo_tipo_parcela', tipo)
                 except:
                     pass
 
