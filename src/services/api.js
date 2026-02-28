@@ -88,12 +88,14 @@ const parseJsonResponse = (payload) => {
 };
 
 export const authLogin = async (username, password) => {
-  const response = await requestWithRetry(() => api.get('/api/login-get', {
-    params: { username, password },
-    responseType: 'text',
-    transformResponse: [data => data],
-    timeout: 30000
-  }), { retries: 2, baseDelay: 1000 });
+  const response = await requestWithRetry(() => api.post(`${AUTH_BASE}/login`,
+    { username, password },
+    {
+      responseType: 'text',
+      transformResponse: [data => data],
+      timeout: 30000
+    }
+  ), { retries: 2, baseDelay: 1000 });
   return parseJsonResponse(response.data);
 };
 
