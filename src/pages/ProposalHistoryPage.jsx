@@ -207,23 +207,7 @@ const ProposalHistoryPage = () => {
                                 <span>Data</span>
                                 <span>Ações</span>
                             </div>
-                            {deleteTarget && (
-                                <div className="proposal-delete-confirm">
-                                    <div>
-                                        <strong>Excluir proposta?</strong>
-                                        <span>Essa ação não pode ser desfeita.</span>
-                                    </div>
-                                    <div className="proposal-delete-actions">
-                                        <button className="action-btn" onClick={() => setDeleteTarget(null)}>
-                                            Cancelar
-                                        </button>
-                                        <button className="action-btn danger" onClick={handleDelete}>
-                                            <Trash2 size={16} />
-                                            Excluir
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
+
                             {rows.map(({ proposal, obra, quadra, lote, cliente, data }) => (
                                 <div key={proposal.id} className="proposal-table-row">
                                     <span className="proposal-client" data-label="Cliente">{cliente}</span>
@@ -264,6 +248,30 @@ const ProposalHistoryPage = () => {
                     obraName={editingProposal.payload?.obraName}
                 />
             )}
+
+            {/* Delete Confirmation Modal */}
+            {deleteTarget && (
+                <div className="modal-overlay">
+                    <div className="delete-modal-content">
+                        <div className="delete-modal-header">
+                            <AlertCircle size={40} className="delete-modal-icon" />
+                            <h2>Excluir Proposta?</h2>
+                        </div>
+                        <p>Você está prestes a excluir a proposta de <strong>{deleteTarget.payload?.nome_proponente || deleteTarget.payload?.nome || 'Cliente'}</strong>.</p>
+                        <p className="delete-modal-warning">Essa ação não pode ser desfeita e o registro será permanentemente apagado do sistema.</p>
+                        <div className="delete-modal-actions">
+                            <button className="action-btn" onClick={() => setDeleteTarget(null)}>
+                                Cancelar
+                            </button>
+                            <button className="action-btn danger" onClick={handleDelete}>
+                                <Trash2 size={16} />
+                                Excluir Proposta
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <Footer />
         </div>
     );
