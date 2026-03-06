@@ -413,7 +413,7 @@ def list_proposals():
 @app.route('/api/proposals/<int:proposal_id>', methods=['GET', 'PUT', 'DELETE'])
 @token_required
 def proposal_detail(proposal_id):
-    proposal = query_db("SELECT * FROM proposals WHERE id = ?", (proposal_id,), one=True)
+    proposal = get_proposal_by_id(proposal_id)
     if not proposal:
         return jsonify({"error": "Not found"}), 404
 
@@ -455,7 +455,7 @@ def proposal_detail(proposal_id):
 @app.route('/api/proposals/<int:proposal_id>/pdf', methods=['GET'])
 @token_required
 def proposal_pdf(proposal_id):
-    proposal = query_db("SELECT * FROM proposals WHERE id = ?", (proposal_id,), one=True)
+    proposal = get_proposal_by_id(proposal_id)
     if not proposal:
         return jsonify({"error": "Not found"}), 404
 
@@ -630,8 +630,13 @@ def manage_clients():
         can_see_all = request.user_role == 'admin'
         if not can_see_all:
              # Check specific permissions
-             user = query_db("SELECT permissions FROM users WHERE id = ?", (request.user_id,), one=True)
-             perms = json.loads(user['permissions']) if user and user['permissions'] else {}
+             user = get_user_by_id(request.user_id)
+             perms = user.get('permissions', {}) if user else {}
+             if isinstance(perms, str):
+                 try:
+                     perms = json.loads(perms)
+                 except:
+                     perms = {}
              can_see_all = perms.get('canViewAllClients', False)
 
         created_by = request.args.get('created_by')
