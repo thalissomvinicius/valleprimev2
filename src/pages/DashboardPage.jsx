@@ -41,26 +41,45 @@ const DashboardPage = () => {
         const loadStats = async () => {
             setStats(prev => ({ ...prev, loading: true }));
             try {
+                // Se for admin, busca tudo (sem filtro de created_by)
+                const clientReqPf = isAdmin
+                    ? { page: 1, limit: 1000, type: 'pf' }
+                    : { page: 1, limit: 1000, type: 'pf', created_by: currentUser.id };
+
+                const clientReqPj = isAdmin
+                    ? { page: 1, limit: 1000, type: 'pj' }
+                    : { page: 1, limit: 1000, type: 'pj', created_by: currentUser.id };
+
                 const [clientsPf, clientsPj, proposalsResult] = await Promise.all([
-                    getClients({ page: 1, limit: 200, type: 'pf', created_by: currentUser.id }),
-                    getClients({ page: 1, limit: 200, type: 'pj', created_by: currentUser.id }),
-                    getProposals({ page: 1, limit: 500 })
+                    getClients(clientReqPf),
+                    getClients(clientReqPj),
+                    getProposals({ page: 1, limit: 1000 })
                 ]);
+
                 const clientsCount = (clientsPf?.total_count ?? clientsPf?.clients?.length ?? 0)
                     + (clientsPj?.total_count ?? clientsPj?.clients?.length ?? 0);
+
                 const proposalsList = proposalsResult?.proposals || [];
-                const ownerId = String(currentUser.id);
-                const proposalsCount = proposalsList.filter((proposal) => {
-                    const createdBy = proposal?.created_by ?? proposal?.createdBy ?? proposal?.user_id ?? proposal?.userId ?? proposal?.user?.id ?? proposal?.payload?.created_by ?? proposal?.payload?.user_id;
-                    return createdBy && String(createdBy) === ownerId;
-                }).length;
+                let proposalsCount = 0;
+
+                if (isAdmin) {
+                    proposalsCount = proposalsResult?.total_count ?? proposalsList.length;
+                } else {
+                    const ownerId = String(currentUser.id);
+                    proposalsCount = proposalsList.filter((proposal) => {
+                        const createdBy = proposal?.created_by ?? proposal?.createdBy ?? proposal?.user_id ?? proposal?.userId ?? proposal?.user?.id ?? proposal?.payload?.created_by ?? proposal?.payload?.user_id;
+                        return createdBy && String(createdBy) === ownerId;
+                    }).length;
+                }
+
                 setStats({ clients: clientsCount, proposals: proposalsCount, loading: false });
-            } catch {
+            } catch (err) {
+                console.error("Dashboard Stats Error:", err);
                 setStats({ clients: null, proposals: null, loading: false });
             }
         };
         loadStats();
-    }, [currentUser?.id]);
+    }, [currentUser?.id, isAdmin]);
 
     const renderStatValue = (value) => {
         if (stats.loading) return <Loader2 size={32} className="stat-loading-spinner" />;
@@ -107,7 +126,9 @@ const DashboardPage = () => {
                         </div>
                         <div className="stat-info">
                             <span className="stat-value">{renderStatValue(stats.clients)}</span>
-                            <span className="stat-label">Clientes cadastrados por você</span>
+                            <span className="stat-label">
+                                {isAdmin ? 'Clientes cadastrados no sistema' : 'Clientes cadastrados por você'}
+                            </span>
                         </div>
                     </div>
                     <div className="dashboard-stat-card">
@@ -116,7 +137,9 @@ const DashboardPage = () => {
                         </div>
                         <div className="stat-info">
                             <span className="stat-value">{renderStatValue(stats.proposals)}</span>
-                            <span className="stat-label">Propostas feitas por você</span>
+                            <span className="stat-label">
+                                {isAdmin ? 'Propostas emitidas no sistema' : 'Propostas feitas por você'}
+                            </span>
                         </div>
                     </div>
                 </section>
