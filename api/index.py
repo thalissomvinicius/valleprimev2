@@ -90,17 +90,27 @@ def hello():
     return jsonify({"status": "ok", "message": "Full system restored (v8.6-master-sync)", "time": datetime.datetime.now().isoformat()})
 
 def check_supabase_connection():
-    """Verify Supabase connectivity on startup"""
+    """Verify Supabase connectivity and ensure default admin exists"""
     try:
         from database import SUPABASE_URL, SUPABASE_KEY
         if not SUPABASE_URL or not SUPABASE_KEY:
             print("[STARTUP] WARNING: SUPABASE_URL or SUPABASE_KEY not set!")
             return False
-        result = count_users()
-        print(f"[STARTUP] Supabase connected. Users: {result.get('count', 0)}")
+            
+        # Check if admin user exists
+        admin = get_user_by_username('admin')
+        if not admin:
+            print("[STARTUP] Admin user not found. Seeding default admin...")
+            # Hash for 'admin123' (salt: 1234567890abcdef1234567890abcdef)
+            default_hash = "a09be37937be13180bb2ef0133b37803df3bf7c2688029514e868f0b09315d16:1234567890abcdef1234567890abcdef"
+            create_user('admin', default_hash, 'Administrador', 'admin', {"all": True}, True)
+            print("[STARTUP] Default admin seeded successfully.")
+        else:
+            print("[STARTUP] Supabase connected. Admin user exists.")
+        
         return True
     except Exception as e:
-        print(f"[STARTUP] Supabase connection test failed: {e}")
+        print(f"[STARTUP] Supabase connection/seed failed: {e}")
         return False
 
 @app.route('/api/debug/db')
