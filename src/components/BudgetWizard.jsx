@@ -12,7 +12,7 @@ import { Step1LotInfo, Step3Sinal, Step4Saldo, Step5Summary } from './BudgetWiza
 
 const ENV_API = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '');
 const isPagesDev = typeof window !== 'undefined' && /\.pages\.dev$/i.test(window.location?.hostname || '');
-const API_BASE_URL = ENV_API || (isPagesDev ? 'https://valleprimev2.onrender.com' : '');
+const API_BASE_URL = ENV_API || (isPagesDev ? 'https://valleprimev2-api-production.up.railway.app' : '');
 
 const BudgetWizard = ({ lot, onClose, obraName }) => {
     const { showToast } = useToast();

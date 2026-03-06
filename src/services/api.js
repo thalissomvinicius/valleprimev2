@@ -3,7 +3,7 @@ import axios from 'axios';
 // Em produção: use VITE_API_BASE se definido; senão fallback para a API no Render
 const ENV_API = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '');
 const isDev = import.meta.env.DEV;
-const PRODUCTION_API = 'https://valleprimev2.onrender.com';
+const PRODUCTION_API = 'https://valleprimev2-api-production.up.railway.app';
 // Se estiver no Cloudflare Pages (*.pages.dev), sempre usar a API no Render
 const isPagesDev = typeof window !== 'undefined' && /\.pages\.dev$/i.test(window.location?.hostname || '');
 const API_BASE_URL = ENV_API || (isPagesDev ? PRODUCTION_API : (isDev ? '' : PRODUCTION_API));
@@ -46,7 +46,7 @@ const requestWithRetry = async (fn, { retries = 2, baseDelay = 800 } = {}) => {
 };
 
 // Request interceptor: em *.pages.dev usar URL absoluta para o Render (garante que a requisição vá ao backend)
-const RENDER_API = 'https://valleprimev2.onrender.com';
+const RENDER_API = 'https://valleprimev2-api-production.up.railway.app'; // Now using Railway
 api.interceptors.request.use(config => {
   if (typeof window !== 'undefined' && /\.pages\.dev$/i.test(window.location?.hostname || '') && config.url?.startsWith?.('/api')) {
     // Para /api/consulta e /api/generate_proposal, usamos as functions locais do Cloudflare Pages
