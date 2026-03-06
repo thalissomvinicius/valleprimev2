@@ -20,7 +20,7 @@ export async function onRequest({ request, env }) {
     });
   }
 
-  const upstreamBase = (env?.PDF_UPSTREAM_BASE || "https://valleprimev2.onrender.com").replace(/\/$/, "");
+  const upstreamBase = (env?.PDF_UPSTREAM_BASE || "https://valleprimev2-api-production.up.railway.app").replace(/\/$/, "");
   const upstreamUrl = `${upstreamBase}/api/generate_proposal`;
 
   const auth = request.headers.get("authorization") || "";
