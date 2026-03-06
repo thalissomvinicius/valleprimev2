@@ -4,7 +4,6 @@ import os
 import datetime
 import traceback
 import json
-import sqlite3
 import hashlib
 import secrets
 import sys
@@ -25,17 +24,12 @@ CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'dev_secret_key_valle_prime_v2')
 
-# Database path for SQLite
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-if os.environ.get('VERCEL') == '1' or os.environ.get('RENDER') == '1' or os.path.exists('/opt/render'):
-    DB_PATH = '/tmp/clients.db'
-else:
-    DB_PATH = os.path.join(BASE_DIR, 'clients.db')
+# Supabase is the sole data source (configured via environment variables)
 
 from database import (
     get_user_by_id, get_user_by_username, get_all_users, create_user, update_user, delete_user, count_users,
     get_clients, check_duplicate_client, get_client_by_id, create_client, update_client, delete_client, count_clients, get_recent_clients,
-    get_proposals, get_proposal_by_id, count_proposals, create_proposal, update_proposal, delete_proposal, db_execute_sqlite
+    get_proposals, get_proposal_by_id, count_proposals, create_proposal, update_proposal, delete_proposal
 )
 
 def hash_password(password):
@@ -95,121 +89,24 @@ def hello():
     # v8.6 Full REST mapping with DELETE support
     return jsonify({"status": "ok", "message": "Full system restored (v8.6-master-sync)", "time": datetime.datetime.now().isoformat()})
 
-def migrate_db_internal():
-    """Internal migration logic to ensure tables exist"""
+def check_supabase_connection():
+    """Verify Supabase connectivity on startup"""
     try:
-        conn, db_type = get_db_connection()
-        cur = conn.cursor()
-        
-        if db_type == 'postgres':
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS clients (
-                    id SERIAL PRIMARY KEY,
-                    nome TEXT NOT NULL,
-                    cpf_cnpj TEXT NOT NULL,
-                    tipo_pessoa TEXT NOT NULL DEFAULT 'PF',
-                    created_by TEXT,
-                    data TEXT,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS users (
-                    id SERIAL PRIMARY KEY,
-                    username TEXT UNIQUE NOT NULL,
-                    password_hash TEXT NOT NULL,
-                    nome TEXT,
-                    role TEXT DEFAULT 'user',
-                    permissions TEXT,
-                    active BOOLEAN DEFAULT TRUE,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS proposals (
-                    id SERIAL PRIMARY KEY,
-                    user_id INTEGER,
-                    obra_codigo TEXT,
-                    obra_nome TEXT,
-                    quadra TEXT,
-                    lote TEXT,
-                    payload TEXT,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-        else:
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS clients (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    nome TEXT NOT NULL,
-                    cpf_cnpj TEXT NOT NULL,
-                    tipo_pessoa TEXT NOT NULL DEFAULT 'PF',
-                    created_by TEXT,
-                    data TEXT,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS users (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    username TEXT UNIQUE NOT NULL,
-                    password_hash TEXT NOT NULL,
-                    nome TEXT,
-                    role TEXT DEFAULT 'user',
-                    permissions TEXT,
-                    active BOOLEAN DEFAULT 1,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS proposals (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    user_id INTEGER,
-                    obra_codigo TEXT,
-                    obra_nome TEXT,
-                    quadra TEXT,
-                    lote TEXT,
-                    payload TEXT,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-        # Ensure admin user exists
-        admin_exists = False
-        if db_type == 'postgres':
-            cur.execute("SELECT 1 FROM users WHERE username = 'admin'")
-            admin_exists = bool(cur.fetchone())
-        else:
-            cur.execute("SELECT 1 FROM users WHERE username = 'admin'")
-            admin_exists = bool(cur.fetchone())
-            
-        if not admin_exists:
-            # Hash for 'admin123'
-            # salt: 1234567890abcdef1234567890abcdef
-            # pbkdf2: SHA256, 100k, admin123 -> a09be...
-            default_hash = "a09be37937be13180bb2ef0133b37803df3bf7c2688029514e868f0b09315d16:1234567890abcdef1234567890abcdef"
-            if db_type == 'postgres':
-                cur.execute("INSERT INTO users (username, password_hash, nome, role, active) VALUES (%s, %s, %s, %s, %s)",
-                           ('admin', default_hash, 'Administrador', 'admin', True))
-            else:
-                cur.execute("INSERT INTO users (username, password_hash, nome, role, active) VALUES (?, ?, ?, ?, ?)",
-                           ('admin', default_hash, 'Administrador', 'admin', 1))
-        
-        conn.commit()
-        conn.close()
+        from database import SUPABASE_URL, SUPABASE_KEY
+        if not SUPABASE_URL or not SUPABASE_KEY:
+            print("[STARTUP] WARNING: SUPABASE_URL or SUPABASE_KEY not set!")
+            return False
+        result = count_users()
+        print(f"[STARTUP] Supabase connected. Users: {result.get('count', 0)}")
         return True
     except Exception as e:
-        print(f"MIGRATION ERROR: {e}")
-        traceback.print_exc()
+        print(f"[STARTUP] Supabase connection test failed: {e}")
         return False
 
 @app.route('/api/debug/db')
 def debug_db():
     try:
-        # Test manual insert if requested
+        from database import SUPABASE_URL, SUPABASE_KEY
         if request.args.get('test_insert') == 'true':
             create_client("Teste Manual", "00000000000", "PF", "system", {})
             return jsonify({"message": "Manual test insert executed. Refresh this page to see count."})
@@ -218,12 +115,11 @@ def debug_db():
         users_count = count_users()
         last_clients = get_recent_clients(5)
         
-        # Environment check (hiding secrets)
         env_vars = {k: "SET" if "KEY" in k or "URL" in k or "PASSWORD" in k or "SECRET" in k else v 
                    for k, v in os.environ.items() if k in ['DATABASE_URL', 'DATABASE_URL1', 'VERCEL', 'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY']}
         
         return jsonify({
-            "database": "connected",
+            "database": "supabase-only",
             "clients_total": clients_count['count'] if clients_count else 0,
             "users_total": users_count['count'] if users_count else 0,
             "last_clients": last_clients or [],
@@ -235,13 +131,6 @@ def debug_db():
         })
     except Exception as e:
         return jsonify({"error": str(e), "trace": traceback.format_exc()}), 500
-
-@app.route('/api/migrate-db')
-def migrate_db():
-    if migrate_db_internal():
-        return jsonify({"success": True, "message": "Database initialized/migrated"})
-    else:
-        return jsonify({"success": False, "message": "Migration failed (check logs)"}), 500
 
 def get_optional_user_from_token():
     auth_header = request.headers.get('Authorization', '')
@@ -1144,13 +1033,12 @@ def debug_env():
 
     return jsonify({"env": env_vars, "status": "alive", "proposals_health": proposals_health})
 
-# Auto-migrate database on startup
+# Check Supabase connectivity on startup
 try:
-    print("[STARTUP] Running database migration...")
-    migrate_db_internal()
-    print("[STARTUP] Database migration completed successfully")
+    print("[STARTUP] Checking Supabase connectivity...")
+    check_supabase_connection()
 except Exception as e:
-    print(f"[STARTUP] Database migration failed: {e}")
+    print(f"[STARTUP] Supabase check failed: {e}")
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "5000"))
