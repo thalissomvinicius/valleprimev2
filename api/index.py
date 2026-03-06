@@ -961,12 +961,14 @@ def generate_proposal():
                         data.setdefault('saldo_valor_parcela', format_currency(val_parc))
                     data.setdefault('saldo_periodicidade', 'MENSAL')
                     
-                    if installments <= 36:
+                    if installments == 1:
                         tipo = "FIXA"
+                    elif installments <= 36:
+                        tipo = "FIXAS"
                     elif installments <= 72:
-                        tipo = "CORRIGIDA"
+                        tipo = "CORRIGIDAS"
                     else:
-                        tipo = "REAJUSTÁVEL"
+                        tipo = "REAJUSTÁVEIS"
                         
                     data.setdefault('saldo_tipo_parcela', tipo)
                 except:
