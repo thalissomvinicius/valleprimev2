@@ -48,7 +48,44 @@ def format_cpf_cnpj(value):
     return value  # Return original if not valid
 
 
+def apply_gender_grammar(data):
+    """Corrigir gramática de nacionalidade e estado civil baseado no sexo, e limpar dados nulos do 2º proponente"""
+    
+    # 1. Proponente Principal
+    is_fem_p1 = data.get('sexo_fem_proponente') is True
+    
+    if is_fem_p1:
+        if str(data.get('nacionalidade_proponente', '')).upper() == 'BRASILEIRO':
+            data['nacionalidade_proponente'] = 'BRASILEIRA'
+            
+        estado_civil_p1 = str(data.get('estado_civil_proponente', '')).upper()
+        if estado_civil_p1 in ['CASADO', 'DIVORCIADO', 'SOLTEIRO', 'VIÚVO', 'VIUVO']:
+            # Replace trailing 'O' with 'A'
+            data['estado_civil_proponente'] = estado_civil_p1[:-1] + 'A'
+            
+    # 2. Segundo Proponente
+    nome_p2 = str(data.get('nome_segundo', '')).strip()
+    if not nome_p2:
+        # Limpar lixo se não houver segundo proponente de fato
+        data['nacionalidade_segundo'] = ''
+        data['estado_civil_segundo'] = ''
+        data['profissao_segundo'] = ''
+        data['cpf_cnpj_segundo'] = ''
+        data['rg_segundo'] = ''
+    else:
+        is_fem_p2 = data.get('sexo_fem_segundo') is True
+        if is_fem_p2:
+            if str(data.get('nacionalidade_segundo', '')).upper() == 'BRASILEIRO':
+                data['nacionalidade_segundo'] = 'BRASILEIRA'
+                
+            estado_civil_p2 = str(data.get('estado_civil_segundo', '')).upper()
+            if estado_civil_p2 in ['CASADO', 'DIVORCIADO', 'SOLTEIRO', 'VIÚVO', 'VIUVO']:
+                data['estado_civil_segundo'] = estado_civil_p2[:-1] + 'A'
+
 def generate_pdf_reportlab(data, background_image_path, positions_path, output_filename="proposta_final_output.pdf"):
+    # Apply grammar fixes before drawing
+    apply_gender_grammar(data)
+    
     # Load positions
     with open(positions_path, 'r', encoding='utf-8') as f:
         positions = json.load(f)
