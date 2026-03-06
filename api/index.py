@@ -32,249 +32,11 @@ if os.environ.get('VERCEL') == '1' or os.environ.get('RENDER') == '1' or os.path
 else:
     DB_PATH = os.path.join(BASE_DIR, 'clients.db')
 
-# Supabase REST Config
-SUPABASE_URL = os.environ.get('SUPABASE_URL', '').rstrip('/')
-SUPABASE_KEY = os.environ.get('SUPABASE_SERVICE_ROLE_KEY') or os.environ.get('SUPABASE_ANON_KEY')
-
-def get_db_connection():
-    # Only SQLite fallback now
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn, 'sqlite'
-
-def query_supabase_rest(table, method='GET', params=None, data=None):
-    if not SUPABASE_URL or not SUPABASE_KEY:
-        return None
-        
-    url = f"{SUPABASE_URL}/rest/v1/{table}"
-    if params:
-        url += f"?{params}"
-    
-    headers = {
-        "apikey": SUPABASE_KEY,
-        "Authorization": f"Bearer {SUPABASE_KEY}",
-        "Content-Type": "application/json",
-        "Prefer": "return=representation" if method in ['POST', 'PATCH'] else ""
-    }
-    
-    try:
-        timeout_seconds = 5
-        if method == 'GET':
-            response = requests.get(url, headers=headers, timeout=timeout_seconds)
-        elif method == 'POST':
-            response = requests.post(url, headers=headers, json=data, timeout=timeout_seconds)
-        elif method == 'PATCH':
-            response = requests.patch(url, headers=headers, json=data, timeout=timeout_seconds)
-        elif method == 'DELETE':
-            response = requests.delete(url, headers=headers, timeout=timeout_seconds)
-        
-        # Log response for debug
-        print(f"[Supabase REST] {method} {url} -> {response.status_code}")
-        
-        if response.status_code in [200, 201, 204, 206]:
-            if not response.text: return True
-            try:
-                return response.json()
-            except:
-                return True
-        
-        print(f"[Supabase REST ERROR] {response.status_code}: {response.text}")
-        return None
-    except Exception as e:
-        # Fail fast so we can fallback to SQLite without hanging the request
-        print(f"[Supabase REST EXCEPTION] {e}")
-        return None
-
-def query_db(sql, params=(), one=False, commit=False):
-    # Try Supabase REST API first if configured and it's a known simple query
-    if SUPABASE_URL and SUPABASE_KEY:
-        table = None
-        sql_lower = sql.lower()
-        if "clients" in sql_lower: table = "clients"
-        elif "users" in sql_lower: table = "users"
-        elif "proposals" in sql_lower: table = "proposals"
-        
-        if table:
-            try:
-                # Handle INSERT
-                if "INSERT INTO" in sql:
-                    # Very basic parser for our specific inserts
-                    if table == "clients":
-                        payload = {
-                            "nome": params[0],
-                            "cpf_cnpj": params[1],
-                            "tipo_pessoa": params[2],
-                            "created_by": params[3],
-                            "data": params[4]
-                        }
-                    elif table == "users":
-                        payload = {
-                            "username": params[0],
-                            "password_hash": params[1],
-                            "nome": params[2],
-                            "role": params[3],
-                            "active": params[4],
-                            "permissions": json.loads(params[5]) if len(params) > 5 and isinstance(params[5], str) else (params[5] if len(params) > 5 else {})
-                        }
-                    elif table == "proposals":
-                        payload = {
-                            "user_id": params[0],
-                            "obra_codigo": params[1],
-                            "obra_nome": params[2],
-                            "quadra": params[3],
-                            "lote": params[4],
-                            "payload": json.loads(params[5]) if isinstance(params[5], str) and params[5].startswith('{') else params[5]
-                        }
-                    res = query_supabase_rest(table, 'POST', data=payload)
-                    return True if res is not None else False
-                
-                # Handle UPDATE
-                if "UPDATE" in sql.upper() and "SET" in sql.upper():
-                    # Parse: UPDATE table SET col1=?, col2=? WHERE id=?
-                    import re
-                    set_match = re.search(r"SET\s+(.+?)\s+WHERE", sql, re.IGNORECASE)
-                    if set_match and "id = ?" in sql.lower():
-                        set_part = set_match.group(1)
-                        cols = re.findall(r"(\w+)\s*=\s*\?", set_part)
-                        payload = {}
-                        for i, col in enumerate(cols):
-                            if i < len(params) - 1:  # last param is id
-                                val = params[i]
-                                if isinstance(val, str) and (val.startswith('{') or val.startswith('[')):
-                                    try:
-                                        val = json.loads(val)
-                                    except:
-                                        pass
-                                payload[col] = val
-                        user_id = params[-1]
-                        where_clause = f"id=eq.{user_id}"
-                        print(f"[SUPABASE UPDATE] table={table}, payload={payload}, where={where_clause}")
-                        res = query_supabase_rest(table, 'PATCH', params=where_clause, data=payload)
-                        return True if res is not None else False
-                
-                # Handle DELETE
-                if "DELETE FROM" in sql:
-                    where_id = f"id=eq.{params[0]}"
-                    res = query_supabase_rest(table, 'DELETE', params=where_id)
-                    return True if res is not None else False
-
-                # Handle SELECT COUNT
-                if "COUNT(*)" in sql:
-                    where_clause = None
-                    if "WHERE" in sql:
-                        if "created_by =" in sql:
-                            where_clause = f"created_by=eq.{params[0]}"
-                        elif "id =" in sql:
-                            where_clause = f"id=eq.{params[0]}"
-                    
-                    # PostgREST count is a bit tricky, but we'll use a simple approach
-                    # Just get the list and return length or use Prefer: count=exact if needed
-                    # For now, let's get matching items
-                    res = query_supabase_rest(table, 'GET', params=where_clause)
-                    count = len(res) if isinstance(res, list) else 0
-                    if one:
-                        return {"count": count}
-                    return [{"count": count}]
-
-                # Handle SELECT (all columns or specific columns)
-                if "SELECT" in sql.upper() and "FROM" in sql.upper():
-                    rest_params = []
-                    
-                    # Extract columns if not SELECT *
-                    import re
-                    col_match = re.search(r"SELECT\s+(.+?)\s+FROM", sql, re.IGNORECASE)
-                    if col_match and col_match.group(1).strip() != '*':
-                        cols = col_match.group(1).strip()
-                        rest_params.append(f"select={cols}")
-                    
-                    # Parse WHERE clause with multiple conditions
-                    if "WHERE" in sql.upper():
-                        where_match = re.search(r"WHERE\s+(.+?)(?:ORDER BY|LIMIT|$)", sql, re.IGNORECASE | re.DOTALL)
-                        if where_match:
-                            where_part = where_match.group(1).strip()
-                            # Find all column = ? patterns
-                            conditions = re.findall(r"(\w+)\s*=\s*\?", where_part)
-                            for i, col in enumerate(conditions):
-                                if i < len(params):
-                                    val = params[i]
-                                    if isinstance(val, bool):
-                                        val = str(val).lower()
-                                    rest_params.append(f"{col}=eq.{val}")
-                    
-                    if "ORDER BY created_at DESC" in sql:
-                        rest_params.append("order=created_at.desc")
-                    elif "ORDER BY id" in sql:
-                        rest_params.append("order=id.asc")
-
-                    if "LIMIT ? OFFSET ?" in sql.upper() and len(params) >= 2:
-                        rest_params.append(f"limit={params[-2]}")
-                        rest_params.append(f"offset={params[-1]}")
-                    
-                    final_params = "&".join(rest_params) if rest_params else None
-                    print(f"[SUPABASE SELECT] table={table}, params={final_params}")
-                    res = query_supabase_rest(table, 'GET', params=final_params)
-                    
-                    if one:
-                        return res[0] if (isinstance(res, list) and len(res) > 0) else None
-                    return res or []
-
-            except Exception as api_err:
-                print(f"[Supabase API Fallback Error] {api_err}")
-                import traceback
-                traceback.print_exc()
-
-    # Original direct connection logic
-    conn, db_type = None, None
-    try:
-        conn, db_type = get_db_connection()
-        cur = conn.cursor()
-        if db_type == 'postgres':
-            sql = sql.replace('?', '%s')
-        cur.execute(sql, params)
-        rowcount = cur.rowcount
-        if commit:
-            conn.commit()
-            print(f"[DB] Committed. Rowcount: {rowcount}")
-            return True
-        if one:
-            rv = cur.fetchone()
-            if rv:
-                col_names = [desc[0] for desc in cur.description]
-                result = dict(zip(col_names, rv))
-                # Convert datetime to string for JSON compatibility
-                for key, val in result.items():
-                    if isinstance(val, (datetime.datetime, datetime.date)):
-                        result[key] = val.isoformat()
-                return result
-            return None
-        rv = cur.fetchall()
-        if cur.description:
-            col_names = [desc[0] for desc in cur.description]
-            results = []
-            for row in rv:
-                row_dict = dict(zip(col_names, row))
-                # Convert datetime to string for JSON compatibility
-                for key, val in row_dict.items():
-                    if isinstance(val, (datetime.datetime, datetime.date)):
-                        row_dict[key] = val.isoformat()
-                results.append(row_dict)
-            return results
-        return []
-    except Exception as e:
-        print(f"QUERY ERROR: {e}")
-        if conn:
-            try:
-                conn.rollback()
-            except:
-                pass
-        # Re-raise the exception instead of returning None
-        raise
-    finally:
-        if conn: 
-            try:
-                conn.close()
-            except:
-                pass
+from database import (
+    get_user_by_id, get_user_by_username, get_all_users, create_user, update_user, delete_user, count_users,
+    get_clients, check_duplicate_client, get_client_by_id, create_client, update_client, delete_client, count_clients, get_recent_clients,
+    get_proposals, get_proposal_by_id, count_proposals, create_proposal, update_proposal, delete_proposal, db_execute_sqlite
+)
 
 def hash_password(password):
     salt = secrets.token_hex(16)
@@ -449,13 +211,12 @@ def debug_db():
     try:
         # Test manual insert if requested
         if request.args.get('test_insert') == 'true':
-            query_db("INSERT INTO clients (nome, cpf_cnpj, tipo_pessoa, created_by, data) VALUES (?, ?, ?, ?, ?)",
-                     ("Teste Manual", "00000000000", "PF", "system", "{}"), commit=True)
+            create_client("Teste Manual", "00000000000", "PF", "system", {})
             return jsonify({"message": "Manual test insert executed. Refresh this page to see count."})
 
-        clients_count = query_db("SELECT COUNT(*) as count FROM clients", one=True)
-        users_count = query_db("SELECT COUNT(*) as count FROM users", one=True)
-        last_clients = query_db("SELECT id, nome, created_at, created_by FROM clients ORDER BY id DESC LIMIT 5")
+        clients_count = count_clients()
+        users_count = count_users()
+        last_clients = get_recent_clients(5)
         
         # Environment check (hiding secrets)
         env_vars = {k: "SET" if "KEY" in k or "URL" in k or "PASSWORD" in k or "SECRET" in k else v 
@@ -515,11 +276,7 @@ def store_proposal(payload, user_id):
     obra_codigo, obra_nome, quadra, lote = extract_proposal_meta(payload)
     print(f"\n[DEBUG STORE_PROPOSAL] Preparing to insert into proposals: user_id={user_id}, obra_codigo={obra_codigo}, obra_nome={obra_nome}, quadra={quadra}, lote={lote}")
     try:
-        query_db(
-            "INSERT INTO proposals (user_id, obra_codigo, obra_nome, quadra, lote, payload) VALUES (?, ?, ?, ?, ?, ?)",
-            (user_id, obra_codigo, obra_nome, quadra, lote, json.dumps(payload)),
-            commit=True
-        )
+        create_proposal(user_id, obra_codigo, obra_nome, quadra, lote, payload)
         print("[DEBUG STORE_PROPOSAL] Insert successful.")
     except Exception as e:
         print(f"[DEBUG STORE_PROPOSAL] Insert exception: {e}")
@@ -541,19 +298,10 @@ def auth_me():
         
         user_id = payload.get('user_id')
         
-        # Admin hardcoded
-        if user_id == 1 and payload.get('role') == 'admin':
-            return jsonify({
-                'user': {
-                    'id': 1,
-                    'username': 'admin',
-                    'role': 'admin',
-                    'permissions': {"canViewAllClients": True}
-                }
-            })
+        # Removed hardcoded admin bypass
             
         # Buscar usuário no banco
-        user_record = query_db("SELECT id, username, nome, role, permissions, active FROM users WHERE id = ?", (user_id,), one=True)
+        user_record = get_user_by_id(user_id)
         
         if user_record:
             # Rejeitar se inativo
@@ -590,32 +338,7 @@ def auth_me():
     except jwt.InvalidTokenError:
         return jsonify({'message': 'Invalid token'}), 401
 
-# ROTA TEMPORÁRIA - Reset senha admin (REMOVER APÓS USO)
-@app.route('/api/reset-admin-password', methods=['GET'])
-def reset_admin_password():
-    """Reset admin password to admin123 - TEMPORARY ROUTE"""
-    if not SUPABASE_URL or not SUPABASE_KEY:
-        return jsonify({'error': 'Supabase not configured'}), 500
-    
-    # MD5 hash of 'admin123'
-    new_hash = hashlib.md5('admin123'.encode()).hexdigest()
-    
-    # Update via Supabase REST API
-    try:
-        res = query_supabase_rest('users', 'PATCH', 
-            params='username=eq.admin',
-            data={'password_hash': new_hash})
-        
-        if res:
-            return jsonify({
-                'success': True, 
-                'message': 'Admin password reset to admin123',
-                'new_hash': new_hash
-            })
-        else:
-            return jsonify({'error': 'Failed to update'}), 500
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+
 
 # ROTA ALTERNATIVA GET - para contornar problema de body parsing no Vercel
 @app.route('/api/login-get', methods=['GET'])
@@ -627,81 +350,20 @@ def login_get():
     if not username or not password:
         return jsonify({'message': 'Credentials required'}), 400
     
-    # TEMPORARY HARDCODED BYPASS - allows admin login while DB issue is investigated
-    if username == 'admin' and password == 'admin123':
-        try:
-            token = jwt.encode({
-                'user_id': 1,
-                'role': 'admin',
-                'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=12)
-            }, SECRET_KEY, algorithm="HS256")
-            if isinstance(token, bytes): token = token.decode('utf-8')
-            
-            return jsonify({
-                'token': token,
-                'user': {
-                    'id': 1,
-                    'username': 'admin',
-                    'role': 'admin',
-                    'permissions': {"canViewAllClients": True}
-                }
-            })
-        except Exception as e:
-            print(f"[LOGIN-GET] Token generation failed: {e}")
-            return jsonify({'message': 'Internal error'}), 500
+
     
-    user = None
-    
-    # Try Supabase REST API first (production)
-    if SUPABASE_URL and SUPABASE_KEY:
-        try:
-            rest_params = f"username=eq.{username}&active=eq.true&select=*"
-            res = query_supabase_rest('users', 'GET', params=rest_params)
-            if isinstance(res, list) and len(res) > 0:
-                user = res[0]
-                print(f"[LOGIN-GET] Found user via Supabase: {user.get('username')}")
-        except Exception as e:
-            print(f"[LOGIN-GET] Supabase lookup failed: {e}")
-    
-    # Fallback to SQLite if Supabase not configured or user not found
-    if not user:
-        conn = None
-        try:
-            conn, db_type = get_db_connection()
-            cur = conn.cursor()
-            sql = "SELECT * FROM users WHERE username = ? AND active = ?"
-            cur.execute(sql, (username, True))
-            rv = cur.fetchone()
-            
-            if rv:
-                col_names = [desc[0] for desc in cur.description]
-                user = dict(zip(col_names, rv))
-            
-            # If user not found and table might be empty, try to create admin once
-            if not user and username == 'admin' and password == 'admin123':
-                cnt_sql = "SELECT count(*) as cnt FROM users"
-                cur.execute(cnt_sql)
-                res = cur.fetchone()
-                cnt = res[0] if res else 0
-                
-                if cnt == 0:
-                    pw_hash = hash_password('admin123')
-                    ins_sql = "INSERT INTO users (username, password_hash, nome, role, active, permissions) VALUES (?, ?, ?, ?, ?, ?)"
-                    cur.execute(ins_sql, ('admin', pw_hash, 'Admin', 'admin', True, json.dumps({"canViewAllClients": True})))
-                    conn.commit()
-                    
-                    cur.execute(sql, ('admin', True))
-                    rv = cur.fetchone()
-                    if rv:
-                        col_names = [desc[0] for desc in cur.description]
-                        user = dict(zip(col_names, rv))
-            
-            if conn: conn.close()
-        except Exception as e:
-            if conn:
-                try: conn.close()
-                except: pass
-            print(f"[LOGIN-GET] SQLite lookup failed: {e}")
+    try:
+        user = get_user_by_username(username, active_only=True)
+        # If user not found and table might be empty, try to create admin once
+        if not user and username == 'admin' and password == 'admin123':
+            cnt_res = count_users()
+            if cnt_res and cnt_res.get('count', 0) == 0:
+                pw_hash = hash_password('admin123')
+                create_user('admin', pw_hash, 'Admin', 'admin', {"canViewAllClients": True}, True)
+                user = get_user_by_username('admin', active_only=True)
+    except Exception as e:
+        print(f"[LOGIN-GET] Lookup failed: {e}")
+        user = None
     
     if not user:
         return jsonify({'message': 'Invalid credentials'}), 401
@@ -756,78 +418,19 @@ def login():
         if not username or not password:
             return jsonify({'message': 'Credentials required'}), 400
         
-        # TEMPORARY HARDCODED BYPASS - allows admin login while DB issue is investigated
-        if username == 'admin' and password == 'admin123':
-            token = jwt.encode({
-                'user_id': 1,
-                'role': 'admin',
-                'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=12)
-            }, SECRET_KEY, algorithm="HS256")
-            if isinstance(token, bytes): token = token.decode('utf-8')
-            
-            return jsonify({
-                'token': token,
-                'user': {
-                    'id': 1,
-                    'username': 'admin',
-                    'role': 'admin',
-                    'permissions': {"canViewAllClients": True}
-                }
-            })
+
         
-        user = None
-        
-        # Try Supabase REST API first (production)
-        if SUPABASE_URL and SUPABASE_KEY:
-            try:
-                rest_params = f"username=eq.{username}&active=eq.true&select=*"
-                res = query_supabase_rest('users', 'GET', params=rest_params)
-                if isinstance(res, list) and len(res) > 0:
-                    user = res[0]
-                    print(f"[LOGIN POST] Found user via Supabase: {user.get('username')}")
-            except Exception as e:
-                print(f"[LOGIN POST] Supabase lookup failed: {e}")
-        
-        # Fallback to SQLite if Supabase not configured or user not found
-        if not user:
-            conn = None
-            try:
-                conn, db_type = get_db_connection()
-                
-                cur = conn.cursor()
-                sql = "SELECT * FROM users WHERE username = %s AND active = %s" if db_type == 'postgres' else "SELECT * FROM users WHERE username = ? AND active = ?"
-                cur.execute(sql, (username, True))
-                rv = cur.fetchone()
-                
-                if rv:
-                    col_names = [desc[0] for desc in cur.description]
-                    user = dict(zip(col_names, rv))
-                
-                # If user not found and table might be empty, try to create admin once
-                if not user and username == 'admin' and password == 'admin123':
-                     cnt_sql = "SELECT count(*) as cnt FROM users"
-                     cur.execute(cnt_sql)
-                     res = cur.fetchone()
-                     cnt = res[0] if res else 0
-                     
-                     if cnt == 0:
-                         pw_hash = hash_password('admin123')
-                         ins_sql = "INSERT INTO users (username, password_hash, nome, role, active, permissions) VALUES (%s, %s, %s, %s, %s, %s)" if db_type == 'postgres' else "INSERT INTO users (username, password_hash, nome, role, active, permissions) VALUES (?, ?, ?, ?, ?, ?)"
-                         cur.execute(ins_sql, ('admin', pw_hash, 'Admin', 'admin', True, json.dumps({"canViewAllClients": True})))
-                         conn.commit()
-                         
-                         cur.execute(sql, ('admin', True))
-                         rv = cur.fetchone()
-                         if rv:
-                            col_names = [desc[0] for desc in cur.description]
-                            user = dict(zip(col_names, rv))
-                
-                if conn: conn.close()
-            except Exception as e:
-                if conn:
-                    try: conn.close()
-                    except: pass
-                print(f"[LOGIN POST] SQLite lookup failed: {e}")
+        try:
+            user = get_user_by_username(username, active_only=True)
+            if not user and username == 'admin' and password == 'admin123':
+                cnt_res = count_users()
+                if cnt_res and cnt_res.get('count', 0) == 0:
+                    pw_hash = hash_password('admin123')
+                    create_user('admin', pw_hash, 'Admin', 'admin', {"canViewAllClients": True}, True)
+                    user = get_user_by_username('admin', active_only=True)
+        except Exception as e:
+            print(f"[LOGIN POST] Lookup failed: {e}")
+            user = None
 
         if not user:
             return jsonify({'message': 'Invalid credentials (User not found)'}), 401
@@ -873,18 +476,10 @@ def list_proposals():
         if limit < 1: limit = 50
         offset = (page - 1) * limit
 
-        if request.user_role == 'admin':
-            where_sql = ""
-            params = ()
-        else:
-            where_sql = "WHERE user_id = ?"
-            params = (request.user_id,)
-
-        total_count = query_db(f"SELECT COUNT(*) as count FROM proposals {where_sql}", params, one=True)
-        rows = query_db(
-            f"SELECT id, user_id, obra_codigo, obra_nome, quadra, lote, payload, created_at, updated_at FROM proposals {where_sql} ORDER BY created_at DESC LIMIT ? OFFSET ?",
-            params + (limit, offset)
-        )
+        uid_filter = None if request.user_role == 'admin' else request.user_id
+        
+        total_count = count_proposals(uid_filter)
+        rows = get_proposals(uid_filter, limit, offset)
 
         proposals = []
         for row in rows:
@@ -927,7 +522,7 @@ def proposal_detail(proposal_id):
         return jsonify({"error": "Forbidden"}), 403
 
     if request.method == 'DELETE':
-        query_db("DELETE FROM proposals WHERE id = ?", (proposal_id,), commit=True)
+        delete_proposal(proposal_id)
         return jsonify({"success": True})
 
     if request.method == 'GET':
@@ -955,11 +550,7 @@ def proposal_detail(proposal_id):
         return jsonify({"error": "Invalid payload"}), 400
 
     obra_codigo, obra_nome, quadra, lote = extract_proposal_meta(payload)
-    query_db(
-        "UPDATE proposals SET payload = ?, obra_codigo = ?, obra_nome = ?, quadra = ?, lote = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-        (json.dumps(payload), obra_codigo, obra_nome, quadra, lote, proposal_id),
-        commit=True
-    )
+    update_proposal(proposal_id, obra_codigo, obra_nome, quadra, lote, payload)
     return jsonify({"success": True})
 
 @app.route('/api/proposals/<int:proposal_id>/pdf', methods=['GET'])
@@ -1149,14 +740,10 @@ def manage_clients():
         if created_by and (request.user_role == 'admin' or str(created_by) == str(request.user_id)):
             force_created_by = str(created_by)
         
-        # Filter by tipo_pessoa AND optionally by created_by
         if can_see_all:
-            if force_created_by:
-                clients = query_db("SELECT * FROM clients WHERE tipo_pessoa = ? AND created_by = ? ORDER BY created_at DESC", (client_type, force_created_by))
-            else:
-                clients = query_db("SELECT * FROM clients WHERE tipo_pessoa = ? ORDER BY created_at DESC", (client_type,))
+            clients = get_clients(client_type, force_created_by if force_created_by else None)
         else:
-            clients = query_db("SELECT * FROM clients WHERE tipo_pessoa = ? AND created_by = ? ORDER BY created_at DESC", (client_type, str(request.user_id)))
+            clients = get_clients(client_type, str(request.user_id))
         
         print(f"[DEBUG] Found {len(clients) if clients else 0} clients")
         # Normalize response for frontend
@@ -1199,14 +786,14 @@ def manage_clients():
                 }), 400
 
             if client_id:
-                existing = query_db("SELECT id, created_by FROM clients WHERE id = ?", (client_id,), one=True)
+                existing = get_client_by_id(client_id)
                 if not existing:
                     return jsonify({'success': False, 'error': 'Cliente não encontrado'}), 404
 
                 can_update_any = request.user_role == 'admin'
                 if not can_update_any:
-                    user = query_db("SELECT permissions FROM users WHERE id = ?", (request.user_id,), one=True)
-                    perms = json.loads(user['permissions']) if user and user['permissions'] else {}
+                    user = get_user_by_id(request.user_id)
+                    perms = json.loads(user['permissions']) if user and isinstance(user.get('permissions'), str) else (user.get('permissions') or {})
                     can_update_any = perms.get('canViewAllClients', False)
 
                 if not can_update_any and str(existing.get('created_by')) != str(request.user_id):
@@ -1214,40 +801,28 @@ def manage_clients():
 
                 updated_at = datetime.datetime.now().isoformat()
                 print(f"[DEBUG] Attempting to update client: {client_id} - {nome} - {cpf_cnpj}")
-                success = query_db(
-                    "UPDATE clients SET nome = ?, cpf_cnpj = ?, tipo_pessoa = ?, data = ?, updated_at = ? WHERE id = ?",
-                    (nome, cpf_cnpj, tipo_pessoa, json.dumps(data), updated_at, client_id),
-                    commit=True
-                )
+                success = update_client(client_id, nome, cpf_cnpj, tipo_pessoa, data, updated_at)
                 print(f"[DEBUG] Update result: {success}")
                 if success:
                     return jsonify({'success': True, 'message': 'Cliente atualizado com sucesso', 'database': 'supabase-rest'})
                 return jsonify({'success': False, 'error': 'Falha ao atualizar no banco de dados Supabase'}), 500
 
-            existing = query_db(
-                "SELECT id FROM clients WHERE cpf_cnpj = ? AND tipo_pessoa = ? AND created_by = ? ORDER BY id DESC LIMIT 1",
-                (cpf_cnpj, tipo_pessoa, str(request.user_id)),
-                one=True
-            )
-            if existing and existing.get('id'):
+            existing_id = None
+            for c in get_clients(tipo_pessoa, str(request.user_id)):
+                if c.get('cpf_cnpj') == cpf_cnpj:
+                    existing_id = c.get('id')
+                    break
+            if existing_id:
                 updated_at = datetime.datetime.now().isoformat()
-                print(f"[DEBUG] Attempting to update existing client by CPF/CNPJ: {existing.get('id')}")
-                success = query_db(
-                    "UPDATE clients SET nome = ?, cpf_cnpj = ?, tipo_pessoa = ?, data = ?, updated_at = ? WHERE id = ?",
-                    (nome, cpf_cnpj, tipo_pessoa, json.dumps(data), updated_at, existing.get('id')),
-                    commit=True
-                )
+                print(f"[DEBUG] Attempting to update existing client by CPF/CNPJ: {existing_id}")
+                success = update_client(existing_id, nome, cpf_cnpj, tipo_pessoa, data, updated_at)
                 print(f"[DEBUG] Update result: {success}")
                 if success:
                     return jsonify({'success': True, 'message': 'Cliente atualizado com sucesso', 'database': 'supabase-rest'})
                 return jsonify({'success': False, 'error': 'Falha ao atualizar no banco de dados Supabase'}), 500
 
             print(f"[DEBUG] Attempting to insert client: {nome} - {cpf_cnpj}")
-            success = query_db(
-                "INSERT INTO clients (nome, cpf_cnpj, tipo_pessoa, created_by, data) VALUES (?, ?, ?, ?, ?)",
-                (nome, cpf_cnpj, tipo_pessoa, str(request.user_id), json.dumps(data)),
-                commit=True
-            )
+            success = create_client(nome, cpf_cnpj, tipo_pessoa, str(request.user_id), data)
             print(f"[DEBUG] Insert result: {success}")
 
             if success:
@@ -1279,17 +854,11 @@ def delete_client(client_id):
         # Check permissions - only admin or the user who created the client can delete
         can_delete_any = request.user_role == 'admin'
         if not can_delete_any:
-            user = query_db("SELECT permissions FROM users WHERE id = ?", (request.user_id,), one=True)
-            perms = json.loads(user['permissions']) if user and user['permissions'] else {}
+            user = get_user_by_id(request.user_id)
+            perms = json.loads(user['permissions']) if user and isinstance(user.get('permissions'), str) else (user.get('permissions') or {})
             can_delete_any = perms.get('canViewAllClients', False)
         
-        if can_delete_any:
-            # Admin can delete any client
-            result = query_db("DELETE FROM clients WHERE id = ?", (client_id,), commit=True)
-        else:
-            # Regular user can only delete their own clients
-            result = query_db("DELETE FROM clients WHERE id = ? AND created_by = ?", 
-                            (client_id, str(request.user_id)), commit=True)
+        result = delete_client(client_id, None if can_delete_any else str(request.user_id))
         
         if result:
             return jsonify({'success': True, 'message': 'Cliente excluído com sucesso'})
@@ -1325,15 +894,7 @@ def check_duplicate_client():
             if match:
                 client_id = int(match.group())
         
-        # Check if exists
-        if client_id:
-            # Editing existing client - exclude self from check
-            existing = query_db("SELECT id, nome FROM clients WHERE cpf_cnpj = ? AND id != ?", 
-                               (cpf_cnpj, client_id), one=True)
-        else:
-            # New client
-            existing = query_db("SELECT id, nome FROM clients WHERE cpf_cnpj = ?", 
-                               (cpf_cnpj,), one=True)
+        existing = check_duplicate_client(cpf_cnpj, client_id)
         
         if existing:
             return jsonify({'exists': True, 'client_name': existing['nome'], 'client_id': existing['id']})
@@ -1353,9 +914,9 @@ def manage_users():
         return jsonify({'message': 'Forbidden'}), 403
     
     if request.method == 'GET':
-        users = query_db("SELECT id, username, nome, role, permissions, active FROM users ORDER BY id")
+        users = get_all_users()
         for u in users:
-             u['permissions'] = json.loads(u['permissions']) if u['permissions'] else {}
+             u['permissions'] = json.loads(u['permissions']) if u['permissions'] and isinstance(u['permissions'], str) else (u['permissions'] or {})
         return jsonify({'users': users})
     
     if request.method == 'POST':
@@ -1366,8 +927,7 @@ def manage_users():
             return jsonify({'message': 'Missing fields'}), 400
         
         pw_hash = hash_password(password)
-        query_db("INSERT INTO users (username, password_hash, nome, role, active, permissions) VALUES (?, ?, ?, ?, ?, ?)",
-                (username, pw_hash, data.get('nome'), 'user', True, json.dumps(data.get('permissions', {}))), commit=True)
+        create_user(username, pw_hash, data.get('nome'), 'user', data.get('permissions', {}), True)
         return jsonify({'success': True})
 
 @app.route('/api/users/<int:user_id>', methods=['PUT', 'DELETE'])
@@ -1377,28 +937,19 @@ def user_ops(user_id):
         return jsonify({'message': 'Forbidden'}), 403
         
     if request.method == 'DELETE':
-        query_db("DELETE FROM users WHERE id = ?", (user_id,), commit=True)
+        delete_user(user_id)
         return jsonify({'success': True})
     
     if request.method == 'PUT':
         data = request.get_json()
-        # Simple update logic
-        updates = []
-        params = []
-        if 'nome' in data:
-            updates.append("nome = ?")
-            params.append(data['nome'])
-        if 'active' in data:
-            updates.append("active = ?")
-            params.append(bool(data['active']))
-        if 'permissions' in data:
-            updates.append("permissions = ?")
-            params.append(json.dumps(data['permissions']))
+        updates = {}
+        if 'nome' in data: updates['nome'] = data['nome']
+        if 'active' in data: updates['active'] = bool(data['active'])
+        if 'permissions' in data: updates['permissions'] = data['permissions']
             
         if not updates: return jsonify({'message': 'No data'}), 400
         
-        params.append(user_id)
-        query_db(f"UPDATE users SET {', '.join(updates)} WHERE id = ?", tuple(params), commit=True)
+        update_user(user_id, updates)
         return jsonify({'success': True})
 
 @app.route('/api/generate_proposal', methods=['POST'])
