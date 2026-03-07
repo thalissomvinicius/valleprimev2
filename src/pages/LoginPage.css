@@ -581,16 +581,39 @@
 
 @media (max-width: 480px) {
     .login-wrapper {
-        padding: 20px;
+        padding: 10px;
+        overflow: hidden;
     }
 
     .login-box {
-        padding: 32px 20px;
+        padding: 24px 20px;
         border-radius: 20px;
+        margin-top: -30px;
+        width: 95%;
     }
 
     .login-brand h1 {
         font-size: 24px;
+    }
+
+    .login-logo {
+        width: 64px;
+        height: 64px;
+        margin-bottom: 15px;
+    }
+
+    .login-form .input-group label {
+        font-size: 13px !important;
+        letter-spacing: 0.05em;
+    }
+
+    .login-form .input-group input {
+        padding: 14px 16px;
+        font-size: 15px;
+    }
+
+    .login-btn {
+        padding: 15px;
     }
 
     .blob-1,

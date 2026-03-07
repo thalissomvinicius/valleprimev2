@@ -710,37 +710,90 @@
     background: #ebf8ff;
 }
 
-/* Summary Section */
+/* Summary Section Premium */
 .summary-section {
-    background: white;
-    border-radius: 12px;
-    padding: 0.75rem;
-    margin-bottom: 0.75rem;
-    border: 2px solid var(--border-color);
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.summary-header-premium {
+    text-align: center;
+    padding-bottom: 1rem;
+    border-bottom: 2px dashed #e2e8f0;
+    margin-bottom: 1rem;
+}
+
+.summary-obra-name {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--primary-color);
+    margin-bottom: 0.35rem;
+    letter-spacing: -0.02em;
+}
+
+.summary-location {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    font-weight: 600;
 }
 
 .summary-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.5rem 0;
-    border-bottom: 1px solid var(--border-color);
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #f1f5f9;
 }
 
-.summary-item:last-child {
+.summary-item:last-of-type {
     border-bottom: none;
+    padding-bottom: 0;
+    margin-top: 0.5rem;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    padding: 1rem;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
 }
 
 .summary-label {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     color: var(--text-muted);
     font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.summary-item:last-of-type .summary-label {
+    color: var(--primary-color);
+    font-weight: 800;
 }
 
 .summary-value {
     font-size: 1rem;
-    font-weight: 700;
+    font-weight: 800;
     color: var(--text-color);
+    text-align: right;
+}
+
+.summary-item:last-of-type .summary-value {
+    color: var(--accent-color);
+    font-size: 1.15rem;
+}
+
+.summary-value small {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-top: 4px;
 }
 
 .summary-actions {

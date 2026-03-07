@@ -109,14 +109,45 @@ const DashboardPage = () => {
                     </div>
                 </section>
 
-                <section className="motivational-quote-section">
-                    <div className="quote-container">
-                        <Quote className="quote-icon" size={24} />
-                        <div className="quote-content">
-                            <p className="quote-text">"{quote.text}"</p>
-                            <span className="quote-author">— {quote.author}</span>
+                <section className="dashboard-cards">
+                    <Link to="/disponibilidade" className="dashboard-card highlight">
+                        <div className="card-icon primary">
+                            <Home size={22} />
                         </div>
-                    </div>
+                        <div>
+                            <h3>Disponibilidade</h3>
+                            <p>Mapa de lotes atualizados</p>
+                        </div>
+                    </Link>
+                    <Link to="/propostas" className="dashboard-card">
+                        <div className="card-icon info">
+                            <FileText size={22} />
+                        </div>
+                        <div>
+                            <h3>Propostas</h3>
+                            <p>Histórico e envios</p>
+                        </div>
+                    </Link>
+                    <Link to="/clientes" className="dashboard-card">
+                        <div className="card-icon success">
+                            <Users size={22} />
+                        </div>
+                        <div>
+                            <h3>Clientes</h3>
+                            <p>Gerencie cadastros</p>
+                        </div>
+                    </Link>
+                    {isAdmin && (
+                        <Link to="/admin" className="dashboard-card">
+                            <div className="card-icon warning">
+                                <Shield size={22} />
+                            </div>
+                            <div>
+                                <h3>Admin</h3>
+                                <p>Painel Geral</p>
+                            </div>
+                        </Link>
+                    )}
                 </section>
 
                 <section className="dashboard-stats">
@@ -144,45 +175,14 @@ const DashboardPage = () => {
                     </div>
                 </section>
 
-                <section className="dashboard-cards">
-                    <Link to="/disponibilidade" className="dashboard-card">
-                        <div className="card-icon primary">
-                            <Home size={22} />
+                <section className="motivational-quote-section">
+                    <div className="quote-container">
+                        <Quote className="quote-icon" size={24} />
+                        <div className="quote-content">
+                            <p className="quote-text">"{quote.text}"</p>
+                            <span className="quote-author">— {quote.author}</span>
                         </div>
-                        <div>
-                            <h3>Disponibilidade</h3>
-                            <p>Mapa de lotes e status atualizados</p>
-                        </div>
-                    </Link>
-                    <Link to="/propostas" className="dashboard-card">
-                        <div className="card-icon info">
-                            <FileText size={22} />
-                        </div>
-                        <div>
-                            <h3>Histórico de Propostas</h3>
-                            <p>Reimpressão e atualização de dados</p>
-                        </div>
-                    </Link>
-                    <Link to="/clientes" className="dashboard-card">
-                        <div className="card-icon success">
-                            <Users size={22} />
-                        </div>
-                        <div>
-                            <h3>Clientes</h3>
-                            <p>Gerencie cadastros e vínculos</p>
-                        </div>
-                    </Link>
-                    {isAdmin && (
-                        <Link to="/admin" className="dashboard-card">
-                            <div className="card-icon warning">
-                                <Shield size={22} />
-                            </div>
-                            <div>
-                                <h3>Painel Administrativo</h3>
-                                <p>Permissões, usuários e controles</p>
-                            </div>
-                        </Link>
-                    )}
+                    </div>
                 </section>
 
                 <section className="dashboard-obras">
