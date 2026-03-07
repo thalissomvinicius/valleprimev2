@@ -50,3 +50,35 @@ export const calculateInstallmentValue = (remainingBalance, installments) => {
     if (!installments || installments <= 0) return 0;
     return remainingBalance / installments;
 };
+
+export const getShortObraName = (fullName) => {
+    if (!fullName) return 'EMPREENDIMENTO';
+
+    // Remove city suffix (e.g., "- TOMÉ-AÇU")
+    let name = fullName.split(' - ')[0].trim().toUpperCase();
+
+    // Remove "RESIDENCIAL" 
+    name = name.replace(/^RESIDENCIAL\s+/, '');
+
+    // Apply abbreviations mapped from pattern definitions
+    name = name.replace(/^VALLE\s+DO\s+/, 'V. DO ');
+    name = name.replace(/^VALLE\s+DOS\s+/, 'V. DOS ');
+    name = name.replace(/^VALLE\s+DAS\s+/, 'V. DAS ');
+    name = name.replace(/^VALLE\s+/, 'V. ');
+    name = name.replace(/^JARDIM\s+DO\s+/, 'J. DO ');
+    name = name.replace(/^JARDIM\s+/, 'J. ');
+    name = name.replace(/^PARQUE\s+DO\s+/, 'P. DO ');
+    name = name.replace(/^SALLES\s+/, 'S. ');
+
+    return name.substring(0, 30).trim();
+};
+
+export const getShortClientName = (fullName) => {
+    if (!fullName) return 'CLIENTE';
+
+    const parts = fullName.trim().toUpperCase().split(/\s+/);
+    if (parts.length === 1) return parts[0].substring(0, 20);
+
+    // First Name + Last Name
+    return `${parts[0]} ${parts[parts.length - 1]}`.substring(0, 30);
+};

@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import logo from '../assets/Valle-logo-azul.png';
+import { getShortObraName, getShortClientName } from './finance';
 
 export const generateResidenceDeclaration = async (data, customCityUF = null, customDate = null, obraName = null, residenceReason = 'option1', residenceReasonOther = '') => {
     try {
@@ -236,7 +237,14 @@ export const generateResidenceDeclaration = async (data, customCityUF = null, cu
         // Forçar download direto
         const link = document.createElement('a');
         link.href = pdfBlobUrl;
-        link.download = `Declaracao_Residencia_${data.p1?.nome ? data.p1.nome.replace(/[^a-zA-Z0-9]/g, '_') : 'Cliente'}.pdf`;
+
+        const shortObra = getShortObraName(obraName);
+        const shortClient = getShortClientName(data.p1?.nome);
+        const qdStr = String(data.quadra || '').padStart(3, '0');
+        const ltStr = String(data.lote || '').padStart(3, '0');
+
+        link.download = `DEC. DE RES. - ${shortObra} - ${shortClient} - QD ${qdStr} - LT ${ltStr}.pdf`;
+
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);

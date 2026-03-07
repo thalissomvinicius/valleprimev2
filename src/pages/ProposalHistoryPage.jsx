@@ -7,6 +7,7 @@ import Footer from '../components/Footer';
 import { getProposals, printProposal, updateProposal, deleteProposal } from '../services/api';
 // import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { getShortObraName, getShortClientName } from '../utils/finance';
 import './ProposalHistoryPage.css';
 
 const ProposalHistoryPage = () => {
@@ -53,13 +54,13 @@ const ProposalHistoryPage = () => {
             const lot = payload.lot || {};
             const qdStr = String(proposal.quadra || lot.QD || '').padStart(3, '0');
             const ltStr = String(proposal.lote || lot.LT || '').padStart(3, '0');
-            const obra = (proposal.obra_nome || payload.obraName || 'EMPREENDIMENTO').substring(0, 15).toUpperCase();
-            const cliente = (payload.nome_proponente || payload.nome || 'CLIENTE').toUpperCase().substring(0, 30);
+            const obra = getShortObraName(proposal.obra_nome || payload.obraName);
+            const cliente = getShortClientName(payload.nome_proponente || payload.nome);
 
             // Forçar download para evitar bloqueio de pop-up
             const link = document.createElement('a');
             link.href = url;
-            link.download = `${obra} - QD${qdStr} - LT${ltStr} - ${cliente}.pdf`;
+            link.download = `PROPOSTA - ${obra} - ${cliente} - QD ${qdStr} - LT ${ltStr}.pdf`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);

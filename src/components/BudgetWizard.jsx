@@ -7,7 +7,7 @@ import ClientSelectionModal from './ClientSelectionModal';
 import { saveClient } from '../services/api';
 import { useToast } from '../context/ToastContext';
 import logo from '../assets/Valle-logo-azul.png';
-import { formatCurrency, formatCurrencyForBackend, getPlanType, calculateDownPayment, calculateDiscountedSinal, calculateDiscountedValues } from '../utils/finance';
+import { formatCurrency, formatCurrencyForBackend, getPlanType, calculateDownPayment, calculateDiscountedSinal, calculateDiscountedValues, getShortObraName, getShortClientName } from '../utils/finance';
 import { Step1LotInfo, Step3Sinal, Step4Saldo, Step5Summary } from './BudgetWizardSteps';
 
 const ENV_API = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '');
@@ -370,11 +370,11 @@ ${sinalSection}
                 // Forçar download para evitar bloqueio de pop-up
                 const link = document.createElement('a');
                 link.href = url;
-                const shortObra = (obraName || 'EMPREENDIMENTO').substring(0, 15).toUpperCase();
+                const shortObra = getShortObraName(obraName);
                 const qdStr = String(lot.QD || '').padStart(3, '0');
                 const ltStr = String(lot.LT || '').padStart(3, '0');
-                const clientName = (clientData.nome_proponente || clientData.nome || 'CLIENTE').toUpperCase().substring(0, 30);
-                link.download = `${shortObra} - QD${qdStr} - LT${ltStr} - ${clientName}.pdf`;
+                const clientName = getShortClientName(clientData.nome_proponente || clientData.nome);
+                link.download = `PROPOSTA - ${shortObra} - ${clientName} - QD ${qdStr} - LT ${ltStr}.pdf`;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
