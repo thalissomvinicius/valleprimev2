@@ -221,12 +221,14 @@
 
 .login-form .input-group input {
     width: 100%;
-    padding: 16px 20px;
+    height: 54px;
+    padding: 0 20px;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 14px;
     color: white;
     font-size: 16px;
+    box-sizing: border-box;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -608,8 +610,10 @@
     }
 
     .login-form .input-group input {
-        padding: 14px 16px;
+        height: 48px;
+        padding: 0 16px;
         font-size: 15px;
+        box-sizing: border-box;
     }
 
     .login-btn {
