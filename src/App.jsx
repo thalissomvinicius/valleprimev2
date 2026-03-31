@@ -16,9 +16,9 @@ import BudgetModal from './components/BudgetModalWrapper';
 import ClientListPage from './pages/ClientListPage';
 import { Users as UsersIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import StatusWarningModal from './components/StatusWarningModal';
 import ProposalHistoryPage from './pages/ProposalHistoryPage';
 import DashboardPage from './pages/DashboardPage';
+import BrokersPage from './pages/BrokersPage';
 
 function MainApp() {
   const { currentUser, logout } = useAuth();
@@ -547,6 +547,7 @@ function App() {
         <Route path="/admin" element={isAdmin ? <AdminPanel /> : <Navigate to="/dashboard" replace />} />
         <Route path="/clientes" element={<ClientListPage />} />
         <Route path="/propostas" element={<ProposalHistoryPage />} />
+        <Route path="/corretores" element={<BrokersPage />} />
         <Route path="/disponibilidade" element={<MainApp />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />

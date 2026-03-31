@@ -1,0 +1,296 @@
+from fastapi import APIRouter, Query, HTTPException, Depends
+from typing import Optional
+from datetime import datetime
+import pandas as pd
+from database import get_db_connection
+import math
+
+router = APIRouter()
+
+def fetch_dados_corretores(conn, empresa, obra, corretor_id=None, data_inicio=None, data_fim=None, mes=None):
+    """
+    Lista os corretores com base nos filtros dinâmicos de Data, Obra e Corretor passados pela Request.
+    """
+    # Trata data_inicio e data_fim se "mes" for passado
+    if mes:
+        try:
+            # Ex: "2026-03" -> inicio: 2026-03-01 / fim: 2026-03-31
+            dt = datetime.strptime(mes, '%Y-%m')
+            ultimo_dia = pd.Period(mes).days_in_month
+            data_inicio = f"{mes}-01"
+            data_fim = f"{mes}-{ultimo_dia}"
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Formato de mês inválido. Use AAAA-MM")
+
+    # Constroi os blocos do Filtro
+    filtros_vendas = f"Empresa_Ven = {empresa} AND Obra_Ven = '{obra}' AND TipoVenda_Ven IN (0,1,2,3,4,5)"
+    filtros_vendas_rec = f"Empresa_VRec = {empresa} AND Obra_VRec = '{obra}' AND TipoVenda_VRec IN (0,1,2,3,4,5)"
+    
+    if corretor_id:
+        filtros_vendas += f" AND Vendedor_Ven = {corretor_id}"
+        filtros_vendas_rec += f" AND Vendedor_VRec = {corretor_id}"
+    
+    if data_inicio:
+        filtros_vendas += f" AND Data_Ven >= '{data_inicio}'"
+        filtros_vendas_rec += f" AND Data_VRec >= '{data_inicio}'"
+    
+    if data_fim:
+        filtros_vendas += f" AND Data_Ven <= '{data_fim}'"
+        filtros_vendas_rec += f" AND Data_VRec <= '{data_fim}'"
+
+    # Busca Nome Real do Empreendimento
+    try:
+        nome_obra_df = pd.read_sql("SELECT Descr_Obr FROM Obras WITH(NOLOCK) WHERE Empresa_Obr = ? AND Cod_Obr = ?", conn, params=[empresa, obra])
+        nome_empreendimento = str(nome_obra_df['Descr_Obr'].iloc[0]).strip() if not nome_obra_df.empty else f"Obra {obra}"
+    except Exception:
+        nome_empreendimento = f"Obra {obra}"
+
+    query_vendas = f"""
+    SELECT 
+        v.Num_Ven AS venda,
+        v.Cliente_Ven AS clienteId,
+        p_cli.nome_pes AS cliente_nome,
+        p_cli.cpf_pes AS cliente_cpf,
+        '' AS cliente_fone_1,
+        '' AS cliente_fone_2,
+        '' AS cliente_email,
+        FORMAT(p_cli.dtnasc_pes, 'yyyy-MM-dd') AS cliente_nascimento,
+        pe.Endereco_pend AS cliente_endereco,
+        pe.Bairro_pend AS cliente_bairro,
+        pe.Cidade_pend AS cliente_cidade,
+        v.Vendedor_Ven AS corretorId,
+        UPPER(p_cor.nome_pes) AS corretor_nome,
+        ISNULL(UPPER(p_ger.nome_pes), 'SEM GERENTE/DIRETO') AS gerente_nome,
+        FORMAT(v.Data_Ven, 'yyyy-MM-dd') AS dataVenda,
+        (v.ValorTot_Ven + v.Acrescimo_Ven - v.Desconto_Ven) AS valorTotal,
+        ISNULL(u.C1_unid, '') AS quadra,
+        ISNULL(u.C2_unid, '') AS lote,
+        v.Status_Ven AS statusCodigo,
+        CASE v.Status_Ven
+            WHEN 0 THEN 'Normal'
+            WHEN 1 THEN 'Cancelada'
+            WHEN 3 THEN 'Quitada'
+            WHEN 4 THEN 'Adiantado'
+            ELSE 'Outro'
+        END AS statusVenda
+    FROM (
+        SELECT Empresa_Ven, Obra_Ven, Num_Ven, Cliente_Ven, Vendedor_Ven, Data_Ven, ValorTot_Ven, Acrescimo_Ven, Desconto_Ven, Status_Ven
+        FROM Vendas WITH(NOLOCK)
+        WHERE {filtros_vendas}
+        UNION
+        SELECT Empresa_VRec, Obra_VRec, Num_VRec, Cliente_VRec, Vendedor_VRec, Data_VRec, ValorTot_VRec, Acrescimo_VRec, Desconto_VRec, Status_VRec
+        FROM VendasRecebidas WITH(NOLOCK)
+        WHERE {filtros_vendas_rec}
+    ) v
+    INNER JOIN Pessoas p_cli WITH(NOLOCK) ON v.Cliente_Ven = p_cli.cod_pes
+    LEFT JOIN PesEndereco pe WITH(NOLOCK) ON p_cli.cod_pes = pe.CodPes_pend AND pe.Tipo_pend = 0
+    LEFT JOIN Pessoas p_cor WITH(NOLOCK) ON v.Vendedor_Ven = p_cor.cod_pes
+    LEFT JOIN (SELECT CodPes_hqi, MIN(CodPesSuper_hqi) AS CodPesSuper_hqi FROM HierarquiaIntegrante WITH(NOLOCK) GROUP BY CodPes_hqi) hi ON v.Vendedor_Ven = hi.CodPes_hqi
+    LEFT JOIN Pessoas p_ger WITH(NOLOCK) ON hi.CodPesSuper_hqi = p_ger.cod_pes
+    OUTER APPLY (
+        SELECT TOP 1 itv.Empresa_itv, itv.Obra_Itv, itv.NumVend_Itv, un.C1_unid, un.C2_unid 
+        FROM ItensVenda itv WITH(NOLOCK)
+        INNER JOIN UnidadePer un WITH(NOLOCK) ON itv.Empresa_itv = un.Empresa_unid AND itv.Produto_Itv = un.Prod_unid AND itv.CodPerson_Itv = un.NumPer_unid
+        WHERE v.Empresa_Ven = itv.Empresa_itv AND v.Obra_Ven = itv.Obra_Itv AND v.Num_Ven = itv.NumVend_Itv
+    ) u
+    ORDER BY v.Data_Ven DESC
+    """
+    
+    query_sinais_abertos = f"""
+    SELECT 
+        cr.NumVend_prc as venda,
+        COUNT(cr.NumParc_Prc) as qtdAberto,
+        ISNULL(SUM(cr.Valor_Prc), 0) as valorAberto,
+        SUM(CASE WHEN cr.Data_Prc < CAST(GETDATE() AS DATE) THEN 1 ELSE 0 END) as qtdAtraso,
+        ISNULL(SUM(CASE WHEN cr.Data_Prc < CAST(GETDATE() AS DATE) THEN cr.Valor_Prc ELSE 0 END), 0) as valorAtraso,
+        FORMAT(MIN(CASE WHEN cr.Status_Prc = 0 THEN cr.Data_Prc END), 'yyyy-MM-dd') as proximoVencimento,
+        MAX(CASE WHEN cr.Data_Prc < CAST(GETDATE() AS DATE) THEN DATEDIFF(day, cr.Data_Prc, GETDATE()) ELSE 0 END) as diasAtraso
+    FROM ContasReceber cr WITH(NOLOCK)
+    WHERE cr.Empresa_prc = {empresa} AND cr.Obra_Prc = '{obra}' AND cr.Tipo_Prc = 'S' AND cr.Status_Prc = 0
+    GROUP BY cr.NumVend_prc
+    """
+    
+    query_sinais_pagos = f"""
+    SELECT 
+        r.NumVend_Rec as venda,
+        COUNT(r.NumParc_Rec) as qtdPago,
+        ISNULL(SUM(r.Valor_Rec + r.ValorConf_Rec), 0) as valorPago,
+        FORMAT(MAX(r.Data_Rec), 'yyyy-MM-dd') as ultimaDataPagamento
+    FROM Recebidas r WITH(NOLOCK)
+    WHERE r.Empresa_Rec = {empresa} AND r.Obra_Rec = '{obra}' AND r.Tipo_Rec = 'S'
+    GROUP BY r.NumVend_Rec
+    """
+
+    query_condicao_financiamento = f"""
+    SELECT 
+        cr.NumVend_prc as venda,
+        COUNT(cr.NumParc_Prc) as totalParcelasFinanciamento,
+        SUM(CASE WHEN cr.Status_Prc = 1 THEN cr.Valor_Prc ELSE 0 END) as valorPagoFinanciamento,
+        SUM(CASE WHEN cr.Status_Prc = 0 THEN cr.Valor_Prc ELSE 0 END) as saldoDevedorFinanciamento,
+        SUM(CASE WHEN cr.Status_Prc = 0 AND cr.Data_Prc < CAST(GETDATE() AS DATE) THEN 1 ELSE 0 END) as parcelasAtrasadasFinanciamento,
+        SUM(CASE WHEN cr.Status_Prc = 0 AND cr.Data_Prc < CAST(GETDATE() AS DATE) THEN cr.Valor_Prc ELSE 0 END) as valorAtrasadoFinanciamento
+    FROM ContasReceber cr WITH(NOLOCK)
+    WHERE cr.Empresa_prc = {empresa} AND cr.Obra_Prc = '{obra}' AND cr.Tipo_Prc != 'S'
+    GROUP BY cr.NumVend_prc
+    """
+
+    query_prorrogacoes = f"""
+    SELECT 
+        cr.NumVend_prc as venda,
+        SUM(CASE WHEN cr.DataPror_Prc IS NOT NULL AND cr.DataPror_Prc > cr.Data_Prc THEN 1 ELSE 0 END) as qtdProrrogacoes,
+        MAX(CASE WHEN cr.DataPror_Prc IS NOT NULL AND cr.DataPror_Prc > cr.Data_Prc THEN FORMAT(cr.DataPror_Prc, 'yyyy-MM-dd') ELSE NULL END) as ultimaProrrogacao
+    FROM ContasReceber cr WITH(NOLOCK)
+    WHERE cr.Empresa_prc = {empresa} AND cr.Obra_Prc = '{obra}'
+    GROUP BY cr.NumVend_prc
+    """
+
+    import warnings
+    warnings.filterwarnings('ignore', category=UserWarning)# Ignore Pandas SQLAlchemy explicit warning 
+    vendas_df = pd.read_sql(query_vendas, conn)
+    sinais_abertos_df = pd.read_sql(query_sinais_abertos, conn)
+    sinais_pagos_df = pd.read_sql(query_sinais_pagos, conn)
+    condicoes_df = pd.read_sql(query_condicao_financiamento, conn)
+    prorrogacoes_df = pd.read_sql(query_prorrogacoes, conn)
+
+    if vendas_df.empty:
+        return []
+
+    vendas_df.drop_duplicates(subset=['venda'], keep='first', inplace=True)
+
+    sinais_abertos_map = sinais_abertos_df.set_index('venda').to_dict('index') if not sinais_abertos_df.empty else {}
+    sinais_pagos_map = sinais_pagos_df.set_index('venda').to_dict('index') if not sinais_pagos_df.empty else {}
+    condicao_map = condicoes_df.set_index('venda').to_dict('index') if not condicoes_df.empty else {}
+    prorrogacoes_map = prorrogacoes_df.set_index('venda').to_dict('index') if not prorrogacoes_df.empty else {}
+
+    corretores_dict = {}
+    current_month = datetime.now().strftime('%Y-%m')
+    vendas_df.fillna('', inplace=True)
+
+    for _, row in vendas_df.iterrows():
+        cod_corretor = row.get('corretorId')
+        nome_corretor = row.get('corretor_nome', 'SEM CORRETOR')
+        gerente_nome = row.get('gerente_nome', 'SEM GERENTE')
+        if not cod_corretor: pass
+        if math.isnan(cod_corretor): cod_corretor = 0
+            
+        if cod_corretor not in corretores_dict:
+            corretores_dict[cod_corretor] = {
+                "codigo_corretor": int(cod_corretor),
+                "corretor": str(nome_corretor).strip(),
+                "diretoria_equipe": str(gerente_nome).strip(),
+                "empreendimento": nome_empreendimento,
+                "resumo": {
+                    "vendas_mes_atual": 0,
+                    "vendas_total_obra": 0,
+                    "vgv_total": 0.0
+                },
+                "vendas_detalhadas": []
+            }
+
+        data_venda = row.get('dataVenda')
+        is_current_month = False
+        if data_venda and data_venda.startswith(current_month):
+            is_current_month = True
+
+        valor_venda = float(row.get('valorTotal', 0))
+
+        if row.get('statusCodigo') in [0, 3]: # Apenas normais ou quitadas p/ VGV
+            corretores_dict[cod_corretor]['resumo']['vendas_total_obra'] += 1
+            corretores_dict[cod_corretor]['resumo']['vgv_total'] += valor_venda
+            if is_current_month:
+                corretores_dict[cod_corretor]['resumo']['vendas_mes_atual'] += 1
+
+        venda_id = row.get('venda')
+        aberto = sinais_abertos_map.get(venda_id, {'qtdAberto': 0, 'valorAberto': 0, 'qtdAtraso': 0, 'valorAtraso': 0, 'proximoVencimento': None, 'diasAtraso': 0})
+        pago = sinais_pagos_map.get(venda_id, {'qtdPago': 0, 'valorPago': 0, 'ultimaDataPagamento': None})
+        condicao = condicao_map.get(venda_id, {'totalParcelasFinanciamento': 0, 'valorPagoFinanciamento': 0, 'saldoDevedorFinanciamento': 0, 'parcelasAtrasadasFinanciamento': 0, 'valorAtrasadoFinanciamento': 0})
+        prorrog = prorrogacoes_map.get(venda_id, {'qtdProrrogacoes': 0, 'ultimaProrrogacao': None})
+
+        sinal_situacao = "Sem Sinais"
+        if aberto['qtdAtraso'] > 0: sinal_situacao = "Em Atraso"
+        elif aberto['qtdAberto'] == 0 and pago['qtdPago'] > 0: sinal_situacao = "Sinais Pagos na Íntegra"
+        elif aberto['qtdAberto'] > 0 and pago['qtdPago'] > 0: sinal_situacao = "Parcialmente Pago"
+        elif aberto['qtdAberto'] > 0 and pago['qtdPago'] == 0: sinal_situacao = "Aguardando Pagamento"
+
+        telefone_cli = str(row.get('cliente_fone_2') or row.get('cliente_fone_1') or '').strip()
+        condicao_prazo = "À Vista" if condicao['totalParcelasFinanciamento'] == 0 else f"Financiado em {int(condicao['totalParcelasFinanciamento'])}x"
+
+        end_rua = str(row.get('cliente_endereco', '')).strip()
+        end_bai = str(row.get('cliente_bairro', '')).strip()
+        end_cid = str(row.get('cliente_cidade', '')).strip()
+        endereco_completo = f"{end_rua}, {end_bai} - {end_cid}".strip(', -')
+
+        venda_detalhe = {
+            "venda_id": int(venda_id),
+            "quadra": str(row.get('quadra', '')).strip(),
+            "lote": str(row.get('lote', '')).strip(),
+            "data_venda": data_venda,
+            "status_venda": row.get('statusVenda', ''),
+            "valor_venda": valor_venda,
+            "condicao_pagamento": condicao_prazo,
+            "progresso_financiamento": {
+                "total_parcelas_pos_sinal": int(condicao['totalParcelasFinanciamento']),
+                "saldo_devedor_atual": float(condicao['saldoDevedorFinanciamento']),
+                "valor_total_amortizado": float(condicao['valorPagoFinanciamento']),
+                "parcelas_em_atraso": int(condicao['parcelasAtrasadasFinanciamento']),
+                "valor_em_atraso": float(condicao['valorAtrasadoFinanciamento']),
+                "alerta_risco_distrato": bool(condicao['parcelasAtrasadasFinanciamento'] > 0),
+                "houve_prorrogacao": bool(prorrog['qtdProrrogacoes'] > 0),
+                "total_prorrogacoes": int(prorrog['qtdProrrogacoes']),
+                "data_ultima_prorrogacao": prorrog['ultimaProrrogacao']
+            },
+            "cliente": {
+                "nome": str(row.get('cliente_nome', '')).strip(),
+                "cpf": str(row.get('cliente_cpf', '')).strip(),
+                "data_nascimento": str(row.get('cliente_nascimento', '')).strip() if row.get('cliente_nascimento') else None,
+                "telefone": telefone_cli,
+                "email": str(row.get('cliente_email', '')).strip(),
+                "endereco": endereco_completo
+            },
+            "sinal_negocio": {
+                "situacao": sinal_situacao,
+                "sinais_totais": int(pago['qtdPago']) + int(aberto['qtdAberto']),
+                "valor_total_sinal": float(pago['valorPago']) + float(aberto['valorAberto']),
+                "sinais_pagos": int(pago['qtdPago']),
+                "valor_ja_pago": float(pago['valorPago']),
+                "data_ultimo_pagamento": pago['ultimaDataPagamento'],
+                "valor_em_atraso": float(aberto['valorAtraso']),
+                "dias_em_atraso_max": int(aberto['diasAtraso']),
+                "data_proximo_vencimento": aberto['proximoVencimento']
+            }
+        }
+        corretores_dict[cod_corretor]['vendas_detalhadas'].append(venda_detalhe)
+
+    return list(corretores_dict.values())
+
+@router.get("/integracao/corretores")
+async def obter_dados_integracao_corretores(
+    empresa: int = Query(28, description="Código da empresa (ex: 28)"),
+    obra: str = Query("70100", description="Código da obra (ex: 70100)"),
+    corretor_id: Optional[int] = Query(None, description="Filtrar por ID do Corretor"),
+    data_inicio: Optional[str] = Query(None, description="Data Inicial (AAAA-MM-DD)"),
+    data_fim: Optional[str] = Query(None, description="Data Final (AAAA-MM-DD)"),
+    mes: Optional[str] = Query(None, description="Atalho para filtrar um mês específico (AAAA-MM)"),
+    api_key: Optional[str] = Query(None, description="Chave de Acesso para segurança do Endpoint")
+):
+    """
+    Exportação completa dos Corretores.
+    Contém Módulos CRM, Financiamento, Extensão de Prazos e Metas/VGV.
+    """
+    # Exemplo de bloqueio simples caso queira habilitar (comentado a pedido)
+    # if api_key != "MINHA_SENHA_FORTE_123": raise HTTPException(status_code=401, detail="Unauthorized")
+
+    try:
+        with get_db_connection() as conn:
+            payload = fetch_dados_corretores(
+                conn=conn, 
+                empresa=empresa, 
+                obra=obra,
+                corretor_id=corretor_id,
+                data_inicio=data_inicio,
+                data_fim=data_fim,
+                mes=mes
+            )
+            return {"total_corretores": len(payload), "dados": payload}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro interno ao processar dados: {str(e)}")

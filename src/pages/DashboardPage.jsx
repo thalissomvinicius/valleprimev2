@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { LayoutDashboard, Home, FileText, Users, Shield, LogOut, MapPin, Loader2, Quote } from 'lucide-react';
+import { LayoutDashboard, Home, FileText, Users, Shield, LogOut, MapPin, Loader2, Quote, TrendingUp } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { useAuth, OBRAS } from '../context/AuthContext';
@@ -135,6 +135,15 @@ const DashboardPage = () => {
                         <div>
                             <h3>Clientes</h3>
                             <p>Gerencie cadastros</p>
+                        </div>
+                    </Link>
+                    <Link to="/corretores" className="dashboard-card">
+                        <div className="card-icon primary">
+                            <TrendingUp size={22} />
+                        </div>
+                        <div>
+                            <h3>Vendas</h3>
+                            <p>Desempenho & Sinais</p>
                         </div>
                     </Link>
                     {isAdmin && (

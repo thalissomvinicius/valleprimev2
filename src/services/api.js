@@ -263,3 +263,29 @@ export const printProposal = async (id) => {
 };
 
 
+
+export const fetchCorretoresData = async (filters = {}) => {
+  try {
+    const { empresa = 28, obra = '70100', corretor_id, mes, data_inicio, data_fim } = filters;
+    const params = new URLSearchParams();
+    params.append('empresa', empresa);
+    params.append('obra', obra);
+    if (corretor_id) params.append('corretor_id', corretor_id);
+    if (mes) params.append('mes', mes);
+    if (data_inicio) params.append('data_inicio', data_inicio);
+    if (data_fim) params.append('data_fim', data_fim);
+
+    // LocalTunnel API requires the Bypass-Tunnel-Reminder header
+    const response = await axios.get(`https://valleprime-api-corretores.loca.lt/api/integracao/corretores?${params.toString()}`, {
+      headers: {
+        'Bypass-Tunnel-Reminder': 'true'
+      },
+      timeout: 30000
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching brokers data:', error);
+    throw error;
+  }
+};

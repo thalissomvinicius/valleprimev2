@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { LayoutDashboard, Home, FileText, Users, Shield, LogOut, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Home, FileText, Users, Shield, LogOut, Menu, X, TrendingUp } from 'lucide-react';
 import logo from '../assets/Valle-logo-azul.png';
 import { useAuth } from '../context/AuthContext';
 import './Header.css';
@@ -51,6 +51,10 @@ const Header = ({ children, title }) => {
                                 <Link to="/propostas" className="btn-clients-header" onClick={closeMenu} title="Propostas">
                                     <FileText size={18} />
                                     <span className="nav-text">Propostas</span>
+                                </Link>
+                                <Link to="/corretores" className="btn-clients-header" onClick={closeMenu} title="Vendas/Corretores">
+                                    <TrendingUp size={18} />
+                                    <span className="nav-text">Vendas</span>
                                 </Link>
                                 <Link to="/clientes" className="btn-clients-header" onClick={closeMenu} title="Clientes">
                                     <Users size={18} />
