@@ -357,6 +357,7 @@ def login():
             'user': {
                 'id': user['id'],
                 'username': user['username'],
+                'nome': user.get('nome'),
                 'role': user['role'],
                 'permissions': perms
             }
