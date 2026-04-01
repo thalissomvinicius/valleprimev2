@@ -2,7 +2,7 @@ from fastapi import APIRouter, Query, HTTPException, Depends
 from typing import Optional
 from datetime import datetime
 import pandas as pd
-from database import get_db_connection
+from database_uau import get_db_connection
 import math
 
 router = APIRouter()
@@ -14,11 +14,11 @@ def fetch_dados_corretores(conn, empresa, obra, corretor_id=None, data_inicio=No
     # Trata data_inicio e data_fim se "mes" for passado
     if mes:
         try:
-            # Ex: "2026-03" -> inicio: 2026-03-01 / fim: 2026-03-31
+            # Ex: "2026-03" -> inicio: 20260301 / fim: 20260331
             dt = datetime.strptime(mes, '%Y-%m')
             ultimo_dia = pd.Period(mes).days_in_month
-            data_inicio = f"{mes}-01"
-            data_fim = f"{mes}-{ultimo_dia}"
+            data_inicio = dt.strftime('%Y%m') + '01'
+            data_fim = dt.strftime('%Y%m') + str(ultimo_dia).zfill(2)
         except ValueError:
             raise HTTPException(status_code=400, detail="Formato de mês inválido. Use AAAA-MM")
 
@@ -146,11 +146,11 @@ def fetch_dados_corretores(conn, empresa, obra, corretor_id=None, data_inicio=No
 
     import warnings
     warnings.filterwarnings('ignore', category=UserWarning)# Ignore Pandas SQLAlchemy explicit warning 
-    vendas_df = pd.read_sql(query_vendas, conn)
-    sinais_abertos_df = pd.read_sql(query_sinais_abertos, conn)
-    sinais_pagos_df = pd.read_sql(query_sinais_pagos, conn)
-    condicoes_df = pd.read_sql(query_condicao_financiamento, conn)
-    prorrogacoes_df = pd.read_sql(query_prorrogacoes, conn)
+    vendas_df = pd.read_sql(query_vendas, conn).fillna(0)
+    sinais_abertos_df = pd.read_sql(query_sinais_abertos, conn).fillna(0)
+    sinais_pagos_df = pd.read_sql(query_sinais_pagos, conn).fillna(0)
+    condicoes_df = pd.read_sql(query_condicao_financiamento, conn).fillna(0)
+    prorrogacoes_df = pd.read_sql(query_prorrogacoes, conn).fillna(0)
 
     if vendas_df.empty:
         return []
@@ -164,7 +164,8 @@ def fetch_dados_corretores(conn, empresa, obra, corretor_id=None, data_inicio=No
 
     corretores_dict = {}
     current_month = datetime.now().strftime('%Y-%m')
-    vendas_df.fillna('', inplace=True)
+    # Use fillna with specific values if needed, but the global fillna(0) above should cover most numeric issues
+    vendas_df.replace({pd.NA: None, float('nan'): 0}, inplace=True)
 
     for _, row in vendas_df.iterrows():
         cod_corretor = row.get('corretorId')

@@ -41,9 +41,10 @@ const BrokersPage = () => {
         setLoading(true);
         try {
             // Se não for admin, filtramos apenas pelo corretor logado
+            const uauId = currentUser?.permissions?.uau_corretor_id;
             const filters = {
                 mes: selectedMonth,
-                corretor_id: isAdmin ? null : currentUser?.id,
+                corretor_id: isAdmin ? null : (uauId || currentUser?.id),
                 empresa: 28, // Padrão Valle
                 obra: '70100' // Padrão
             };
@@ -74,7 +75,7 @@ const BrokersPage = () => {
         } finally {
             setLoading(false);
         }
-    }, [selectedMonth, currentUser?.id, isAdmin]);
+    }, [selectedMonth, currentUser?.id, isAdmin, currentUser?.permissions?.uau_corretor_id]);
 
     useEffect(() => {
         loadData();

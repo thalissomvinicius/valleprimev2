@@ -727,3 +727,352 @@
 2026-01-21 16:16:22,616 INFO: 127.0.0.1 - - [21/Jan/2026 16:16:22] "GET /api/clients?type=pf&page=1&limit=50 HTTP/1.1" 200 -
 2026-01-21 16:21:26,773 INFO: 127.0.0.1 - - [21/Jan/2026 16:21:26] "GET /api/clients?type=pf&page=1&limit=50 HTTP/1.1" 200 -
 2026-01-21 16:21:26,967 INFO: 127.0.0.1 - - [21/Jan/2026 16:21:26] "GET /api/clients?type=pf&page=1&limit=50 HTTP/1.1" 200 -
+2026-03-31 17:11:19,253 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8000
+ * Running on http://10.20.18.92:8000
+2026-03-31 17:11:19,254 INFO: [33mPress CTRL+C to quit[0m
+2026-03-31 17:11:19,267 INFO:  * Restarting with watchdog (windowsapi)
+2026-03-31 17:11:19,788 WARNING:  * Debugger is active!
+2026-03-31 17:11:19,792 INFO:  * Debugger PIN: 109-348-809
+2026-03-31 17:34:44,184 INFO:  * Detected change in 'C:\\Python313\\Lib\\multiprocessing\\spawn.py', reloading
+2026-03-31 17:34:44,190 INFO:  * Detected change in 'C:\\Python313\\Lib\\multiprocessing\\process.py', reloading
+2026-03-31 17:34:44,193 INFO:  * Detected change in 'C:\\Python313\\Lib\\multiprocessing\\util.py', reloading
+2026-03-31 17:34:44,437 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\engine\\__init__.py', reloading
+2026-03-31 17:34:44,493 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\orm\\__init__.py', reloading
+2026-03-31 17:34:44,521 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\sql\\expression.py', reloading
+2026-03-31 17:34:44,562 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\__init__.py', reloading
+2026-03-31 17:34:44,609 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\orm\\context.py', reloading
+2026-03-31 17:34:44,685 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\sql\\_dml_constructors.py', reloading
+2026-03-31 17:34:44,704 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\sql\\_elements_constructors.py', reloading
+2026-03-31 17:34:44,722 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\sql\\_selectable_constructors.py', reloading
+2026-03-31 17:34:44,741 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\sql\\_typing.py', reloading
+2026-03-31 17:34:44,766 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\sql\\base.py', reloading
+2026-03-31 17:34:44,790 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\sql\\cache_key.py', reloading
+2026-03-31 17:34:44,834 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\sql\\dml.py', reloading
+2026-03-31 17:34:44,922 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\sql\\elements.py', reloading
+2026-03-31 17:34:45,002 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\sql\\functions.py', reloading
+2026-03-31 17:34:45,024 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\sql\\lambdas.py', reloading
+2026-03-31 17:34:45,064 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\sql\\operators.py', reloading
+2026-03-31 17:34:45,119 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\sql\\selectable.py', reloading
+2026-03-31 17:34:45,153 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\sql\\visitors.py', reloading
+2026-03-31 17:34:45,293 INFO:  * Restarting with watchdog (windowsapi)
+2026-03-31 17:34:46,359 WARNING:  * Debugger is active!
+2026-03-31 17:34:46,367 INFO:  * Debugger PIN: 109-348-809
+2026-03-31 17:34:46,442 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\orm\\_orm_constructors.py', reloading
+2026-03-31 17:34:46,468 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\orm\\attributes.py', reloading
+2026-03-31 17:34:46,491 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\orm\\base.py', reloading
+2026-03-31 17:34:46,521 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\orm\\decl_api.py', reloading
+2026-03-31 17:34:46,542 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\orm\\decl_base.py', reloading
+2026-03-31 17:34:46,567 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\orm\\descriptor_props.py', reloading
+2026-03-31 17:34:46,585 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\orm\\dynamic.py', reloading
+2026-03-31 17:34:46,619 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\orm\\events.py', reloading
+2026-03-31 17:34:46,643 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\orm\\identity.py', reloading
+2026-03-31 17:34:46,672 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\orm\\instrumentation.py', reloading
+2026-03-31 17:34:46,697 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\orm\\interfaces.py', reloading
+2026-03-31 17:34:46,762 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\orm\\loading.py', reloading
+2026-03-31 17:34:46,784 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\orm\\mapped_collection.py', reloading
+2026-03-31 17:34:46,804 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\orm\\properties.py', reloading
+2026-03-31 17:34:46,826 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\orm\\query.py', reloading
+2026-03-31 17:34:46,852 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\orm\\relationships.py', reloading
+2026-03-31 17:34:46,877 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\orm\\scoping.py', reloading
+2026-03-31 17:34:46,909 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\orm\\session.py', reloading
+2026-03-31 17:34:46,933 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\orm\\state.py', reloading
+2026-03-31 17:34:46,950 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\orm\\unitofwork.py', reloading
+2026-03-31 17:34:46,967 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\orm\\util.py', reloading
+2026-03-31 17:34:46,984 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\orm\\writeonly.py', reloading
+2026-03-31 17:34:47,002 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\orm\\path_registry.py', reloading
+2026-03-31 17:34:47,019 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\future\\__init__.py', reloading
+2026-03-31 17:34:47,035 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\sql\\util.py', reloading
+2026-03-31 17:34:47,052 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\orm\\_typing.py', reloading
+2026-03-31 17:34:47,086 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\engine\\events.py', reloading
+2026-03-31 17:34:47,101 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\engine\\util.py', reloading
+2026-03-31 17:34:47,119 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\engine\\create.py', reloading
+2026-03-31 17:34:47,135 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\engine\\mock.py', reloading
+2026-03-31 17:34:47,208 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\engine\\reflection.py', reloading
+2026-03-31 17:34:47,227 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\engine\\row.py', reloading
+2026-03-31 17:34:47,253 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\engine\\url.py', reloading
+2026-03-31 17:34:47,275 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\pool\\__init__.py', reloading
+2026-03-31 17:34:47,298 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\util\\_py_collections.py', reloading
+2026-03-31 17:34:47,322 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\event\\registry.py', reloading
+2026-03-31 17:34:47,354 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\pool\\base.py', reloading
+2026-03-31 17:34:47,383 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\util\\_concurrency_py3k.py', reloading
+2026-03-31 17:34:47,416 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\event\\api.py', reloading
+2026-03-31 17:34:47,549 INFO:  * Restarting with watchdog (windowsapi)
+2026-03-31 17:34:49,229 WARNING:  * Debugger is active!
+2026-03-31 17:34:49,238 INFO:  * Debugger PIN: 109-348-809
+2026-03-31 17:34:49,402 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\numpy\\_typing\\_add_docstring.py', reloading
+2026-03-31 17:34:49,723 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\schema.py', reloading
+2026-03-31 17:34:49,730 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\watchdog\\observers\\winapi.py', reloading
+2026-03-31 17:34:49,754 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\types.py', reloading
+2026-03-31 17:34:49,784 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\pool\\impl.py', reloading
+2026-03-31 17:34:49,821 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\engine\\_py_row.py', reloading
+2026-03-31 17:34:49,886 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\orm\\collections.py', reloading
+2026-03-31 17:34:49,904 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\sql\\crud.py', reloading
+2026-03-31 17:34:49,905 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\cryptography\\hazmat\\primitives\\_cipheralgorithm.py', reloading
+2026-03-31 17:34:49,907 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\log.py', reloading
+2026-03-31 17:34:49,967 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\orm\\dependency.py', reloading
+2026-03-31 17:34:50,009 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\cyextension\\__init__.py', reloading
+2026-03-31 17:34:50,010 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\orm\\clsregistry.py', reloading
+2026-03-31 17:34:50,036 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\engine\\_py_util.py', reloading
+2026-03-31 17:34:50,039 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\watchdog\\utils\\dirsnapshot.py', reloading
+2026-03-31 17:34:50,041 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\orm\\strategies.py', reloading
+2026-03-31 17:34:50,055 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\orm\\bulk_persistence.py', reloading
+2026-03-31 17:34:50,071 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\util\\topological.py', reloading
+2026-03-31 17:34:50,083 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\dialects\\__init__.py', reloading
+2026-03-31 17:34:50,090 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\orm\\state_changes.py', reloading
+2026-03-31 17:34:50,108 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\dialects\\mssql\\__init__.py', reloading
+2026-03-31 17:34:50,118 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\engine\\default.py', reloading
+2026-03-31 17:34:50,135 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\dialects\\mysql\\__init__.py', reloading
+2026-03-31 17:34:50,136 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\ext\\asyncio\\session.py', reloading
+2026-03-31 17:34:50,150 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\sql\\default_comparator.py', reloading
+2026-03-31 17:34:50,156 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\dialects\\oracle\\__init__.py', reloading
+2026-03-31 17:34:50,182 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\sql\\naming.py', reloading
+2026-03-31 17:34:50,188 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\dialects\\postgresql\\__init__.py', reloading
+2026-03-31 17:34:50,213 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\dialects\\sqlite\\__init__.py', reloading
+2026-03-31 17:34:50,246 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\pool\\events.py', reloading
+2026-03-31 17:34:50,433 INFO:  * Restarting with watchdog (windowsapi)
+2026-03-31 17:34:52,068 WARNING:  * Debugger is active!
+2026-03-31 17:34:52,075 INFO:  * Debugger PIN: 109-348-809
+2026-03-31 17:34:52,133 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\computation\\api.py', reloading
+2026-03-31 17:34:52,142 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\reshape\\api.py', reloading
+2026-03-31 17:34:52,156 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\api\\__init__.py', reloading
+2026-03-31 17:34:52,171 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\arrays\\__init__.py', reloading
+2026-03-31 17:34:52,196 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\errors\\__init__.py', reloading
+2026-03-31 17:34:52,211 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\io\\__init__.py', reloading
+2026-03-31 17:34:52,225 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\plotting\\__init__.py', reloading
+2026-03-31 17:34:52,238 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\testing.py', reloading
+2026-03-31 17:34:52,277 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\util\\_print_versions.py', reloading
+2026-03-31 17:34:52,290 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\io\\api.py', reloading
+2026-03-31 17:34:52,326 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\io\\json\\_normalize.py', reloading
+2026-03-31 17:34:52,339 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\util\\_tester.py', reloading
+2026-03-31 17:34:52,350 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\_version_meson.py', reloading
+2026-03-31 17:34:52,368 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\_version.py', reloading
+2026-03-31 17:34:52,384 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\_libs\\__init__.py', reloading
+2026-03-31 17:34:52,409 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\dtypes\\missing.py', reloading
+2026-03-31 17:34:52,427 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\algorithms.py', reloading
+2026-03-31 17:34:52,440 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\arrays\\__init__.py', reloading
+2026-03-31 17:34:52,456 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\arrays\\boolean.py', reloading
+2026-03-31 17:34:52,470 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\arrays\\floating.py', reloading
+2026-03-31 17:34:52,483 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\arrays\\integer.py', reloading
+2026-03-31 17:34:52,503 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\arrays\\string_.py', reloading
+2026-03-31 17:34:52,525 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\construction.py', reloading
+2026-03-31 17:34:52,539 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\flags.py', reloading
+2026-03-31 17:34:52,552 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\groupby\\__init__.py', reloading
+2026-03-31 17:34:52,568 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\indexes\\api.py', reloading
+2026-03-31 17:34:52,588 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\indexes\\datetimes.py', reloading
+2026-03-31 17:34:52,611 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\indexes\\interval.py', reloading
+2026-03-31 17:34:52,635 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\indexes\\period.py', reloading
+2026-03-31 17:34:52,655 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\indexes\\timedeltas.py', reloading
+2026-03-31 17:34:52,687 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\indexing.py', reloading
+2026-03-31 17:34:52,723 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\series.py', reloading
+2026-03-31 17:34:52,751 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\tools\\datetimes.py', reloading
+2026-03-31 17:34:52,771 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\tools\\numeric.py', reloading
+2026-03-31 17:34:52,790 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\tools\\timedeltas.py', reloading
+2026-03-31 17:34:52,815 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\io\\formats\\format.py', reloading
+2026-03-31 17:34:52,838 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\tseries\\offsets.py', reloading
+2026-03-31 17:34:52,867 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\_config\\config.py', reloading
+2026-03-31 17:34:52,947 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\compat\\_constants.py', reloading
+2026-03-31 17:34:52,968 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\compat\\_optional.py', reloading
+2026-03-31 17:34:52,983 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\compat\\numpy\\__init__.py', reloading
+2026-03-31 17:34:53,007 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\compat\\numpy\\function.py', reloading
+2026-03-31 17:34:53,036 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\util\\_decorators.py', reloading
+2026-03-31 17:34:53,058 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\util\\_exceptions.py', reloading
+2026-03-31 17:34:53,081 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\util\\_validators.py', reloading
+2026-03-31 17:34:53,106 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\dtypes\\cast.py', reloading
+2026-03-31 17:34:53,243 INFO:  * Restarting with watchdog (windowsapi)
+2026-03-31 17:34:54,672 WARNING:  * Debugger is active!
+2026-03-31 17:34:54,679 INFO:  * Debugger PIN: 109-348-809
+2026-03-31 17:34:54,734 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\io\\excel\\_base.py', reloading
+2026-03-31 17:34:54,752 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\io\\formats\\excel.py', reloading
+2026-03-31 17:34:54,778 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\io\\pytables.py', reloading
+2026-03-31 17:34:54,807 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\io\\sql.py', reloading
+2026-03-31 17:34:54,829 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\io\\pickle.py', reloading
+2026-03-31 17:34:54,843 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\io\\clipboards.py', reloading
+2026-03-31 17:34:54,936 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\window\\rolling.py', reloading
+2026-03-31 17:34:54,956 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\window\\expanding.py', reloading
+2026-03-31 17:34:54,976 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\window\\ewm.py', reloading
+2026-03-31 17:34:55,060 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\ops\\common.py', reloading
+2026-03-31 17:34:55,803 INFO:  * Restarting with watchdog (windowsapi)
+2026-03-31 17:34:57,226 WARNING:  * Debugger is active!
+2026-03-31 17:34:57,233 INFO:  * Debugger PIN: 109-348-809
+2026-03-31 17:41:58,564 INFO:  * Detected change in 'C:\\Python313\\Lib\\zoneinfo\\__init__.py', reloading
+2026-03-31 17:41:58,565 INFO:  * Detected change in 'C:\\Python313\\Lib\\zoneinfo\\_tzpath.py', reloading
+2026-03-31 17:41:58,569 INFO:  * Detected change in 'C:\\Python313\\Lib\\zoneinfo\\_common.py', reloading
+2026-03-31 17:41:58,589 INFO:  * Detected change in 'C:\\Python313\\Lib\\_strptime.py', reloading
+2026-03-31 17:41:58,718 INFO:  * Detected change in 'C:\\Python313\\Lib\\pydoc.py', reloading
+2026-03-31 17:41:58,754 INFO:  * Detected change in 'C:\\Python313\\Lib\\_pyrepl\\__init__.py', reloading
+2026-03-31 17:41:58,755 INFO:  * Detected change in 'C:\\Python313\\Lib\\_pyrepl\\pager.py', reloading
+2026-03-31 17:41:58,995 INFO:  * Restarting with watchdog (windowsapi)
+2026-03-31 17:42:00,122 WARNING:  * Debugger is active!
+2026-03-31 17:42:00,128 INFO:  * Debugger PIN: 109-348-809
+2026-03-31 17:44:15,329 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\Desktop\\PORTIFOLIO\\SCRIPTS\\DISP\\site-disponibilidade\\backend\\convert_pdf.py', reloading
+2026-03-31 17:44:15,799 INFO:  * Restarting with watchdog (windowsapi)
+2026-03-31 17:44:16,885 WARNING:  * Debugger is active!
+2026-03-31 17:44:16,890 INFO:  * Debugger PIN: 109-348-809
+2026-03-31 17:49:23,891 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\Desktop\\PORTIFOLIO\\SCRIPTS\\DISP\\site-disponibilidade\\backend\\main.py', reloading
+2026-03-31 17:49:23,891 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\Desktop\\PORTIFOLIO\\SCRIPTS\\DISP\\site-disponibilidade\\backend\\server.py', reloading
+2026-03-31 17:49:24,512 INFO:  * Restarting with watchdog (windowsapi)
+2026-03-31 17:49:25,583 WARNING:  * Debugger is active!
+2026-03-31 17:49:25,587 INFO:  * Debugger PIN: 109-348-809
+2026-03-31 17:51:39,044 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\hpack\\huffman.py', reloading
+2026-03-31 17:51:39,046 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\io\\excel\\_odswriter.py', reloading
+2026-03-31 17:51:39,056 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\hpack\\huffman_constants.py', reloading
+2026-03-31 17:51:39,061 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\io\\excel\\_openpyxl.py', reloading
+2026-03-31 17:51:39,084 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\PIL\\GimpGradientFile.py', reloading
+2026-03-31 17:51:39,086 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\io\\excel\\_util.py', reloading
+2026-03-31 17:51:39,087 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\hpack\\huffman_table.py', reloading
+2026-03-31 17:51:39,088 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\computation\\check.py', reloading
+2026-03-31 17:51:39,101 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\PIL\\GimpPaletteFile.py', reloading
+2026-03-31 17:51:39,106 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\io\\excel\\_xlsxwriter.py', reloading
+2026-03-31 17:51:39,110 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\_numba\\executor.py', reloading
+2026-03-31 17:51:39,117 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\PIL\\PaletteFile.py', reloading
+2026-03-31 17:51:39,124 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\_config\\dates.py', reloading
+2026-03-31 17:51:39,128 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\hpack\\table.py', reloading
+2026-03-31 17:51:39,138 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\_config\\display.py', reloading
+2026-03-31 17:51:39,147 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\util\\numba_.py', reloading
+2026-03-31 17:51:39,149 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\compat\\pickle_compat.py', reloading
+2026-03-31 17:51:39,174 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\window\\common.py', reloading
+2026-03-31 17:51:39,193 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\arrays\\datetimelike.py', reloading
+2026-03-31 17:51:39,194 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\io\\_util.py', reloading
+2026-03-31 17:51:39,197 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\tseries\\holiday.py', reloading
+2026-03-31 17:51:39,203 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\array_algos\\__init__.py', reloading
+2026-03-31 17:51:39,208 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\window\\doc.py', reloading
+2026-03-31 17:51:39,216 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\util\\version\\__init__.py', reloading
+2026-03-31 17:51:39,220 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\array_algos\\masked_accumulations.py', reloading
+2026-03-31 17:51:39,225 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\arrays\\arrow\\__init__.py', reloading
+2026-03-31 17:51:39,235 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\io\\parsers\\__init__.py', reloading
+2026-03-31 17:51:39,240 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\arrays\\arrow\\extension_types.py', reloading
+2026-03-31 17:51:39,241 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\array_algos\\masked_reductions.py', reloading
+2026-03-31 17:51:39,243 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\window\\numba_.py', reloading
+2026-03-31 17:51:39,244 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\arrays\\interval.py', reloading
+2026-03-31 17:51:39,252 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\arrays\\categorical.py', reloading
+2026-03-31 17:51:39,255 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\groupby\\groupby.py', reloading
+2026-03-31 17:51:39,262 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\io\\parsers\\readers.py', reloading
+2026-03-31 17:51:39,269 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\array_algos\\quantile.py', reloading
+2026-03-31 17:51:39,276 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\indexes\\accessors.py', reloading
+2026-03-31 17:51:39,288 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\arrays\\_utils.py', reloading
+2026-03-31 17:51:39,291 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\groupby\\ops.py', reloading
+2026-03-31 17:51:39,297 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\io\\excel\\_calamine.py', reloading
+2026-03-31 17:51:39,436 INFO:  * Restarting with watchdog (windowsapi)
+2026-03-31 17:51:40,835 WARNING:  * Debugger is active!
+2026-03-31 17:51:40,842 INFO:  * Debugger PIN: 109-348-809
+2026-03-31 17:51:40,903 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\dateutil\\relativedelta.py', reloading
+2026-03-31 17:51:40,909 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\io\\sas\\sasreader.py', reloading
+2026-03-31 17:51:40,921 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pyarrow\\dataset.py', reloading
+2026-03-31 17:51:40,925 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\_testing\\__init__.py', reloading
+2026-03-31 17:51:40,930 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\io\\sas\\sas_xport.py', reloading
+2026-03-31 17:51:40,955 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\io\\sas\\sas7bdat.py', reloading
+2026-03-31 17:51:40,982 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\dialects\\oracle\\base.py', reloading
+2026-03-31 17:51:40,985 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\_config\\localization.py', reloading
+2026-03-31 17:51:40,991 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\dialects\\sqlite\\aiosqlite.py', reloading
+2026-03-31 17:51:41,014 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\dialects\\oracle\\cx_oracle.py', reloading
+2026-03-31 17:51:41,015 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\_testing\\_io.py', reloading
+2026-03-31 17:51:41,022 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\dialects\\sqlite\\base.py', reloading
+2026-03-31 17:51:41,036 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\_testing\\_warnings.py', reloading
+2026-03-31 17:51:41,040 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\dialects\\oracle\\oracledb.py', reloading
+2026-03-31 17:51:41,052 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\dialects\\sqlite\\pysqlcipher.py', reloading
+2026-03-31 17:51:41,062 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\_testing\\asserters.py', reloading
+2026-03-31 17:51:41,065 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\dialects\\oracle\\dictionary.py', reloading
+2026-03-31 17:51:41,077 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\dialects\\sqlite\\pysqlite.py', reloading
+2026-03-31 17:51:41,079 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\_testing\\compat.py', reloading
+2026-03-31 17:51:41,085 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\dialects\\oracle\\types.py', reloading
+2026-03-31 17:51:41,098 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\dialects\\sqlite\\dml.py', reloading
+2026-03-31 17:51:41,102 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\io\\sas\\sas_constants.py', reloading
+2026-03-31 17:51:41,137 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\dialects\\sqlite\\json.py', reloading
+2026-03-31 17:51:41,141 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\connectors\\asyncio.py', reloading
+2026-03-31 17:51:41,142 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\PIL\\ImageWin.py', reloading
+2026-03-31 17:51:41,157 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\dialects\\_typing.py', reloading
+2026-03-31 17:51:41,159 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\PIL\\_version.py', reloading
+2026-03-31 17:51:41,160 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\tqdm\\_monitor.py', reloading
+2026-03-31 17:51:41,161 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\numpy\\_core\\overrides.py', reloading
+2026-03-31 17:51:41,172 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\_testing\\contexts.py', reloading
+2026-03-31 17:51:41,180 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\numpy\\_core\\umath.py', reloading
+2026-03-31 17:51:41,210 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\numpy\\lib\\recfunctions.py', reloading
+2026-03-31 17:51:41,221 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\tqdm\\_tqdm_pandas.py', reloading
+2026-03-31 17:51:41,235 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pyparsing\\__init__.py', reloading
+2026-03-31 17:51:41,253 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pyparsing\\util.py', reloading
+2026-03-31 17:51:41,255 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\interchange\\column.py', reloading
+2026-03-31 17:51:41,256 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\numpy\\_utils\\_inspect.py', reloading
+2026-03-31 17:51:41,273 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pyparsing\\exceptions.py', reloading
+2026-03-31 17:51:41,281 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\tqdm\\cli.py', reloading
+2026-03-31 17:51:41,293 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\interchange\\utils.py', reloading
+2026-03-31 17:51:41,300 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\tqdm\\gui.py', reloading
+2026-03-31 17:51:41,317 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\tqdm\\version.py', reloading
+2026-03-31 17:51:41,331 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pyparsing\\actions.py', reloading
+2026-03-31 17:51:41,335 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\tqdm\\notebook.py', reloading
+2026-03-31 17:51:41,355 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\tqdm\\utils.py', reloading
+2026-03-31 17:51:41,356 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\core\\interchange\\buffer.py', reloading
+2026-03-31 17:51:41,363 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\api\\indexers\\__init__.py', reloading
+2026-03-31 17:51:41,368 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pyparsing\\results.py', reloading
+2026-03-31 17:51:41,371 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\matplotlib\\_mathtext_data.py', reloading
+2026-03-31 17:51:41,379 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\api\\interchange\\__init__.py', reloading
+2026-03-31 17:51:41,397 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\defusedxml\\common.py', reloading
+2026-03-31 17:51:41,402 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pandas\\api\\typing\\__init__.py', reloading
+2026-03-31 17:51:41,406 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pyparsing\\core.py', reloading
+2026-03-31 17:51:41,427 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\defusedxml\\cElementTree.py', reloading
+2026-03-31 17:51:41,445 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\defusedxml\\minidom.py', reloading
+2026-03-31 17:51:41,454 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\PIL\\ImageMath.py', reloading
+2026-03-31 17:51:41,458 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\dialects\\postgresql\\array.py', reloading
+2026-03-31 17:51:41,461 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\defusedxml\\pulldom.py', reloading
+2026-03-31 17:51:41,462 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\pyparsing\\helpers.py', reloading
+2026-03-31 17:51:41,478 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\defusedxml\\sax.py', reloading
+2026-03-31 17:51:41,484 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\dialects\\postgresql\\asyncpg.py', reloading
+2026-03-31 17:51:41,498 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\defusedxml\\expatbuilder.py', reloading
+2026-03-31 17:51:41,517 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\defusedxml\\expatreader.py', reloading
+2026-03-31 17:51:41,521 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\dialects\\postgresql\\base.py', reloading
+2026-03-31 17:51:41,532 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\defusedxml\\xmlrpc.py', reloading
+2026-03-31 17:51:41,549 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\dialects\\postgresql\\pg8000.py', reloading
+2026-03-31 17:51:41,566 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\dialects\\postgresql\\psycopg.py', reloading
+2026-03-31 17:51:41,587 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\dialects\\postgresql\\psycopg2.py', reloading
+2026-03-31 17:51:41,601 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\dialects\\postgresql\\psycopg2cffi.py', reloading
+2026-03-31 17:51:41,617 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\dialects\\postgresql\\dml.py', reloading
+2026-03-31 17:51:41,632 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\dialects\\postgresql\\ext.py', reloading
+2026-03-31 17:51:41,648 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\dialects\\postgresql\\hstore.py', reloading
+2026-03-31 17:51:41,660 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\dialects\\postgresql\\json.py', reloading
+2026-03-31 17:51:41,674 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\dialects\\postgresql\\named_types.py', reloading
+2026-03-31 17:51:41,688 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\dialects\\postgresql\\ranges.py', reloading
+2026-03-31 17:51:41,702 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\dialects\\postgresql\\types.py', reloading
+2026-03-31 17:51:41,713 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\dialects\\postgresql\\operators.py', reloading
+2026-03-31 17:51:41,728 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\dialects\\postgresql\\pg_catalog.py', reloading
+2026-03-31 17:51:41,764 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\sqlalchemy\\dialects\\postgresql\\_psycopg_common.py', reloading
+2026-03-31 17:51:41,795 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\psycopg2\\__init__.py', reloading
+2026-03-31 17:51:41,808 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\psycopg2\\extensions.py', reloading
+2026-03-31 17:51:41,823 INFO:  * Detected change in 'C:\\Users\\thalissom.cruz\\AppData\\Roaming\\Python\\Python313\\site-packages\\psycopg2\\extras.py', reloading
+2026-03-31 17:51:41,958 INFO:  * Restarting with watchdog (windowsapi)
+2026-03-31 17:51:43,017 WARNING:  * Debugger is active!
+2026-03-31 17:51:43,021 INFO:  * Debugger PIN: 109-348-809
+2026-03-31 17:54:58,037 INFO:  * Detected change in 'C:\\Python313\\Lib\\asyncio\\__init__.py', reloading
+2026-03-31 17:54:58,039 INFO:  * Detected change in 'C:\\Python313\\Lib\\asyncio\\base_events.py', reloading
+2026-03-31 17:54:58,059 INFO:  * Detected change in 'C:\\Python313\\Lib\\concurrent\\__init__.py', reloading
+2026-03-31 17:54:58,061 INFO:  * Detected change in 'C:\\Python313\\Lib\\concurrent\\futures\\__init__.py', reloading
+2026-03-31 17:54:58,063 INFO:  * Detected change in 'C:\\Python313\\Lib\\concurrent\\futures\\_base.py', reloading
+2026-03-31 17:54:58,107 INFO:  * Detected change in 'C:\\Python313\\Lib\\asyncio\\constants.py', reloading
+2026-03-31 17:54:58,109 INFO:  * Detected change in 'C:\\Python313\\Lib\\asyncio\\coroutines.py', reloading
+2026-03-31 17:54:58,123 INFO:  * Detected change in 'C:\\Python313\\Lib\\asyncio\\events.py', reloading
+2026-03-31 17:54:58,130 INFO:  * Detected change in 'C:\\Python313\\Lib\\asyncio\\format_helpers.py', reloading
+2026-03-31 17:54:58,135 INFO:  * Detected change in 'C:\\Python313\\Lib\\asyncio\\base_futures.py', reloading
+2026-03-31 17:54:58,136 INFO:  * Detected change in 'C:\\Python313\\Lib\\asyncio\\exceptions.py', reloading
+2026-03-31 17:54:58,137 INFO:  * Detected change in 'C:\\Python313\\Lib\\asyncio\\base_tasks.py', reloading
+2026-03-31 17:54:58,139 INFO:  * Detected change in 'C:\\Python313\\Lib\\asyncio\\futures.py', reloading
+2026-03-31 17:54:58,143 INFO:  * Detected change in 'C:\\Python313\\Lib\\asyncio\\protocols.py', reloading
+2026-03-31 17:54:58,145 INFO:  * Detected change in 'C:\\Python313\\Lib\\asyncio\\sslproto.py', reloading
+2026-03-31 17:54:58,152 INFO:  * Detected change in 'C:\\Python313\\Lib\\asyncio\\transports.py', reloading
+2026-03-31 17:54:58,155 INFO:  * Detected change in 'C:\\Python313\\Lib\\asyncio\\log.py', reloading
+2026-03-31 17:54:58,156 INFO:  * Detected change in 'C:\\Python313\\Lib\\asyncio\\staggered.py', reloading
+2026-03-31 17:54:58,158 INFO:  * Detected change in 'C:\\Python313\\Lib\\asyncio\\locks.py', reloading
+2026-03-31 17:54:58,163 INFO:  * Detected change in 'C:\\Python313\\Lib\\asyncio\\mixins.py', reloading
+2026-03-31 17:54:58,165 INFO:  * Detected change in 'C:\\Python313\\Lib\\asyncio\\tasks.py', reloading
+2026-03-31 17:54:58,173 INFO:  * Detected change in 'C:\\Python313\\Lib\\asyncio\\queues.py', reloading
+2026-03-31 17:54:58,177 INFO:  * Detected change in 'C:\\Python313\\Lib\\asyncio\\timeouts.py', reloading
+2026-03-31 17:54:58,180 INFO:  * Detected change in 'C:\\Python313\\Lib\\asyncio\\trsock.py', reloading
+2026-03-31 17:54:58,182 INFO:  * Detected change in 'C:\\Python313\\Lib\\asyncio\\runners.py', reloading
+2026-03-31 17:54:58,185 INFO:  * Detected change in 'C:\\Python313\\Lib\\asyncio\\streams.py', reloading
+2026-03-31 17:54:58,194 INFO:  * Detected change in 'C:\\Python313\\Lib\\asyncio\\subprocess.py', reloading
+2026-03-31 17:54:58,197 INFO:  * Detected change in 'C:\\Python313\\Lib\\asyncio\\taskgroups.py', reloading
+2026-03-31 17:54:58,200 INFO:  * Detected change in 'C:\\Python313\\Lib\\asyncio\\threads.py', reloading
+2026-03-31 17:54:58,202 INFO:  * Detected change in 'C:\\Python313\\Lib\\asyncio\\windows_events.py', reloading
+2026-03-31 17:54:58,213 INFO:  * Detected change in 'C:\\Python313\\Lib\\asyncio\\base_subprocess.py', reloading
+2026-03-31 17:54:58,218 INFO:  * Detected change in 'C:\\Python313\\Lib\\asyncio\\proactor_events.py', reloading
+2026-03-31 17:54:58,228 INFO:  * Detected change in 'C:\\Python313\\Lib\\asyncio\\selector_events.py', reloading
+2026-03-31 17:54:58,240 INFO:  * Detected change in 'C:\\Python313\\Lib\\asyncio\\windows_utils.py', reloading

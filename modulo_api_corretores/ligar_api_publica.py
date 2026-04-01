@@ -3,45 +3,84 @@ import time
 import sys
 import re
 import threading
+import os
+import requests
 
-def run_localtunnel():
-    print("🌐 Criando o Túnel Público com Localtunnel (bypass de firewall)...")
+def update_frontend_api(url):
+    """Atualiza o frontend com a nova URL do tunel e faz deploy automatico."""
+    print(f"\n[DEPLOY] Atualizando o frontend para usar: {url}")
+    api_file = os.path.join(os.getcwd(), 'src', 'services', 'api.js')
     
-    # Inicia o Localtunnel usando Node.js com um subdomínio fixo
-    lt_process = subprocess.Popen(
-        ["npx", "--yes", "localtunnel", "--port", "8001", "--subdomain", "valleprime-api-corretores"],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        shell=True
+    try:
+        with open(api_file, 'r', encoding='utf-8') as f:
+            content = f.read()
+            
+        # Troca qualquer URL de tunel anterior pela nova
+        content = re.sub(r'https://valleprime-api-corretores\.loca\.lt', url, content)
+        content = re.sub(r'https://[a-zA-Z0-9-]+\.lhr\.life', url, content)
+        content = re.sub(r'https://[a-zA-Z0-9-]+\.trycloudflare\.com', url, content)
+        
+        with open(api_file, 'w', encoding='utf-8') as f:
+            f.write(content)
+            
+        print("[DEPLOY] api.js atualizado!")
+        
+        print("[DEPLOY] Fazendo push para GitHub/Cloudflare Pages...")
+        subprocess.run(["git", "add", api_file], check=False)
+        subprocess.run(["git", "commit", "-m", "fix: auto-update tunnel URL (cloudflare)"], check=False)
+        subprocess.run(["git", "push"], check=False)
+        print("[DEPLOY] Push concluido! Site atualizado em ~60s.")
+        
+    except Exception as e:
+        print(f"[DEPLOY ERRO] {e}")
+
+def run_cloudflare_tunnel():
+    """Cria um tunel publico usando Cloudflare Quick Tunnel (gratuito, sem conta)."""
+    print("[TUNEL] Criando tunel publico com Cloudflare (estavel e sem verificacao)...")
+    
+    cf_path = os.path.join(os.getcwd(), "cloudflared.exe")
+    
+    # Inicia cloudflared e força a porta de metricas em 4567 para podermos ler a URL
+    process = subprocess.Popen(
+        [cf_path, "tunnel", "--metrics", "127.0.0.1:4567", "--url", "http://127.0.0.1:8001"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL
     )
     
-    url_found = False
+    print("[TUNEL] Aguardando o Cloudflare gerar a URL...")
+    public_url = None
     
-    # Lê as linhas do localtunnel até achar a URL gerada
-    for line in iter(lt_process.stdout.readline, ''):
-        line = line.strip()
-        if "your url is:" in line.lower():
-            # Extrai o link mágico
-            match = re.search(r'(https://[^\s]+)', line)
-            if match:
-                public_url = match.group(1)
-                
-                print("\n" + "="*60)
-                print("✅ SUCESSO! SUA API ESTÁ NO AR PELO LOCALTUNNEL!")
-                print("="*60)
-                print(f"\n🌍 LINK DA API BASE:   {public_url}")
-                print(f"📖 PAGINA VISUAL:      {public_url}/docs")
-                print("\n🔹 Link Direto de Exemplo (JSON API Integracao):")
-                print(f"👉 {public_url}/api/integracao/corretores\n")
-                print("="*60)
-                print("Para desligar a API e apagar o link da internet, pressione CTRL+C")
-                url_found = True
-        elif not url_found and line:
-            print(f"[LT Log] {line}")
+    # Tenta ler a metrica por 30 segundos
+    for _ in range(30):
+        time.sleep(1)
+        try:
+            r = requests.get("http://127.0.0.1:4567/metrics", timeout=2)
+            if r.status_code == 200:
+                match = re.search(r'(https://[a-zA-Z0-9-]+\.trycloudflare\.com)', r.text)
+                if match:
+                    public_url = match.group(1)
+                    break
+        except requests.exceptions.RequestException:
+            continue
+            
+    if public_url:
+        print("\n" + "="*60)
+        print("  API PUBLICA NO AR VIA CLOUDFLARE TUNNEL!")
+        print("="*60)
+        print(f"\n  LINK DA API:  {public_url}")
+        print(f"  TESTE:        {public_url}/api/integracao/corretores")
+        print(f"  DOCS:         {public_url}/docs\n")
+        print("="*60)
+        print("  Para desligar, pressione CTRL+C\n")
+        
+        update_frontend_api(public_url)
+    else:
+        print("[TUNEL] Falha ao capturar a URL do Cloudflare. O processo morreu ou bloqueado por firewall.")
 
 def main():
-    print("🚀 Iniciando a VallePrime API Localmente na porta 8000...")
+    print("="*60)
+    print("  VallePrime API - Iniciando servidor local + tunel Cloudflare")
+    print("="*60)
     
     server_process = subprocess.Popen(
         [sys.executable, "-m", "uvicorn", "main:app", "--app-dir", "backend", "--host", "127.0.0.1", "--port", "8001", "--reload"],
@@ -50,24 +89,26 @@ def main():
         text=True
     )
     
-    print("⏳ Aguardando a inicialização do Servidor SQL e API...")
-    time.sleep(4)
+    print("[API] Aguardando inicializacao do Uvicorn...")
+    time.sleep(5)
     
-    # Chama o localtunnel em uma thread ou bloqueando para manter vivo
-    tunnel_thread = threading.Thread(target=run_localtunnel, daemon=True)
+    tunnel_thread = threading.Thread(target=run_cloudflare_tunnel, daemon=True)
     tunnel_thread.start()
     
     try:
-        # Loop para manter a command line lendo os logs do Uvicorn e ficar vivo
+        # Fica lendo logs do Uvicorn
         for line in iter(server_process.stdout.readline, ''):
             clean_line = line.strip()
             if clean_line:
-                print(f"[API Logs] {clean_line}")
-                
+                print(f"[API] {clean_line}")
     except KeyboardInterrupt:
-        print("\n⛔ Desligando a API e o Túnel...")
+        print("\n[FIM] Desligando API e tunel...")
+        
+        # Kill cloudflared explicitly
+        subprocess.run(["Taskkill", "/IM", "cloudflared.exe", "/F"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        
         server_process.terminate()
-        print("Finalizado com segurança.")
+        print("[FIM] Finalizado.")
 
 if __name__ == "__main__":
     main()
