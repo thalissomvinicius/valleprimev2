@@ -266,10 +266,16 @@ const BrokersPage = () => {
                                             {broker.diretoria_equipe}
                                         </div>
                                     </div>
-                                    <div className="vgv-cell">{formatCurrency(broker.resumo.vgv_total)}</div>
+                                    <div className="vgv-cell">
+                                        <span className="metric-label hide-desktop">VGV Total</span>
+                                        {formatCurrency(broker.resumo.vgv_total)}
+                                    </div>
                                     <div className="sales-cell">
-                                        <span className="sales-badge">{broker.resumo.vendas_total_obra}</span>
-                                        <small className="hide-mobile">unidades</small>
+                                        <span className="metric-label hide-desktop">Vendas</span>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            <span className="sales-badge">{broker.resumo.vendas_total_obra}</span>
+                                            <small className="hide-mobile">unidades</small>
+                                        </div>
                                     </div>
                                     <div className={`chevron-cell ${openBrokerId === broker.codigo_corretor ? 'is-open' : ''}`}>
                                         <ChevronDown size={20} />
