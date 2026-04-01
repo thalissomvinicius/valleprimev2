@@ -266,7 +266,7 @@ export const printProposal = async (id) => {
 
 export const fetchConfigObras = async () => {
   try {
-    const response = await axios.get(`https://dont-vienna-smooth-designated.trycloudflare.com/api/integracao/config/obras`, {
+    const response = await axios.get(`https://forest-trail-cite-sierra.trycloudflare.com/api/integracao/config/obras`, {
       headers: { 'Bypass-Tunnel-Reminder': 'true' },
       timeout: 15000
     });
@@ -289,7 +289,7 @@ export const fetchCorretoresData = async (filters = {}) => {
     if (data_fim) params.append('data_fim', data_fim);
 
     // LocalTunnel API requires the Bypass-Tunnel-Reminder header
-    const response = await axios.get(`https://dont-vienna-smooth-designated.trycloudflare.com/api/integracao/corretores?${params.toString()}`, {
+    const response = await axios.get(`https://forest-trail-cite-sierra.trycloudflare.com/api/integracao/corretores?${params.toString()}`, {
       headers: {
         'Bypass-Tunnel-Reminder': 'true'
       },
