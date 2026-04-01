@@ -276,7 +276,7 @@ export const fetchCorretoresData = async (filters = {}) => {
     if (data_fim) params.append('data_fim', data_fim);
 
     // LocalTunnel API requires the Bypass-Tunnel-Reminder header
-    const response = await axios.get(`https://madrid-chip-campaign-promises.trycloudflare.com/api/integracao/corretores?${params.toString()}`, {
+    const response = await axios.get(`https://boundary-capacity-biotechnology-lease.trycloudflare.com/api/integracao/corretores?${params.toString()}`, {
       headers: {
         'Bypass-Tunnel-Reminder': 'true'
       },
