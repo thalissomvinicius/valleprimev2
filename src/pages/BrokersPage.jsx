@@ -125,7 +125,7 @@ const BrokersPage = () => {
     }, [data, searchTerm]);
 
     const formatCurrency = (val) => {
-        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
     };
 
     const toggleBroker = (id) => {
@@ -290,79 +290,82 @@ const BrokersPage = () => {
                                         <div className="sale-section-title">
                                             <TrendingUp size={14} /> Detalhamento de Contratos
                                         </div>
-                                        <div className="sales-grid">
-                                            {broker.vendas_detalhadas.map(venda => (
-                                                <div key={venda.venda_id} className="sale-item-card">
-                                                    <div className="sale-header">
-                                                        <div className="sale-main-info">
-                                                            <div className="lot-badge">
+                                        <div className="sales-table-container">
+                                            <table className="sales-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Unidade</th>
+                                                        <th>Cliente</th>
+                                                        <th>VGV</th>
+                                                        <th>Plano</th>
+                                                        <th>Situação do Sinal</th>
+                                                        <th>Status</th>
+                                                        <th>Data</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {broker.vendas_detalhadas.map(venda => (
+                                                        <tr key={venda.venda_id}>
+                                                            <td className="col-unit">
                                                                 <small>QD {venda.quadra}</small>
                                                                 LT {venda.lote}
-                                                            </div>
-                                                            <div className="sale-id-date">
-                                                                <b>Contrato #{venda.venda_id}</b>
-                                                                <span>Vendido em: {new Date(venda.data_venda).toLocaleDateString('pt-BR')}</span>
-                                                            </div>
-                                                        </div>
-                                                        <div className="sale-tags">
-                                                            <span className={`status-badge ${venda.status_venda.toLowerCase()}`}>
-                                                                {venda.status_venda}
-                                                            </span>
-                                                            <span className={`status-badge ${venda.sinal_negocio.situacao.includes('Pagos') ? 'pago' : venda.sinal_negocio.situacao.includes('Atraso') ? 'atraso' : 'aguardando'}`}>
-                                                                Sinal: {venda.sinal_negocio.situacao}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="sale-content">
-                                                        <div className="client-side">
-                                                            <div className="sale-section-title">Perfil do Comprador</div>
-                                                            <div className="client-info-box">
-                                                                <div className="client-info-item">
-                                                                    <User size={14} /> <b>{venda.client?.nome || venda.cliente?.nome}</b>
+                                                            </td>
+                                                            <td className="col-client">
+                                                                <div className="client-name-cell">
+                                                                    <b>{venda.client?.nome || venda.cliente?.nome}</b>
+                                                                    <div className="info-trigger">
+                                                                        <Info size={12} /> Ver detalhes
+                                                                    </div>
+                                                                    <div className="client-popover">
+                                                                        <div><strong>CPF:</strong> {venda.client?.cpf || venda.cliente?.cpf}</div>
+                                                                        <div><strong>Tel:</strong> {venda.client?.telefone || venda.cliente?.telefone || 'N/A'}</div>
+                                                                        <div><strong>End:</strong> {venda.client?.endereco || venda.cliente?.endereco}</div>
+                                                                        <div style={{marginTop: '5px', paddingTop: '5px', borderTop: '1px solid rgba(255,255,255,0.1)'}}>
+                                                                            <strong>Contrato:</strong> #{venda.venda_id}
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
-                                                                <div className="client-info-item">
-                                                                    <Info size={14} /> CPF: {venda.client?.cpf || venda.cliente?.cpf}
+                                                            </td>
+                                                            <td className="col-vgv">
+                                                                {formatCurrency(venda.valor_venda)}
+                                                            </td>
+                                                            <td style={{fontSize: '0.8rem', color: '#64748b'}}>
+                                                                {venda.condicao_pagamento}
+                                                            </td>
+                                                            <td className="col-signal">
+                                                                <div className="signal-text">
+                                                                    {venda.sinal_negocio.situacao}
                                                                 </div>
-                                                                <div className="client-info-item">
-                                                                    <Phone size={14} /> {venda.client?.telefone || venda.cliente?.telefone || 'Não cadastrado'}
+                                                                <div className="signal-bar">
+                                                                    <div 
+                                                                        className="signal-progress" 
+                                                                        style={{ 
+                                                                            width: `${(venda.sinal_negocio.valor_ja_pago / (venda.sinal_negocio.valor_ja_pago + (venda.sinal_negocio.valor_a_pagar || 0))) * 100}%`,
+                                                                            backgroundColor: venda.sinal_negocio.situacao.includes('Atraso') ? '#ef4444' : '#10b981'
+                                                                        }}
+                                                                    ></div>
                                                                 </div>
-                                                                <div className="client-info-item">
-                                                                    <MapPin size={14} /> {venda.client?.endereco || venda.cliente?.endereco}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="financial-side">
-                                                            <div className="sale-section-title">Situação Financeira</div>
-                                                            <div className="payment-info-box">
-                                                                <div className="payment-mini-card">
-                                                                    <span className="label">VGV da Unidade</span>
-                                                                    <span className="value">{formatCurrency(venda.valor_venda)}</span>
-                                                                </div>
-                                                                <div className="payment-mini-card">
-                                                                    <span className="label">Plano de Pagto</span>
-                                                                    <span className="value">{venda.condicao_pagamento}</span>
-                                                                </div>
-                                                                <div className="payment-mini-card">
-                                                                    <span className="label">Saldo de Sinal Pago</span>
-                                                                    <span className="value">{formatCurrency(venda.sinal_negocio.valor_ja_pago)}</span>
-                                                                </div>
-                                                                <div className={`payment-mini-card ${venda.sinal_negocio.valor_em_atraso > 0 ? 'danger' : ''}`}>
-                                                                    <span className="label">Sinal Pendente</span>
-                                                                    <span className="value">{formatCurrency(venda.sinal_negocio.valor_em_atraso)}</span>
-                                                                </div>
-                                                                {venda.progresso_financiamento.valor_em_atraso > 0 && (
-                                                                    <div className="payment-mini-card danger" style={{ gridColumn: 'span 2' }}>
-                                                                        <span className="label">ALERTA: Parcelas em Atraso (Financiamento)</span>
-                                                                        <span className="value">{formatCurrency(venda.progresso_financiamento.valor_em_atraso)} ({venda.progresso_financiamento.parcelas_em_atraso} parc.)</span>
+                                                                <small style={{fontSize: '0.7rem', color: '#94a3b8'}}>
+                                                                    {formatCurrency(venda.sinal_negocio.valor_ja_pago)} de {formatCurrency(venda.sinal_negocio.valor_ja_pago + (venda.sinal_negocio.valor_a_pagar || 0))}
+                                                                </small>
+                                                            </td>
+                                                            <td>
+                                                                <span className={`status-badge ${venda.status_venda.toLowerCase()}`} style={{padding: '4px 8px', fontSize: '0.7rem'}}>
+                                                                    {venda.status_venda}
+                                                                </span>
+                                                                {venda.progresso_financiamento.parcelas_em_atraso > 0 && (
+                                                                    <div style={{color: '#be123c', fontSize: '0.65rem', fontWeight: '800', marginTop: '4px'}}>
+                                                                        {venda.progresso_financiamento.parcelas_em_atraso} parc. atraso
                                                                     </div>
                                                                 )}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))}
+                                                            </td>
+                                                            <td style={{fontSize: '0.85rem', color: '#64748b'}}>
+                                                                {new Date(venda.data_venda).toLocaleDateString('pt-BR')}
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
                                         </div>
                                     </div>
                                 )}
