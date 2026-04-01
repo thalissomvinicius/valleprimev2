@@ -90,7 +90,7 @@ const BrokersPage = () => {
         } finally {
             setLoading(false);
         }
-    }, [selectedMonth, currentUser?.id, isAdmin, currentUser?.permissions?.uau_corretor_id]);
+    }, [selectedMonth, currentUser?.id, isAdmin, currentUser?.permissions?.uau_corretor_id, selectedObraId]);
 
     useEffect(() => {
         const fetchObras = async () => {
