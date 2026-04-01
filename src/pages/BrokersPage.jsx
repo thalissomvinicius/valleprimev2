@@ -137,58 +137,61 @@ const BrokersPage = () => {
             <Header title="Performance de Vendas" />
 
             <main className="brokers-container">
-                <section className="brokers-hero animate-fade-in-up">
-                    <div className="hero-title">
-                        <div className="hero-icon">
-                            <TrendingUp size={24} />
+                <header className="brokers-hero animate-fade-in-up">
+                    <div className="hero-content">
+                        <div className="hero-title">
+                            <div className="hero-icon">
+                                <TrendingUp size={20} />
+                            </div>
+                            <div>
+                                <h1>Gestão de Corretores</h1>
+                                <p className="stat-secondary-label">Análise de VGV e Recebíveis</p>
+                            </div>
                         </div>
-                        <div>
-                            <h1>Gestão de Corretores</h1>
-                            <p className="stat-secondary-label">Acompanhamento em tempo real de VGV e Recebíveis</p>
-                        </div>
-                    </div>
 
-                    <div className="broker-filters">
-                        <div className="filter-group">
-                            <Briefcase size={18} className="text-muted" />
-                            <span className="filter-label">Empreendimento:</span>
-                            <select 
-                                className="month-picker"
-                                style={{ minWidth: '200px' }}
-                                value={selectedObraId}
-                                onChange={(e) => setSelectedObraId(e.target.value)}
-                            >
-                                {obrasList.map(item => (
-                                    <option key={`${item.empresa}-${item.obra}`} value={`${item.empresa}-${item.obra}`}>
-                                        {item.nome} ({item.obra})
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                        <div className="header-divider hide-mobile"></div>
-                        <div className="filter-group">
-                            <Calendar size={18} className="text-muted" />
-                            <span className="filter-label">Mês de Referência:</span>
-                            <input 
-                                type="month" 
-                                className="month-picker"
-                                value={selectedMonth}
-                                onChange={(e) => setSelectedMonth(e.target.value)}
-                            />
-                        </div>
-                        <div className="header-divider hide-mobile"></div>
-                        <div className="filter-group search-box">
-                            <Search size={18} className="text-muted" />
-                            <input 
-                                type="text" 
-                                placeholder="Buscar corretor..."
-                                className="month-picker"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
+                        <div className="broker-filters">
+                            <div className="filter-group">
+                                <Briefcase size={16} />
+                                <select 
+                                    className="minimal-select"
+                                    value={selectedObraId}
+                                    onChange={(e) => setSelectedObraId(e.target.value)}
+                                >
+                                    {obrasList.map(item => (
+                                        <option key={`${item.empresa}-${item.obra}`} value={`${item.empresa}-${item.obra}`}>
+                                            {item.nome}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="header-divider"></div>
+
+                            <div className="filter-group">
+                                <Calendar size={16} />
+                                <input 
+                                    type="month" 
+                                    className="minimal-date-picker"
+                                    value={selectedMonth}
+                                    onChange={(e) => setSelectedMonth(e.target.value)}
+                                />
+                            </div>
+
+                            <div className="header-divider"></div>
+
+                            <div className="filter-group search-box">
+                                <Search size={16} />
+                                <input 
+                                    type="text" 
+                                    placeholder="Buscar corretor..."
+                                    className="minimal-search"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                            </div>
                         </div>
                     </div>
-                </section>
+                </header>
 
                 <section className="brokers-stats-grid animate-fade-in-up">
                     <div className="broker-stat-card">

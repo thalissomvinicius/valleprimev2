@@ -12,10 +12,19 @@
 }
 
 .brokers-hero {
+    margin: 2rem 0 3rem 0;
+    padding: 1rem 1.5rem;
+    background: rgba(255, 255, 255, 0.4);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.hero-content {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
-    margin: 2.5rem 0 3rem 0;
+    align-items: center;
     gap: 2rem;
     flex-wrap: wrap;
 }
@@ -23,50 +32,42 @@
 .hero-title {
     display: flex;
     align-items: center;
-    gap: 1.25rem;
-    flex: 1 1 300px;
+    gap: 1rem;
+    flex: 0 1 auto;
 }
 
 .hero-title h1 {
-    font-size: 2.2rem;
+    font-size: 1.5rem;
     font-weight: 800;
-    color: var(--secondary-color, #0f172a);
-    margin: 0 0 0.25rem 0;
-    letter-spacing: -0.02em;
+    color: #0f172a;
+    margin: 0;
+    letter-spacing: -0.01em;
 }
 
 .stat-secondary-label {
-    font-size: 0.95rem;
+    font-size: 0.8rem;
     font-weight: 500;
-    color: var(--text-muted, #64748b);
+    color: #64748b;
     margin: 0;
 }
 
 .hero-icon {
-    width: 60px;
-    height: 60px;
+    width: 42px;
+    height: 42px;
     background: linear-gradient(135deg, #2563eb, #3b82f6);
     color: white;
-    border-radius: 16px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 10px 25px rgba(37, 99, 235, 0.3);
+    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
 }
 
-/* Glassmorphism Filters */
+/* Redesigned Filters as a Toolbar */
 .broker-filters {
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 1.25rem;
-    background: rgba(255, 255, 255, 0.85);
-    -webkit-backdrop-filter: blur(12px);
-    backdrop-filter: blur(12px);
-    padding: 0.75rem 1.25rem;
-    border-radius: 20px;
-    box-shadow: 0 8px 32px rgba(15, 23, 42, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.6);
+    gap: 1.5rem;
     flex: 1 1 auto;
     justify-content: flex-end;
 }
@@ -74,28 +75,52 @@
 .filter-group {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.5rem;
+    color: #64748b;
 }
 
-.filter-label {
-    font-size: 0.85rem;
-    font-weight: 700;
-    color: var(--text-muted, #64748b);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+.filter-group svg {
+    opacity: 0.7;
 }
 
-.month-picker {
-    padding: 0.65rem 1rem;
-    border-radius: 12px;
-    border: 1px solid #e2e8f0;
-    background: #f8fafc;
+/* Minimalist Select & Inputs */
+.minimal-select,
+.minimal-date-picker,
+.minimal-search {
+    background: transparent;
+    border: none;
     font-family: inherit;
-    font-weight: 600;
-    color: #334155;
+    font-weight: 700;
+    color: #1e293b;
+    font-size: 0.9rem;
+    padding: 0.5rem 0;
+    cursor: pointer;
     outline: none;
-    transition: all 0.2s ease;
-    font-size: 0.95rem;
+    transition: color 0.2s;
+    max-width: 200px;
+}
+
+.minimal-select:hover,
+.minimal-date-picker:hover {
+    color: #2563eb;
+}
+
+.minimal-search {
+    border-bottom: 1px solid #e2e8f0;
+    font-weight: 500;
+    min-width: 150px;
+    cursor: text;
+}
+
+.minimal-search:focus {
+    border-bottom-color: #3b82f6;
+}
+
+.header-divider {
+    width: 1px;
+    height: 20px;
+    background: #cbd5e1;
+    opacity: 0.5;
 }
 
 .month-picker:hover {
@@ -511,37 +536,37 @@
 
 @media (max-width: 768px) {
     .brokers-hero {
-        flex-direction: column;
-        gap: 1.5rem;
-        margin: 1.5rem 0 2rem 0;
+        padding: 1.5rem 1rem;
+        margin: 1rem 0 2rem 0;
     }
-    
+
+    .hero-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1.5rem;
+    }
+
     .broker-filters { 
         flex-direction: column; 
         align-items: stretch;
-        background: transparent;
-        -webkit-backdrop-filter: none;
-        backdrop-filter: none;
-        box-shadow: none;
-        border: none;
-        padding: 0;
+        width: 100%;
+        gap: 1rem;
     }
     
     .filter-group {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.5rem;
-        background: white;
-        padding: 1rem;
-        border-radius: 16px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-        border: 1px solid #e2e8f0;
+        width: 100%;
+        background: rgba(255, 255, 255, 0.5);
+        padding: 0.75rem 1rem;
+        border-radius: 12px;
+        border: 1px solid rgba(226, 232, 240, 0.5);
     }
 
-    .filter-group select, 
-    .filter-group input {
+    .minimal-select, 
+    .minimal-date-picker,
+    .minimal-search {
         width: 100%;
-        padding: 0.8rem 1rem;
+        max-width: none;
+        font-size: 0.85rem;
     }
 
     .header-divider { display: none; }
