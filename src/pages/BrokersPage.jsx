@@ -17,7 +17,7 @@ import {
     Briefcase
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { fetchCorretoresData } from '../services/api';
+import { fetchCorretoresData, fetchConfigObras } from '../services/api';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import './BrokersPage.css';
@@ -35,18 +35,33 @@ const BrokersPage = () => {
         return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     });
     const [searchTerm, setSearchTerm] = useState('');
+    
+    // Obra selection
+    const [obrasList, setObrasList] = useState([]);
+    const [selectedObraId, setSelectedObraId] = useState(''); // "empresa-obra"
 
 
     const loadData = useCallback(async () => {
+        if (obrasList.length > 0 && !selectedObraId) return; // Wait for initial selection
+
         setLoading(true);
         try {
+            let empresa = 28;
+            let obra = '70100';
+
+            if (selectedObraId) {
+                const [emp, obr] = selectedObraId.split('-');
+                empresa = parseInt(emp);
+                obra = obr;
+            }
+
             // Se não for admin, filtramos apenas pelo corretor logado
             const uauId = currentUser?.permissions?.uau_corretor_id;
             const filters = {
                 mes: selectedMonth,
                 corretor_id: isAdmin ? null : (uauId || currentUser?.id),
-                empresa: 28, // Padrão Valle
-                obra: '70100' // Padrão
+                empresa: empresa,
+                obra: obra
             };
 
             const result = await fetchCorretoresData(filters);
@@ -78,8 +93,27 @@ const BrokersPage = () => {
     }, [selectedMonth, currentUser?.id, isAdmin, currentUser?.permissions?.uau_corretor_id]);
 
     useEffect(() => {
-        loadData();
-    }, [loadData]);
+        const fetchObras = async () => {
+            try {
+                const res = await fetchConfigObras();
+                if (res.obras && res.obras.length > 0) {
+                    setObrasList(res.obras);
+                    // Default to 70100 if available, else first one
+                    const defaultObra = res.obras.find(o => o.obra === '70100') || res.obras[0];
+                    setSelectedObraId(`${defaultObra.empresa}-${defaultObra.obra}`);
+                }
+            } catch (err) {
+                console.error("Erro ao carregar obras:", err);
+            }
+        };
+        fetchObras();
+    }, []);
+
+    useEffect(() => {
+        if (selectedObraId) {
+            loadData();
+        }
+    }, [loadData, selectedObraId]);
 
     const filteredBrokers = useMemo(() => {
         if (!searchTerm) return data;
@@ -116,6 +150,23 @@ const BrokersPage = () => {
 
                     <div className="broker-filters">
                         <div className="filter-group">
+                            <Briefcase size={18} className="text-muted" />
+                            <span className="filter-label">Empreendimento:</span>
+                            <select 
+                                className="month-picker"
+                                style={{ minWidth: '200px' }}
+                                value={selectedObraId}
+                                onChange={(e) => setSelectedObraId(e.target.value)}
+                            >
+                                {obrasList.map(item => (
+                                    <option key={`${item.empresa}-${item.obra}`} value={`${item.empresa}-${item.obra}`}>
+                                        {item.nome} ({item.obra})
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="header-divider hide-mobile"></div>
+                        <div className="filter-group">
                             <Calendar size={18} className="text-muted" />
                             <span className="filter-label">Mês de Referência:</span>
                             <input 
@@ -130,7 +181,7 @@ const BrokersPage = () => {
                             <Search size={18} className="text-muted" />
                             <input 
                                 type="text" 
-                                placeholder="Buscar corretor ou equipe..."
+                                placeholder="Buscar corretor..."
                                 className="month-picker"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}

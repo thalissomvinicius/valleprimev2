@@ -264,6 +264,22 @@ def fetch_dados_corretores(conn, empresa, obra, corretor_id=None, data_inicio=No
 
     return list(corretores_dict.values())
 
+@router.get("/integracao/config/obras")
+async def listar_obras_uau():
+    """
+    Retorna a lista de todas as obras (empreendimentos) ativas para o seletor no Frontend.
+    """
+    query = "SELECT Empresa_Obr AS empresa, Cod_Obr AS obra, Descr_Obr AS nome FROM Obras WITH(NOLOCK) WHERE Status_Obr = 0 ORDER BY Descr_Obr"
+    try:
+        with get_db_connection() as conn:
+            df = pd.read_sql(query, conn)
+            # Garantir que não existam NaNs
+            df = df.fillna(0)
+            obras = df.to_dict('records')
+            return {"total": len(obras), "obras": obras}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao listar obras: {str(e)}")
+
 @router.get("/integracao/corretores")
 async def obter_dados_integracao_corretores(
     empresa: int = Query(28, description="Código da empresa (ex: 28)"),

@@ -264,6 +264,19 @@ export const printProposal = async (id) => {
 
 
 
+export const fetchConfigObras = async () => {
+  try {
+    const response = await axios.get(`https://boundary-capacity-biotechnology-lease.trycloudflare.com/api/integracao/config/obras`, {
+      headers: { 'Bypass-Tunnel-Reminder': 'true' },
+      timeout: 15000
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching obras config:', error);
+    throw error;
+  }
+};
+
 export const fetchCorretoresData = async (filters = {}) => {
   try {
     const { empresa = 28, obra = '70100', corretor_id, mes, data_inicio, data_fim } = filters;
