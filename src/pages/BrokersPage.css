@@ -413,28 +413,108 @@
     text-transform: uppercase;
 }
 
-.col-client {
-    max-width: 200px;
-}
+.col-client {    max-width: 280px;}
 
-.client-name-cell {
+.client-data-card {
     display: flex;
     flex-direction: column;
+    gap: 0.5rem;
 }
 
-.client-name-cell b {
-    color: #0f172a;
-    font-size: 0.95rem;
-}
-
-.client-name-cell .info-trigger {
-    font-size: 0.75rem;
-    color: #3b82f6;
-    cursor: pointer;
-    margin-top: 0.2rem;
+.client-header {
     display: flex;
     align-items: center;
+    gap: 0.4rem;
+}
+
+.icon-user {
+    color: #94a3b8;
+    background: #f1f5f9;
+    padding: 2px;
+    border-radius: 50%;
+}
+
+.client-nome {
+    font-weight: 800;
+    color: #1e293b;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 250px;
+}
+
+.client-actions-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.contact-pill {
+    display: inline-flex;
+    align-items: center;
     gap: 0.25rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.wpp-active {
+    background: #ecfdf5;
+    color: #059669;
+    border: 1px solid #d1fae5;
+}
+
+.wpp-active:hover {
+    background: #d1fae5;
+    transform: translateY(-1px);
+}
+
+.wpp-inactive {
+    background: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+}
+
+.info-trigger-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    background: #eff6ff;
+    color: #2563eb;
+    cursor: pointer;
+    position: relative;
+    border: 1px solid #dbeafe;
+    transition: all 0.2s ease;
+}
+
+.info-trigger-pill:hover {
+    background: #dbeafe;
+}
+
+.expanded-popover {
+    min-width: 240px;
+}
+
+.expanded-popover p {
+    margin: 0.2rem 0;
+    font-size: 0.75rem;
+    color: white;
+}
+
+.popover-footer {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid rgba(255,255,255,0.15);
+    font-size: 0.7rem;
+    color: #93c5fd;
 }
 
 .col-vgv {

@@ -107,7 +107,9 @@ def fetch_dados_corretores(conn, empresa, obra, corretor_id=None, data_inicio=No
     LEFT JOIN VendaHist vh WITH(NOLOCK) ON vh.Empresa_vhist = v.Empresa_Ven AND vh.Obra_vhist = v.Obra_Ven AND vh.NumVend_vhist = v.Num_Ven AND vh.TipoMnt_vhist IN (2,8)
     OUTER APPLY (
         SELECT TOP 1 CONCAT(ddd_tel, fone_tel) AS fone_1, CONCAT(ddd_tel, fone_tel) AS fone_2  
-        FROM PesTel WITH(NOLOCK) WHERE pes_tel = v.Cliente_Ven AND Principal_tel = 1
+        FROM PesTel WITH(NOLOCK) 
+        WHERE pes_tel = v.Cliente_Ven 
+        ORDER BY Principal_tel DESC, seq_tel ASC
     ) tel
     OUTER APPLY (
         SELECT TOP 1 itv.Empresa_itv, itv.Obra_Itv, itv.NumVend_Itv, un.C1_unid, un.C2_unid 

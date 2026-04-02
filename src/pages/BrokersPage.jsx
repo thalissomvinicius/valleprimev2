@@ -318,21 +318,38 @@ const BrokersPage = () => {
                                                                 LT {venda.lote}
                                                             </td>
                                                             <td className="col-client">
-                                                                <div className="client-name-cell">
-                                                                    <b>{venda.client?.nome || venda.cliente?.nome}</b>
-                                                                    <div style={{fontSize:'0.75rem', color:'#64748b', marginTop:'4px'}}>
-                                                                        <Phone size={10} style={{verticalAlign:'middle', marginRight:'2px'}}/> 
-                                                                        {venda.client?.telefone || venda.cliente?.telefone || 'Não informado'}
+                                                                <div className="client-data-card">
+                                                                    <div className="client-header">
+                                                                        <User size={14} className="icon-user" />
+                                                                        <span className="client-nome" title={venda.client?.nome || venda.cliente?.nome}>
+                                                                            {venda.client?.nome || venda.cliente?.nome}
+                                                                        </span>
                                                                     </div>
                                                                     
-                                                                    <div className="info-trigger">
-                                                                        <Info size={12} /> Mais detalhes
-                                                                    </div>
-                                                                    <div className="client-popover">
-                                                                        <div><strong>CPF:</strong> {venda.client?.cpf || venda.cliente?.cpf}</div>
-                                                                        <div><strong>End:</strong> {venda.client?.endereco || venda.cliente?.endereco}</div>
-                                                                        <div style={{marginTop: '5px', paddingTop: '5px', borderTop: '1px solid rgba(255,255,255,0.1)'}}>
-                                                                            <strong>Contrato:</strong> #{venda.venda_id}
+                                                                    <div className="client-actions-row">
+                                                                        { (venda.client?.telefone || venda.cliente?.telefone) && (venda.client?.telefone || venda.cliente?.telefone).trim() !== '' ? (
+                                                                            <a href={`https://wa.me/55${(venda.client?.telefone || venda.cliente?.telefone || '').replace(/\D/g, '')}`} 
+                                                                               target="_blank" 
+                                                                               rel="noreferrer" 
+                                                                               className="contact-pill wpp-active">
+                                                                                <Phone size={10} />
+                                                                                {(venda.client?.telefone || venda.cliente?.telefone)}
+                                                                            </a>
+                                                                        ) : (
+                                                                            <span className="contact-pill wpp-inactive">
+                                                                                <Phone size={10} /> Sem Tel
+                                                                            </span>
+                                                                        )}
+
+                                                                        <div className="info-trigger-pill">
+                                                                            <Info size={11} /> Detalhes
+                                                                            <div className="client-popover expanded-popover">
+                                                                                <p><strong>CPF:</strong> {venda.client?.cpf || venda.cliente?.cpf}</p>
+                                                                                <p><strong>Endereço:</strong> {venda.client?.endereco || venda.cliente?.endereco || 'Não informado'}</p>
+                                                                                <div className="popover-footer">
+                                                                                    <strong>Nº Contrato:</strong> #{venda.venda_id}
+                                                                                </div>
+                                                                            </div>
                                                                         </div>
                                                                     </div>
                                                                 </div>
