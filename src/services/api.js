@@ -264,41 +264,79 @@ export const printProposal = async (id) => {
 
 
 
+// URL base das APIs locais do corretor (Cloudflare tunnel — pode mudar a cada reinício)
+const CORRETORES_TUNNEL_URL = 'https://direct-anticipated-seeking-suzuki.trycloudflare.com';
+
+// URL da API no Railway (sempre online) — usada como fallback de cache
+const RAILWAY_API = 'https://valleprimev2-api-production.up.railway.app';
+
+// Lista estática de obras como fallback quando o túnel estiver offline
+const OBRAS_FALLBACK = [
+  { empresa: 28, obra: '600', nome: 'RESIDENCIAL JARDIM DO VALLE - DOM ELISEU' },
+  { empresa: 28, obra: '601', nome: 'RESIDENCIAL JARDIM AMERICA - CAPANEMA' },
+  { empresa: 28, obra: '602', nome: 'RESIDENCIAL SALLES JARDIM - CASTANHAL' },
+  { empresa: 28, obra: '603', nome: 'RESIDENCIAL JARDIM CASTANHAL - CASTANHAL' },
+  { empresa: 28, obra: '604', nome: 'RESIDENCIAL IPITINGA - TOMÉ-AÇU' },
+  { empresa: 28, obra: '605', nome: 'RESIDENCIAL VALLE DO IPITINGA - TOMÉ-AÇU' },
+  { empresa: 28, obra: '610', nome: 'RESIDENCIAL JARDIM DO VALLE - TAILANDIA' },
+  { empresa: 28, obra: '616', nome: 'RESIDENCIAL JARDIM DO VALLE - BARCARENA' },
+  { empresa: 28, obra: '618', nome: 'RESIDENCIAL JARDIM DO VALLE II - TAILANDIA' },
+  { empresa: 28, obra: '620', nome: 'RESIDENCIAL JARDIM VALLE DO URAIM - PARAGOMINAS' },
+  { empresa: 28, obra: '621', nome: 'RESIDENCIAL PARQUE DO VALLE - RONDON' },
+  { empresa: 28, obra: '623', nome: 'RESIDENCIAL JARDIM CASTANHAL III - CASTANHAL' },
+  { empresa: 28, obra: '624', nome: 'RESIDENCIAL VALLE DO IPITINGA II - TOMÉ-AÇU' },
+  { empresa: 28, obra: '625', nome: 'RESIDENCIAL VALLE DO IPÊS - TOMÉ AÇU' },
+];
+
 export const fetchConfigObras = async () => {
   try {
-    const response = await axios.get(`https://forest-trail-cite-sierra.trycloudflare.com/api/integracao/config/obras`, {
+    const response = await axios.get(`${CORRETORES_TUNNEL_URL}/api/integracao/config/obras`, {
       headers: { 'Bypass-Tunnel-Reminder': 'true' },
-      timeout: 15000
+      timeout: 10000
     });
     return response.data;
-  } catch (error) {
-    console.error('Error fetching obras config:', error);
-    throw error;
+  } catch {
+    // Túnel offline: retorna lista estática embutida
+    console.warn('[fetchConfigObras] Túnel offline, usando lista estática de obras.');
+    return { total: OBRAS_FALLBACK.length, obras: OBRAS_FALLBACK, is_cache: true };
   }
 };
 
 export const fetchCorretoresData = async (filters = {}) => {
+  const { empresa = 28, obra = '70100', corretor_id, mes, data_inicio, data_fim } = filters;
+  const params = new URLSearchParams();
+  params.append('empresa', empresa);
+  params.append('obra', obra);
+  if (corretor_id) params.append('corretor_id', corretor_id);
+  if (mes) params.append('mes', mes);
+  if (data_inicio) params.append('data_inicio', data_inicio);
+  if (data_fim) params.append('data_fim', data_fim);
+
+  // 1ª tentativa: túnel Cloudflare (dados ao vivo do UAU)
   try {
-    const { empresa = 28, obra = '70100', corretor_id, mes, data_inicio, data_fim } = filters;
-    const params = new URLSearchParams();
-    params.append('empresa', empresa);
-    params.append('obra', obra);
-    if (corretor_id) params.append('corretor_id', corretor_id);
-    if (mes) params.append('mes', mes);
-    if (data_inicio) params.append('data_inicio', data_inicio);
-    if (data_fim) params.append('data_fim', data_fim);
+    const response = await axios.get(
+      `${CORRETORES_TUNNEL_URL}/api/integracao/corretores?${params.toString()}`,
+      { headers: { 'Bypass-Tunnel-Reminder': 'true' }, timeout: 30000 }
+    );
+    return response.data; // inclui atualizado_em e is_cache: false
+  } catch {
+    console.warn('[fetchCorretoresData] Túnel offline. Tentando cache do Supabase via Railway...');
+  }
 
-    // LocalTunnel API requires the Bypass-Tunnel-Reminder header
-    const response = await axios.get(`https://forest-trail-cite-sierra.trycloudflare.com/api/integracao/corretores?${params.toString()}`, {
-      headers: {
-        'Bypass-Tunnel-Reminder': 'true'
-      },
-      timeout: 30000
-    });
+  // 2ª tentativa: cache no Supabase (via Railway — sempre online)
+  try {
+    const cacheParams = new URLSearchParams();
+    cacheParams.append('empresa', empresa);
+    cacheParams.append('obra', obra);
+    if (mes) cacheParams.append('mes', mes);
 
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching brokers data:', error);
-    throw error;
+    const cacheResponse = await axios.get(
+      `${RAILWAY_API}/api/integracao/cache/corretores?${cacheParams.toString()}`,
+      { timeout: 15000 }
+    );
+    return cacheResponse.data; // inclui atualizado_em e is_cache: true
+  } catch (cacheError) {
+    console.error('[fetchCorretoresData] Cache também indisponível:', cacheError);
+    throw new Error('Servidor offline e sem cache disponível para este período. Inicie o script e tente novamente.');
   }
 };
