@@ -3,11 +3,11 @@ import { MapPin, Maximize, Plus, Trash2, Check, ClipboardCopy, Send, Info, Layer
 import { OBRAS } from '../context/AuthContext';
 
 export const Step1LotInfo = ({ lotValue, lot, formData, updateFormData, formatCurrency, totalWithDiscount, getPlanType, obraName }) => {
-    const subdivisionName = obraName || lot.Descricao_Empreendimento || 'VALLE';
-    const currentObra = OBRAS.find(o => o.descricao === subdivisionName || o.codigo === lot.Obra);
+    const subdivisionName = obraName || lot?.Descricao_Empreendimento || 'VALLE';
+    const currentObra = OBRAS.find(o => o.descricao === subdivisionName || o.codigo === lot?.Obra);
     const cityState = currentObra ? `${currentObra.cidade} - ${currentObra.uf}` : '';
 
-    const isLocationRedundant = cityState && subdivisionName.toLowerCase().includes(currentObra.cidade.toLowerCase());
+    const isLocationRedundant = cityState && currentObra?.cidade && subdivisionName.toLowerCase().includes(currentObra.cidade.toLowerCase());
     const locationInfo = isLocationRedundant ? '' : cityState;
 
     return (
@@ -60,15 +60,15 @@ export const Step1LotInfo = ({ lotValue, lot, formData, updateFormData, formatCu
                 <div className="lot-badge-row">
                     <div className="lot-badge">
                         <Layers size={14} />
-                        <span>QD: <strong>{lot.QD}</strong></span>
+                        <span>QD: <strong>{lot?.QD || '-'}</strong></span>
                     </div>
                     <div className="lot-badge">
                         <MapPin size={14} />
-                        <span>LT: <strong>{lot.LT}</strong></span>
+                        <span>LT: <strong>{lot?.LT || '-'}</strong></span>
                     </div>
                     <div className="lot-badge area">
                         <Maximize size={14} />
-                        <span><strong>{lot.M2}m²</strong></span>
+                        <span><strong>{lot?.M2 || '0'}m²</strong></span>
                     </div>
                 </div>
 
@@ -378,11 +378,11 @@ export const Step5Summary = ({
     downPaymentTotal, entradaAmount, effectiveRemainingBalance, effectiveBalanceInstallmentValue,
     handleCopyMessage, handleWhatsAppShare, copied, getPlanType
 }) => {
-    const subdivisionName = obraName || lot.Descricao_Empreendimento || 'VALLE';
-    const currentObra = OBRAS.find(o => o.descricao === subdivisionName || o.codigo === lot.Obra);
+    const subdivisionName = obraName || lot?.Descricao_Empreendimento || 'VALLE';
+    const currentObra = OBRAS.find(o => o.descricao === subdivisionName || o.codigo === lot?.Obra);
     const cityState = currentObra ? `${currentObra.cidade} - ${currentObra.uf}` : '';
 
-    const isLocationRedundant = cityState && subdivisionName.toLowerCase().includes(currentObra.cidade.toLowerCase());
+    const isLocationRedundant = cityState && currentObra?.cidade && subdivisionName.toLowerCase().includes(currentObra.cidade.toLowerCase());
     const locationLine = isLocationRedundant ? '' : cityState;
 
     return (
@@ -402,7 +402,7 @@ export const Step5Summary = ({
 
                 <div className="summary-item">
                     <span className="summary-label">Lote</span>
-                    <span className="summary-value">Quadra {lot.QD}, Lote {lot.LT}</span>
+                    <span className="summary-value">Quadra {lot?.QD || '-'}, Lote {lot?.LT || '-'}</span>
                 </div>
 
                 <div className="summary-item">

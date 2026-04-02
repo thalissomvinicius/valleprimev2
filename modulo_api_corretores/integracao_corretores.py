@@ -4,6 +4,13 @@ from datetime import datetime
 import pandas as pd
 from database_uau import get_db_connection
 import math
+try:
+    from cache_supabase import salvar_cache, buscar_cache
+    CACHE_ENABLED = True
+except Exception:
+    CACHE_ENABLED = False
+    def salvar_cache(*a, **kw): return False
+    def buscar_cache(*a, **kw): return None
 
 router = APIRouter()
 
@@ -11,6 +18,10 @@ def fetch_dados_corretores(conn, empresa, obra, corretor_id=None, data_inicio=No
     """
     Lista os corretores com base nos filtros dinâmicos de Data, Obra e Corretor passados pela Request.
     """
+    # Fallback to current month if NO date filter is provided at all
+    if not mes and not data_inicio and not data_fim:
+        mes = datetime.now().strftime('%Y-%m')
+
     # Trata data_inicio e data_fim se "mes" for passado
     if mes:
         try:
@@ -21,6 +32,8 @@ def fetch_dados_corretores(conn, empresa, obra, corretor_id=None, data_inicio=No
             data_fim = dt.strftime('%Y%m') + str(ultimo_dia).zfill(2)
         except ValueError:
             raise HTTPException(status_code=400, detail="Formato de mês inválido. Use AAAA-MM")
+            
+        print(f"DEBUG FILTER: mes={mes} -> data_inicio={data_inicio}, data_fim={data_fim}")
 
     # Constroi os blocos do Filtro
     filtros_vendas = f"Empresa_Ven = {empresa} AND Obra_Ven = '{obra}' AND TipoVenda_Ven IN (0,1,2,3,4,5)"
@@ -37,6 +50,8 @@ def fetch_dados_corretores(conn, empresa, obra, corretor_id=None, data_inicio=No
     if data_fim:
         filtros_vendas += f" AND Data_Ven <= '{data_fim}'"
         filtros_vendas_rec += f" AND Data_VRec <= '{data_fim}'"
+        
+    print(f"DEBUG SQL: {filtros_vendas}")
 
     # Busca Nome Real do Empreendimento
     try:
@@ -269,7 +284,9 @@ async def listar_obras_uau():
     """
     Retorna a lista de todas as obras (empreendimentos) ativas para o seletor no Frontend.
     """
-    query = "SELECT Empresa_Obr AS empresa, Cod_Obr AS obra, Descr_Obr AS nome FROM Obras WITH(NOLOCK) WHERE Status_Obr = 0 ORDER BY Descr_Obr"
+    # Apenas as obras ativas do sistema VallePrime (as mesmas da tela de Disponibilidade)
+    obras_ativas = "('600','601','602','603','604','605','610','616','618','620','621','623','624','625')"
+    query = f"SELECT Empresa_Obr AS empresa, Cod_Obr AS obra, Descr_Obr AS nome FROM Obras WITH(NOLOCK) WHERE Status_Obr = 0 AND Cod_Obr IN {obras_ativas} ORDER BY Descr_Obr"
     try:
         with get_db_connection() as conn:
             df = pd.read_sql(query, conn)
@@ -299,6 +316,7 @@ async def obter_dados_integracao_corretores(
 
     try:
         with get_db_connection() as conn:
+            active_mes = mes or datetime.now().strftime('%Y-%m')
             payload = fetch_dados_corretores(
                 conn=conn, 
                 empresa=empresa, 
@@ -306,8 +324,37 @@ async def obter_dados_integracao_corretores(
                 corretor_id=corretor_id,
                 data_inicio=data_inicio,
                 data_fim=data_fim,
-                mes=mes
+                mes=active_mes
             )
-            return {"total_corretores": len(payload), "dados": payload}
+            atualizado_em = datetime.now().isoformat()
+            # Salva no cache Supabase para uso offline
+            salvar_cache(empresa, obra, active_mes, payload)
+            return {
+                "total_corretores": len(payload),
+                "dados": payload,
+                "atualizado_em": atualizado_em,
+                "is_cache": False
+            }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro interno ao processar dados: {str(e)}")
+
+@router.get("/integracao/cache/corretores")
+async def buscar_dados_cache(
+    empresa: int = Query(28),
+    obra: str = Query("70100"),
+    mes: Optional[str] = Query(None)
+):
+    """
+    Endpoint de fallback: retorna dados em cache do Supabase.
+    Usado pelo frontend quando o servidor local (túnel Cloudflare) está offline.
+    """
+    active_mes = mes or datetime.now().strftime('%Y-%m')
+    cached = buscar_cache(empresa, obra, active_mes)
+    if cached:
+        return {
+            "total_corretores": len(cached['dados']),
+            "dados": cached['dados'],
+            "atualizado_em": cached['atualizado_em'],
+            "is_cache": True
+        }
+    raise HTTPException(status_code=404, detail="Nenhum cache encontrado para esse período.")

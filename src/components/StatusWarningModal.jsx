@@ -5,7 +5,7 @@ import './StatusWarningModal.css';
 const StatusWarningModal = ({ lot, onClose, onConfirm }) => {
     if (!lot) return null;
 
-    const status = lot.Status_Terreno || '';
+    const status = String(lot?.Status_Terreno || '');
 
     const getWarningContent = () => {
         if (status.includes('1 - Vendido')) {
@@ -70,7 +70,7 @@ const StatusWarningModal = ({ lot, onClose, onConfirm }) => {
                     {content.icon}
                     <h2>{content.title}</h2>
                     <div className="lot-badge">
-                        QD {lot.QD} - LT {lot.LT}
+                        QD {lot?.QD || '-'} - LT {lot?.LT || '-'}
                     </div>
                 </div>
 

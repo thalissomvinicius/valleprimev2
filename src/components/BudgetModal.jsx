@@ -10,7 +10,8 @@ import { getShortObraName, getShortClientName } from '../utils/finance';
 import logo from '../assets/Valle-logo-azul.png';
 
 const BudgetModal = ({ lot, onClose, obraName }) => {
-    const lotValue = parseFloat(lot.Valor_Terreno.replace(/\./g, '').replace(',', '.')) || 0;
+    const rawValue = lot?.Valor_Terreno ?? '0';
+    const lotValue = parseFloat(String(rawValue).replace(/\./g, '').replace(',', '.')) || 0;
 
     const downPaymentPercent = 5;
     const [balanceInstallments, setBalanceInstallments] = useState(200);
@@ -159,9 +160,9 @@ const BudgetModal = ({ lot, onClose, obraName }) => {
     };
 
     const getMessage = () => {
-        const currentObra = OBRAS.find(o => o.descricao === obraName || o.codigo === lot.Obra);
+        const currentObra = OBRAS.find(o => o.descricao === obraName || o.codigo === lot?.Obra);
         const locationInfo = currentObra ? `${currentObra.cidade} - ${currentObra.uf}` : '';
-        const subdivision = obraName || lot.Descricao_Empreendimento || 'VALLE';
+        const subdivision = obraName || lot?.Descricao_Empreendimento || 'VALLE';
         const checkMeasure = (val) => val && val.toString() !== '0,00' && val.toString() !== '0.00' && val.toString() !== '- / -';
         const measures = [
             checkMeasure(lot.M_Frente) && `Frente: ${lot.M_Frente}m`,
@@ -431,7 +432,7 @@ ${sinalSection}
                         <div className="header-text">
                             <h2>Orçamento do Lote</h2>
                             <p className="obra-name">{obraName || 'Valle'}</p>
-                            <p className="lot-info">Quadra {lot.QD} • Lote {lot.LT} • {lot.M2} m²</p>
+                            <p className="lot-info">Quadra {lot?.QD || '-'} • Lote {lot?.LT || '-'} • {lot?.M2 || '0'} m²</p>
                         </div>
                     </div>
                     <button className="close-btn" onClick={onClose} title="Fechar">

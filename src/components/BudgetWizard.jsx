@@ -16,7 +16,8 @@ const API_BASE_URL = ENV_API || (isPagesDev ? 'https://valleprimev2-api-producti
 
 const BudgetWizard = ({ lot, onClose, obraName }) => {
     const { showToast } = useToast();
-    const lotValue = parseFloat(lot.Valor_Terreno.replace(/\./g, '').replace(',', '.')) || 0;
+    const rawValue = lot?.Valor_Terreno ?? '0';
+    const lotValue = parseFloat(String(rawValue).replace(/\./g, '').replace(',', '.')) || 0;
 
     // Wizard state
     const [currentStep, setCurrentStep] = useState(1);
@@ -168,10 +169,10 @@ const BudgetWizard = ({ lot, onClose, obraName }) => {
 
     // Generate message
     const getMessage = () => {
-        const subdivision = obraName || lot.Descricao_Empreendimento || 'VALLE';
-        const currentObra = OBRAS.find(o => o.descricao === subdivision || o.codigo === lot.Obra);
+        const subdivision = obraName || lot?.Descricao_Empreendimento || 'VALLE';
+        const currentObra = OBRAS.find(o => o.descricao === subdivision || o.codigo === lot?.Obra);
         const cityState = currentObra ? `${currentObra.cidade} - ${currentObra.uf}` : '';
-        const isLocationRedundant = cityState && subdivision.toLowerCase().includes(currentObra.cidade.toLowerCase());
+        const isLocationRedundant = cityState && currentObra?.cidade && subdivision.toLowerCase().includes(currentObra.cidade.toLowerCase());
         const locationInfo = isLocationRedundant ? '' : cityState;
 
         const checkMeasure = (val) => val && val.toString() !== '0,00' && val.toString() !== '0.00' && val.toString() !== '- / -';
@@ -203,8 +204,8 @@ const BudgetWizard = ({ lot, onClose, obraName }) => {
         return `
 🏡 *${subdivision.toUpperCase()}*
 📍 ${locationInfo}
-📍 Quadra ${lot.QD} | Lote ${lot.LT}
-📐 Área: ${lot.M2} m²
+📍 Quadra ${lot?.QD || '-'} | Lote ${lot?.LT || '-'}
+📐 Área: ${lot?.M2 || '0'} m²
 ${measures ? `📏 ${measures}` : ''}
 
 ${priceSection}
@@ -324,7 +325,7 @@ ${sinalSection}
             lot,
             obraName,
             lotValue,
-            logradouro: lot.Logradouro || '',
+            logradouro: lot?.Logradouro || '',
             downPaymentTotal: sinalDiscountedTotal,
             // Maps all sinal lines
             ...sinalData,
@@ -464,7 +465,7 @@ ${sinalSection}
                             <img src={logo} alt="Valle Logo" className="wizard-logo" />
                             <div className="wizard-title-section">
                                 <h2>Orçamento do Lote</h2>
-                                <p>Quadra {lot.QD} • Lote {lot.LT}</p>
+                                <p>Quadra {lot?.QD || '-'} • Lote {lot?.LT || '-'}</p>
                             </div>
                         </div>
                         <button className="wizard-close-btn" onClick={onClose}>

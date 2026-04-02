@@ -6,12 +6,20 @@ import threading
 import os
 import requests
 
+# Caminhos base absolutos
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(SCRIPT_DIR) # Vai para o diretorio raiz do projeto
+
 def update_frontend_api(url):
     """Atualiza o frontend com a nova URL do tunel e faz deploy automatico."""
     print(f"\n[DEPLOY] Atualizando o frontend para usar: {url}")
-    api_file = os.path.join(os.getcwd(), 'src', 'services', 'api.js')
+    api_file = os.path.join(BASE_DIR, 'src', 'services', 'api.js')
     
     try:
+        if not os.path.exists(api_file):
+            print(f"[DEPLOY ERRO] Arquivo api.js nao encontrado em: {api_file}")
+            return
+            
         with open(api_file, 'r', encoding='utf-8') as f:
             content = f.read()
             
@@ -26,9 +34,10 @@ def update_frontend_api(url):
         print("[DEPLOY] api.js atualizado!")
         
         print("[DEPLOY] Fazendo push para GitHub/Cloudflare Pages...")
-        subprocess.run(["git", "add", api_file], check=False)
-        subprocess.run(["git", "commit", "-m", "fix: auto-update tunnel URL (cloudflare)"], check=False)
-        subprocess.run(["git", "push"], check=False)
+        # Executa git na raiz do projeto
+        subprocess.run(["git", "add", api_file], check=False, cwd=BASE_DIR)
+        subprocess.run(["git", "commit", "-m", "fix: auto-update tunnel URL (cloudflare)"], check=False, cwd=BASE_DIR)
+        subprocess.run(["git", "push"], check=False, cwd=BASE_DIR)
         print("[DEPLOY] Push concluido! Site atualizado em ~60s.")
         
     except Exception as e:
@@ -38,8 +47,13 @@ def run_cloudflare_tunnel():
     """Cria um tunel publico usando Cloudflare Quick Tunnel (gratuito, sem conta)."""
     print("[TUNEL] Criando tunel publico com Cloudflare (estavel e sem verificacao)...")
     
-    cf_path = os.path.join(os.getcwd(), "cloudflared.exe")
+    # Busca cloudflared.exe na raiz do projeto
+    cf_path = os.path.join(BASE_DIR, "cloudflared.exe")
     
+    if not os.path.exists(cf_path):
+        print(f"[TUNEL ERRO] cloudflared.exe nao encontrado em: {cf_path}")
+        return
+
     # Inicia cloudflared e força a porta de metricas em 4567 para podermos ler a URL
     process = subprocess.Popen(
         [cf_path, "tunnel", "--metrics", "127.0.0.1:4567", "--url", "http://127.0.0.1:8001"],
@@ -82,8 +96,11 @@ def main():
     print("  VallePrime API - Iniciando servidor local + tunel Cloudflare")
     print("="*60)
     
+    # Define o diretorio do backend de forma absoluta
+    backend_dir = os.path.join(BASE_DIR, "backend")
+    
     server_process = subprocess.Popen(
-        [sys.executable, "-m", "uvicorn", "main:app", "--app-dir", "backend", "--host", "127.0.0.1", "--port", "8001", "--reload"],
+        [sys.executable, "-m", "uvicorn", "main:app", "--app-dir", backend_dir, "--host", "127.0.0.1", "--port", "8001", "--reload"],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True

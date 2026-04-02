@@ -28,6 +28,8 @@ const BrokersPage = () => {
     const [data, setData] = useState([]);
     const [stats, setStats] = useState({ totalVgv: 0, totalSales: 0, totalPending: 0 });
     const [openBrokerId, setOpenBrokerId] = useState(null);
+    const [lastUpdate, setLastUpdate] = useState(null);
+    const [isCacheData, setIsCacheData] = useState(false);
     
     // Filters
     const [selectedMonth, setSelectedMonth] = useState(() => {
@@ -57,8 +59,11 @@ const BrokersPage = () => {
 
             // Se não for admin, filtramos apenas pelo corretor logado
             const uauId = currentUser?.permissions?.uau_corretor_id;
+            // Fallback for mes to avoid sending an empty string if date-picker is cleared
+            const activeMonth = selectedMonth || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+
             const filters = {
-                mes: selectedMonth,
+                mes: activeMonth,
                 corretor_id: isAdmin ? null : (uauId || currentUser?.id),
                 empresa: empresa,
                 obra: obra
@@ -67,6 +72,8 @@ const BrokersPage = () => {
             const result = await fetchCorretoresData(filters);
             const brokersList = result.dados || [];
             setData(brokersList);
+            setLastUpdate(result.atualizado_em || null);
+            setIsCacheData(result.is_cache || false);
 
             // Calculate global stats for the cards
             let vgv = 0;
@@ -90,7 +97,7 @@ const BrokersPage = () => {
         } finally {
             setLoading(false);
         }
-    }, [selectedMonth, currentUser?.id, isAdmin, currentUser?.permissions?.uau_corretor_id, selectedObraId]);
+    }, [selectedMonth, currentUser?.id, isAdmin, currentUser?.permissions?.uau_corretor_id, selectedObraId, obrasList.length]);
 
     useEffect(() => {
         const fetchObras = async () => {
@@ -374,6 +381,30 @@ const BrokersPage = () => {
                     )}
                 </section>
             </main>
+
+            {lastUpdate && (
+                <div className={`cache-footer ${isCacheData ? 'is-cache' : 'is-live'}`}>
+                    <div className="cache-footer-content">
+                        {isCacheData ? (
+                            <>
+                                <span className="cache-icon warning">⚠️</span>
+                                <div>
+                                    <strong>Servidor de Sincronização Desconectado</strong>
+                                    <p>Exibindo dados em cache offline. Última atualização: {new Date(lastUpdate).toLocaleString('pt-BR')}</p>
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <span className="cache-icon success">✅</span>
+                                <div>
+                                    <strong>Sincronização em Tempo Real Ativa</strong>
+                                    <p>Dados consultados diretamente do servidor UAU integrados em {new Date(lastUpdate).toLocaleString('pt-BR')}</p>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
 
             <Footer />
         </div>
