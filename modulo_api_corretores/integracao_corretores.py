@@ -66,8 +66,8 @@ def fetch_dados_corretores(conn, empresa, obra, corretor_id=None, data_inicio=No
         v.Cliente_Ven AS clienteId,
         p_cli.nome_pes AS cliente_nome,
         p_cli.cpf_pes AS cliente_cpf,
-        '' AS cliente_fone_1,
-        '' AS cliente_fone_2,
+        ISNULL(tel.fone_1, '') AS cliente_fone_1,
+        ISNULL(tel.fone_2, '') AS cliente_fone_2,
         '' AS cliente_email,
         FORMAT(p_cli.dtnasc_pes, 'yyyy-MM-dd') AS cliente_nascimento,
         pe.Endereco_pend AS cliente_endereco,
@@ -81,13 +81,15 @@ def fetch_dados_corretores(conn, empresa, obra, corretor_id=None, data_inicio=No
         ISNULL(u.C1_unid, '') AS quadra,
         ISNULL(u.C2_unid, '') AS lote,
         v.Status_Ven AS statusCodigo,
-        CASE v.Status_Ven
-            WHEN 0 THEN 'Normal'
-            WHEN 1 THEN 'Cancelada'
-            WHEN 3 THEN 'Quitada'
-            WHEN 4 THEN 'Adiantado'
+        CASE 
+            WHEN v.Status_Ven = 0 THEN 'Normal'
+            WHEN v.Status_Ven = 1 AND vh.NumNovaVend_vhist IS NOT NULL THEN 'Cessão'
+            WHEN v.Status_Ven = 1 THEN 'Cancelada'
+            WHEN v.Status_Ven = 3 THEN 'Quitada'
+            WHEN v.Status_Ven = 4 THEN 'Adiantado'
             ELSE 'Outro'
-        END AS statusVenda
+        END AS statusVenda,
+        vh.NumNovaVend_vhist AS novaVendaTransferencia
     FROM (
         SELECT Empresa_Ven, Obra_Ven, Num_Ven, Cliente_Ven, Vendedor_Ven, Data_Ven, ValorTot_Ven, Acrescimo_Ven, Desconto_Ven, Status_Ven
         FROM Vendas WITH(NOLOCK)
@@ -102,6 +104,11 @@ def fetch_dados_corretores(conn, empresa, obra, corretor_id=None, data_inicio=No
     LEFT JOIN Pessoas p_cor WITH(NOLOCK) ON v.Vendedor_Ven = p_cor.cod_pes
     LEFT JOIN (SELECT CodPes_hqi, MIN(CodPesSuper_hqi) AS CodPesSuper_hqi FROM HierarquiaIntegrante WITH(NOLOCK) GROUP BY CodPes_hqi) hi ON v.Vendedor_Ven = hi.CodPes_hqi
     LEFT JOIN Pessoas p_ger WITH(NOLOCK) ON hi.CodPesSuper_hqi = p_ger.cod_pes
+    LEFT JOIN VendaHist vh WITH(NOLOCK) ON vh.Empresa_vhist = v.Empresa_Ven AND vh.Obra_vhist = v.Obra_Ven AND vh.NumVend_vhist = v.Num_Ven AND vh.TipoMnt_vhist IN (2,8)
+    OUTER APPLY (
+        SELECT TOP 1 CONCAT(ddd_tel, fone_tel) AS fone_1, CONCAT(ddd_tel, fone_tel) AS fone_2  
+        FROM PesTel WITH(NOLOCK) WHERE pes_tel = v.Cliente_Ven AND Principal_tel = 1
+    ) tel
     OUTER APPLY (
         SELECT TOP 1 itv.Empresa_itv, itv.Obra_Itv, itv.NumVend_Itv, un.C1_unid, un.C2_unid 
         FROM ItensVenda itv WITH(NOLOCK)
@@ -275,6 +282,31 @@ def fetch_dados_corretores(conn, empresa, obra, corretor_id=None, data_inicio=No
                 "data_proximo_vencimento": aberto['proximoVencimento']
             }
         }
+        
+        # Dados da Cessão (sinais do sucessor)
+        nova_vid = row.get('novaVendaTransferencia')
+        if pd.notna(nova_vid) and nova_vid != 0 and nova_vid != '':
+            transf_aberto = sinais_abertos_map.get(int(nova_vid), {'qtdAberto': 0, 'valorAberto': 0, 'qtdAtraso': 0, 'valorAtraso': 0, 'diasAtraso': 0, 'proximoVencimento': None})
+            transf_pago = sinais_pagos_map.get(int(nova_vid), {'qtdPago': 0, 'valorPago': 0})
+            
+            sinal_situacao_novo = "Sem Sinais"
+            if transf_aberto['qtdAtraso'] > 0: sinal_situacao_novo = "Em Atraso"
+            elif transf_aberto['qtdAberto'] == 0 and transf_pago['qtdPago'] > 0: sinal_situacao_novo = "Sinais Pagos na Íntegra"
+            elif transf_aberto['qtdAberto'] > 0 and transf_pago['qtdPago'] > 0: sinal_situacao_novo = "Parcialmente Pago"
+            elif transf_aberto['qtdAberto'] > 0 and transf_pago['qtdPago'] == 0: sinal_situacao_novo = "Aguardando Pagamento"
+            
+            venda_detalhe['cessao'] = {
+                "vendaId": int(nova_vid),
+                "situacao": sinal_situacao_novo,
+                "sinaisAbertoQtd": int(transf_aberto['qtdAberto']),
+                "sinaisAbertoValor": float(transf_aberto['valorAberto']),
+                "sinaisPagoQtd": int(transf_pago['qtdPago']),
+                "sinaisPagoValor": float(transf_pago['valorPago']),
+                "valorAtraso": float(transf_aberto.get('valorAtraso', 0)),
+                "diasAtraso": int(transf_aberto.get('diasAtraso', 0))
+            }
+        else:
+            venda_detalhe['cessao'] = None
         corretores_dict[cod_corretor]['vendas_detalhadas'].append(venda_detalhe)
 
     return list(corretores_dict.values())

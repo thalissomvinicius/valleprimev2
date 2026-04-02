@@ -295,7 +295,7 @@ const BrokersPage = () => {
                                 {openBrokerId === broker.codigo_corretor && (
                                     <div className="broker-details">
                                         <div className="sale-section-title">
-                                            <TrendingUp size={14} /> Detalhamento de Contratos
+                                            <TrendingUp size={14} /> Tabela de Fechamentos (Contratos)
                                         </div>
                                         <div className="sales-table-container">
                                             <table className="sales-table">
@@ -320,12 +320,16 @@ const BrokersPage = () => {
                                                             <td className="col-client">
                                                                 <div className="client-name-cell">
                                                                     <b>{venda.client?.nome || venda.cliente?.nome}</b>
+                                                                    <div style={{fontSize:'0.75rem', color:'#64748b', marginTop:'4px'}}>
+                                                                        <Phone size={10} style={{verticalAlign:'middle', marginRight:'2px'}}/> 
+                                                                        {venda.client?.telefone || venda.cliente?.telefone || 'Não informado'}
+                                                                    </div>
+                                                                    
                                                                     <div className="info-trigger">
-                                                                        <Info size={12} /> Ver detalhes
+                                                                        <Info size={12} /> Mais detalhes
                                                                     </div>
                                                                     <div className="client-popover">
                                                                         <div><strong>CPF:</strong> {venda.client?.cpf || venda.cliente?.cpf}</div>
-                                                                        <div><strong>Tel:</strong> {venda.client?.telefone || venda.cliente?.telefone || 'N/A'}</div>
                                                                         <div><strong>End:</strong> {venda.client?.endereco || venda.cliente?.endereco}</div>
                                                                         <div style={{marginTop: '5px', paddingTop: '5px', borderTop: '1px solid rgba(255,255,255,0.1)'}}>
                                                                             <strong>Contrato:</strong> #{venda.venda_id}
@@ -337,27 +341,55 @@ const BrokersPage = () => {
                                                                 {formatCurrency(venda.valor_venda)}
                                                             </td>
                                                             <td style={{fontSize: '0.8rem', color: '#64748b'}}>
-                                                                {venda.condicao_pagamento}
+                                                                <div>{venda.condicao_pagamento}</div>
+                                                                {venda.status_venda === 'Cessão' && venda.cessao && (
+                                                                    <div className="status-badge cessao" style={{marginTop: '4px', fontSize: '0.7rem', display: 'inline-block'}}>
+                                                                        Repassado: {venda.cessao.vendaId}
+                                                                    </div>
+                                                                )}
                                                             </td>
                                                             <td className="col-signal">
-                                                                <div className="signal-text">
-                                                                    {venda.sinal_negocio.situacao}
-                                                                </div>
-                                                                <div className="signal-bar">
-                                                                    <div 
-                                                                        className="signal-progress" 
-                                                                        style={{ 
-                                                                            width: `${(venda.sinal_negocio.valor_ja_pago / (venda.sinal_negocio.valor_ja_pago + (venda.sinal_negocio.valor_a_pagar || 0))) * 100}%`,
-                                                                            backgroundColor: venda.sinal_negocio.situacao.includes('Atraso') ? '#ef4444' : '#10b981'
-                                                                        }}
-                                                                    ></div>
-                                                                </div>
-                                                                <small style={{fontSize: '0.7rem', color: '#94a3b8'}}>
-                                                                    {formatCurrency(venda.sinal_negocio.valor_ja_pago)} de {formatCurrency(venda.sinal_negocio.valor_ja_pago + (venda.sinal_negocio.valor_a_pagar || 0))}
-                                                                </small>
+                                                                {venda.status_venda === 'Cessão' && venda.cessao ? (
+                                                                    <div style={{background: 'rgba(234, 179, 8, 0.1)', padding: '6px', borderRadius: '8px', border: '1px dashed #eab308'}}>
+                                                                        <div className="signal-text" style={{fontSize: '0.75rem'}}>
+                                                                            <strong>Novo Cliente:</strong> {venda.cessao.situacao}
+                                                                        </div>
+                                                                        <div className="signal-bar">
+                                                                            <div 
+                                                                                className="signal-progress" 
+                                                                                style={{ 
+                                                                                    width: `${(venda.cessao.sinaisPagoValor / Math.max(1, venda.cessao.sinaisPagoValor + venda.cessao.sinaisAbertoValor)) * 100}%`,
+                                                                                    backgroundColor: venda.cessao.situacao.includes('Atraso') ? '#ef4444' : '#10b981'
+                                                                                }}
+                                                                            ></div>
+                                                                        </div>
+                                                                        <small style={{fontSize: '0.7rem', color: '#94a3b8', display: 'flex', justifyContent: 'space-between'}}>
+                                                                            <span>Pago: {formatCurrency(venda.cessao.sinaisPagoValor)}</span>
+                                                                            {venda.cessao.sinaisAbertoValor > 0 && <span style={{color: '#ef4444'}}>Falta: {formatCurrency(venda.cessao.sinaisAbertoValor)}</span>}
+                                                                        </small>
+                                                                    </div>
+                                                                ) : (
+                                                                    <>
+                                                                        <div className="signal-text">
+                                                                            {venda.sinal_negocio.situacao}
+                                                                        </div>
+                                                                        <div className="signal-bar">
+                                                                            <div 
+                                                                                className="signal-progress" 
+                                                                                style={{ 
+                                                                                    width: `${(venda.sinal_negocio.valor_ja_pago / Math.max(1, (venda.sinal_negocio.valor_ja_pago + (venda.sinal_negocio.valor_a_pagar || 0)))) * 100}%`,
+                                                                                    backgroundColor: venda.sinal_negocio.situacao.includes('Atraso') ? '#ef4444' : '#10b981'
+                                                                                }}
+                                                                            ></div>
+                                                                        </div>
+                                                                        <small style={{fontSize: '0.7rem', color: '#94a3b8'}}>
+                                                                            {formatCurrency(venda.sinal_negocio.valor_ja_pago)} de {formatCurrency(venda.sinal_negocio.valor_ja_pago + (venda.sinal_negocio.valor_a_pagar || 0))}
+                                                                        </small>
+                                                                    </>
+                                                                )}
                                                             </td>
                                                             <td>
-                                                                <span className={`status-badge ${venda.status_venda.toLowerCase()}`} style={{padding: '4px 8px', fontSize: '0.7rem'}}>
+                                                                <span className={`status-badge ${venda.status_venda.toLowerCase().replace('ã','a')}`} style={{padding: '4px 8px', fontSize: '0.7rem'}}>
                                                                     {venda.status_venda}
                                                                 </span>
                                                                 {venda.progresso_financiamento.parcelas_em_atraso > 0 && (
