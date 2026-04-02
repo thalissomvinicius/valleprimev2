@@ -133,7 +133,11 @@ function MainApp() {
       let bVal = b[sortConfig.key];
 
       // Handle specific column types
-      if (sortConfig.key === 'Valor_Terreno') {
+      if (sortConfig.key === 'Status_Terreno') {
+        return sortConfig.direction === 'asc' 
+          ? String(a.Status_Terreno || '').localeCompare(String(b.Status_Terreno || ''))
+          : String(b.Status_Terreno || '').localeCompare(String(a.Status_Terreno || ''));
+      } else if (sortConfig.key === 'Valor_Terreno') {
         aVal = parseValue(a.Valor_Terreno);
         bVal = parseValue(b.Valor_Terreno);
       } else if (sortConfig.key === 'M2') {
@@ -181,7 +185,7 @@ function MainApp() {
   };
 
   const handleLotClick = (lot) => {
-    if (lot.Status_Terreno.includes('0 - Disponível')) {
+    if (String(lot?.Status_Terreno || '').includes('0 - Disponível')) {
       setSelectedLot(lot);
     } else {
       setPendingLot(lot);

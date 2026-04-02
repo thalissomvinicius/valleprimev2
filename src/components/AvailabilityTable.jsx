@@ -116,7 +116,7 @@ const AvailabilityTable = ({ data, loading, onRowClick, onSort, sortConfig }) =>
                             <td className="value-cell">{formatCurrency(item.Valor_Terreno)}</td>
                             <td>
                                 <span className={`status-badge ${getStatusClass(item.Status_Terreno)}`}>
-                                    {item.Status_Terreno.includes(' - ') ? item.Status_Terreno.split(' - ')[1] : item.Status_Terreno}
+                                    {String(item.Status_Terreno || '').includes(' - ') ? String(item.Status_Terreno).split(' - ')[1] : (item.Status_Terreno || '-')}
                                 </span>
                             </td>
                             <td>{item.Logradouro}</td>
