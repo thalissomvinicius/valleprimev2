@@ -193,10 +193,13 @@ def fetch_dados_corretores(conn, empresa, obra, corretor_id=None, data_inicio=No
 
     for _, row in vendas_df.iterrows():
         cod_corretor = row.get('corretorId')
-        nome_corretor = row.get('corretor_nome', 'SEM CORRETOR')
-        gerente_nome = row.get('gerente_nome', 'SEM GERENTE')
-        if not cod_corretor: pass
-        if math.isnan(cod_corretor): cod_corretor = 0
+        if pd.isna(cod_corretor) or not cod_corretor:
+            cod_corretor = 0
+        else:
+            try:
+                cod_corretor = int(float(cod_corretor))
+            except (ValueError, TypeError):
+                cod_corretor = 0
             
         if cod_corretor not in corretores_dict:
             corretores_dict[cod_corretor] = {
@@ -226,6 +229,10 @@ def fetch_dados_corretores(conn, empresa, obra, corretor_id=None, data_inicio=No
                 corretores_dict[cod_corretor]['resumo']['vendas_mes_atual'] += 1
 
         venda_id = row.get('venda')
+        if pd.isna(venda_id) or not venda_id:
+            continue # Venda sem ID não pode ser processada
+        venda_id = int(float(venda_id))
+        
         aberto = sinais_abertos_map.get(venda_id, {'qtdAberto': 0, 'valorAberto': 0, 'qtdAtraso': 0, 'valorAtraso': 0, 'proximoVencimento': None, 'diasAtraso': 0})
         pago = sinais_pagos_map.get(venda_id, {'qtdPago': 0, 'valorPago': 0, 'ultimaDataPagamento': None})
         condicao = condicao_map.get(venda_id, {'totalParcelasFinanciamento': 0, 'valorPagoFinanciamento': 0, 'saldoDevedorFinanciamento': 0, 'parcelasAtrasadasFinanciamento': 0, 'valorAtrasadoFinanciamento': 0})
@@ -286,29 +293,32 @@ def fetch_dados_corretores(conn, empresa, obra, corretor_id=None, data_inicio=No
         }
         
         # Dados da Cessão (sinais do sucessor)
+        venda_detalhe['cessao'] = None
         nova_vid = row.get('novaVendaTransferencia')
-        if pd.notna(nova_vid) and nova_vid != 0 and nova_vid != '':
-            transf_aberto = sinais_abertos_map.get(int(nova_vid), {'qtdAberto': 0, 'valorAberto': 0, 'qtdAtraso': 0, 'valorAtraso': 0, 'diasAtraso': 0, 'proximoVencimento': None})
-            transf_pago = sinais_pagos_map.get(int(nova_vid), {'qtdPago': 0, 'valorPago': 0})
-            
-            sinal_situacao_novo = "Sem Sinais"
-            if transf_aberto['qtdAtraso'] > 0: sinal_situacao_novo = "Em Atraso"
-            elif transf_aberto['qtdAberto'] == 0 and transf_pago['qtdPago'] > 0: sinal_situacao_novo = "Sinais Pagos na Íntegra"
-            elif transf_aberto['qtdAberto'] > 0 and transf_pago['qtdPago'] > 0: sinal_situacao_novo = "Parcialmente Pago"
-            elif transf_aberto['qtdAberto'] > 0 and transf_pago['qtdPago'] == 0: sinal_situacao_novo = "Aguardando Pagamento"
-            
-            venda_detalhe['cessao'] = {
-                "vendaId": int(nova_vid),
-                "situacao": sinal_situacao_novo,
-                "sinaisAbertoQtd": int(transf_aberto['qtdAberto']),
-                "sinaisAbertoValor": float(transf_aberto['valorAberto']),
-                "sinaisPagoQtd": int(transf_pago['qtdPago']),
-                "sinaisPagoValor": float(transf_pago['valorPago']),
-                "valorAtraso": float(transf_aberto.get('valorAtraso', 0)),
-                "diasAtraso": int(transf_aberto.get('diasAtraso', 0))
-            }
-        else:
-            venda_detalhe['cessao'] = None
+        if pd.notna(nova_vid) and str(nova_vid).strip() != '0' and str(nova_vid).strip() != '':
+            try:
+                nova_vid_int = int(float(nova_vid))
+                transf_aberto = sinais_abertos_map.get(nova_vid_int, {'qtdAberto': 0, 'valorAberto': 0, 'qtdAtraso': 0, 'valorAtraso': 0, 'diasAtraso': 0, 'proximoVencimento': None})
+                transf_pago = sinais_pagos_map.get(nova_vid_int, {'qtdPago': 0, 'valorPago': 0})
+                
+                sinal_situacao_novo = "Sem Sinais"
+                if transf_aberto['qtdAtraso'] > 0: sinal_situacao_novo = "Em Atraso"
+                elif transf_aberto['qtdAberto'] == 0 and transf_pago['qtdPago'] > 0: sinal_situacao_novo = "Sinais Pagos na Íntegra"
+                elif transf_aberto['qtdAberto'] > 0 and transf_pago['qtdPago'] > 0: sinal_situacao_novo = "Parcialmente Pago"
+                elif transf_aberto['qtdAberto'] > 0 and transf_pago['qtdPago'] == 0: sinal_situacao_novo = "Aguardando Pagamento"
+                
+                venda_detalhe['cessao'] = {
+                    "vendaId": nova_vid_int,
+                    "situacao": sinal_situacao_novo,
+                    "sinaisAbertoQtd": int(transf_aberto['qtdAberto']),
+                    "sinaisAbertoValor": float(transf_aberto['valorAberto']),
+                    "sinaisPagoQtd": int(transf_pago['qtdPago']),
+                    "sinaisPagoValor": float(transf_pago['valorPago']),
+                    "valorAtraso": float(transf_aberto.get('valorAtraso', 0)),
+                    "diasAtraso": int(transf_aberto.get('diasAtraso', 0))
+                }
+            except (ValueError, TypeError):
+                pass # Ignora cessão se ID for inválido
         corretores_dict[cod_corretor]['vendas_detalhadas'].append(venda_detalhe)
 
     return list(corretores_dict.values())
