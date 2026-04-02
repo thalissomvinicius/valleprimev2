@@ -19,6 +19,7 @@ import { Link } from 'react-router-dom';
 import ProposalHistoryPage from './pages/ProposalHistoryPage';
 import DashboardPage from './pages/DashboardPage';
 import BrokersPage from './pages/BrokersPage';
+import StatusWarningModal from './components/StatusWarningModal';
 
 function MainApp() {
   const { currentUser, logout } = useAuth();
