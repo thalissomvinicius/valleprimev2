@@ -291,7 +291,6 @@ const OBRAS_FALLBACK = [
 export const fetchConfigObras = async () => {
   try {
     const response = await axios.get(`${CORRETORES_TUNNEL_URL}/api/integracao/config/obras`, {
-      headers: { 'Bypass-Tunnel-Reminder': 'true' },
       timeout: 10000
     });
     return response.data;
@@ -316,7 +315,7 @@ export const fetchCorretoresData = async (filters = {}) => {
   try {
     const response = await axios.get(
       `${CORRETORES_TUNNEL_URL}/api/integracao/corretores?${params.toString()}`,
-      { headers: { 'Bypass-Tunnel-Reminder': 'true' }, timeout: 30000 }
+      { timeout: 30000 }
     );
     return response.data; // inclui atualizado_em e is_cache: false
   } catch {
