@@ -272,20 +272,24 @@ const RAILWAY_API = 'https://valleprimev2-api-production.up.railway.app';
 
 // Lista estática de obras como fallback quando o túnel estiver offline
 const OBRAS_FALLBACK = [
-  { empresa: 28, obra: '600', nome: 'RESIDENCIAL JARDIM DO VALLE - DOM ELISEU' },
-  { empresa: 28, obra: '601', nome: 'RESIDENCIAL JARDIM AMERICA - CAPANEMA' },
-  { empresa: 28, obra: '602', nome: 'RESIDENCIAL SALLES JARDIM - CASTANHAL' },
-  { empresa: 28, obra: '603', nome: 'RESIDENCIAL JARDIM CASTANHAL - CASTANHAL' },
-  { empresa: 28, obra: '604', nome: 'RESIDENCIAL IPITINGA - TOMÉ-AÇU' },
-  { empresa: 28, obra: '605', nome: 'RESIDENCIAL VALLE DO IPITINGA - TOMÉ-AÇU' },
-  { empresa: 28, obra: '610', nome: 'RESIDENCIAL JARDIM DO VALLE - TAILANDIA' },
-  { empresa: 28, obra: '616', nome: 'RESIDENCIAL JARDIM DO VALLE - BARCARENA' },
-  { empresa: 28, obra: '618', nome: 'RESIDENCIAL JARDIM DO VALLE II - TAILANDIA' },
-  { empresa: 28, obra: '620', nome: 'RESIDENCIAL JARDIM VALLE DO URAIM - PARAGOMINAS' },
-  { empresa: 28, obra: '621', nome: 'RESIDENCIAL PARQUE DO VALLE - RONDON' },
-  { empresa: 28, obra: '623', nome: 'RESIDENCIAL JARDIM CASTANHAL III - CASTANHAL' },
-  { empresa: 28, obra: '624', nome: 'RESIDENCIAL VALLE DO IPITINGA II - TOMÉ-AÇU' },
-  { empresa: 28, obra: '625', nome: 'RESIDENCIAL VALLE DO IPÊS - TOMÉ AÇU' },
+  { empresa: 13, obra: '70100', nome: 'RESIDENCIAL JARDIM DO VALLE - DOM ELISEU' },
+  { empresa: 12, obra: '70100', nome: 'RESIDENCIAL JARDIM AMERICA - CAPANEMA' },
+  { empresa: 9, obra: '70100', nome: 'RESIDENCIAL SALLES JARDIM - CASTANHAL' },
+  { empresa: 6, obra: '70100', nome: 'RESIDENCIAL JARDIM CASTANHAL - CASTANHAL' },
+  { empresa: 6, obra: '70400', nome: 'RESIDENCIAL IPITINGA - TOMÉ-AÇU' },
+  { empresa: 28, obra: '70100', nome: 'RESIDENCIAL VALLE DO IPITINGA II - TOMÉ-AÇU' },
+  { empresa: 6, obra: '70300', nome: 'RESIDENCIAL JARDIM DO VALLE - TAILANDIA' },
+  { empresa: 15, obra: '70100', nome: 'RESIDENCIAL JARDIM DO VALLE - BARCARENA' },
+  { empresa: 22, obra: '70100', nome: 'RESIDENCIAL JARDIM DO VALLE II - TAILANDIA' },
+  { empresa: 983, obra: '70100', nome: 'RESIDENCIAL JARDIM VALLE DO URAIM - PARAGOMINAS' },
+  { empresa: 6, obra: '70500', nome: 'RESIDENCIAL PARQUE DO VALLE - RONDON' },
+  { empresa: 24, obra: '70100', nome: 'RESIDENCIAL JARDIM CASTANHAL III - CASTANHAL' },
+  { empresa: 29, obra: '70100', nome: 'RESIDENCIAL VALLE DOS IPÊS - TOMÉ AÇU' },
+  { empresa: 12, obra: '70101', nome: 'RESIDENCIAL JARDIM AMÉRICA II - CAPANEMA' },
+  { empresa: 6, obra: '70101', nome: 'RESIDENCIAL JARDIM CASTANHAL II - CASTANHAL' },
+  { empresa: 9, obra: '70101', nome: 'RESIDENCIAL SALLES JARDIM II - CASTANHAL' },
+  { empresa: 9, obra: '70102', nome: 'RESIDENCIAL SALLES JARDIM III - CASTANHAL' },
+  { empresa: 9, obra: '70103', nome: 'RESIDENCIAL SALLES JARDIM IV - CASTANHAL' },
 ];
 
 export const fetchConfigObras = async () => {

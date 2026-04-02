@@ -284,14 +284,36 @@ async def listar_obras_uau():
     """
     Retorna a lista de todas as obras (empreendimentos) ativas para o seletor no Frontend.
     """
-    # Apenas as obras ativas do sistema VallePrime (as mesmas da tela de Disponibilidade)
-    obras_ativas = "('600','601','602','603','604','605','610','616','618','620','621','623','624','625')"
-    query = f"SELECT Empresa_Obr AS empresa, Cod_Obr AS obra, Descr_Obr AS nome FROM Obras WITH(NOLOCK) WHERE Status_Obr = 0 AND Cod_Obr IN {obras_ativas} ORDER BY Descr_Obr"
+    # Mapeamento real extraído da tabela de Vendas do UAU (Substitui os códigos fictícios 600-625)
+    query = """
+    SELECT Empresa_Obr AS empresa, Cod_Obr AS obra, UPPER(Descr_Obr) AS nome 
+    FROM Obras WITH(NOLOCK) 
+    WHERE (Empresa_Obr = 13 AND Cod_Obr = '70100') /* Dom Eliseu */
+       OR (Empresa_Obr = 12 AND Cod_Obr = '70100') /* Capanema (Jardim America) */
+       OR (Empresa_Obr = 12 AND Cod_Obr = '70101') /* Capanema II */
+       OR (Empresa_Obr = 9 AND Cod_Obr = '70100')  /* Salles Jardim I */
+       OR (Empresa_Obr = 9 AND Cod_Obr = '70101')  /* Salles Jardim II */
+       OR (Empresa_Obr = 9 AND Cod_Obr = '70102')  /* Salles Jardim III */
+       OR (Empresa_Obr = 9 AND Cod_Obr = '70103')  /* Salles Jardim IV */
+       OR (Empresa_Obr = 6 AND Cod_Obr = '70100')  /* Jardim Castanhal I */
+       OR (Empresa_Obr = 6 AND Cod_Obr = '70101')  /* Jardim Castanhal II */
+       OR (Empresa_Obr = 24 AND Cod_Obr = '70100') /* Jardim Castanhal III */
+       OR (Empresa_Obr = 6 AND Cod_Obr = '70400')  /* Valle do Ipitinga */
+       OR (Empresa_Obr = 28 AND Cod_Obr = '70100') /* Valle do Ipitinga II */
+       OR (Empresa_Obr = 6 AND Cod_Obr = '70300')  /* Tailandia I */
+       OR (Empresa_Obr = 22 AND Cod_Obr = '70100') /* Tailandia II */
+       OR (Empresa_Obr = 15 AND Cod_Obr = '70100') /* Barcarena */
+       OR (Empresa_Obr = 983 AND Cod_Obr = '70100') /* Paragominas Uraim */
+       OR (Empresa_Obr = 6 AND Cod_Obr = '70500')  /* Rondon Parque do Valle */
+       OR (Empresa_Obr = 29 AND Cod_Obr = '70100') /* Valle dos Ipes Tomé-Açu */
+    ORDER BY Descr_Obr
+    """
     try:
         with get_db_connection() as conn:
             df = pd.read_sql(query, conn)
-            # Garantir que não existam NaNs
-            df = df.fillna(0)
+            # Limpa espaços das strings
+            df['nome'] = df['nome'].apply(lambda x: str(x).strip() if pd.notnull(x) else x)
+
             obras = df.to_dict('records')
             return {"total": len(obras), "obras": obras}
     except Exception as e:
