@@ -265,7 +265,7 @@ export const printProposal = async (id) => {
 
 
 // URL base das APIs locais do corretor (Cloudflare tunnel — pode mudar a cada reinício)
-const CORRETORES_TUNNEL_URL = 'https://merge-custody-jackets-amanda.trycloudflare.com';
+const CORRETORES_TUNNEL_URL = 'https://dsl-married-intelligent-out.trycloudflare.com';
 
 // URL da API no Railway (sempre online) — usada como fallback de cache
 const RAILWAY_API = 'https://valleprimev2-api-production.up.railway.app';
