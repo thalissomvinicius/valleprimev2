@@ -22,7 +22,15 @@ except ImportError as e:
     generate_pdf_reportlab = None
 
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
+
+@app.after_request
+def add_cors_headers(response):
+    """Ensure CORS headers are present even on errors."""
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+    return response
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'dev_secret_key_valle_prime_v2')
 
@@ -1122,12 +1130,15 @@ def monitor_lots_task():
     
     # Pre-populate cache from last alerts to prevent duplicate notifications on restart
     try:
+        # Give some time for DB environment to be fully ready
+        time.sleep(5)
         recent_alerts = get_recent_alerts(50)
-        for al in recent_alerts:
-            l_id = al.get('lote_id')
-            if l_id and l_id not in last_status_cache:
-                last_status_cache[l_id] = al.get('novo_status')
-        print(f"[MONITOR] Pre-cached {len(last_status_cache)} lot statuses from Supabase.")
+        if recent_alerts and isinstance(recent_alerts, list):
+            for al in recent_alerts:
+                l_id = al.get('lote_id')
+                if l_id and l_id not in last_status_cache:
+                    last_status_cache[l_id] = al.get('novo_status')
+            print(f"[MONITOR] Pre-cached {len(last_status_cache)} lot statuses from Supabase.")
     except Exception as e:
         print(f"[MONITOR] Failed to pre-cache alerts: {e}")
     
