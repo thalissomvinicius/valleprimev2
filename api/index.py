@@ -1207,6 +1207,31 @@ try:
 except Exception as e:
     print(f"[STARTUP] Supabase check failed: {e}")
 
+@app.route('/api/health')
+def health_check():
+    """Route for monitoring and Keep-Alive. monitor_thread must be alive."""
+    try:
+        return jsonify({
+            "status": "healthy",
+            "python": sys.version,
+            "monitor_active": monitor_thread.is_alive() if 'monitor_thread' in globals() else False,
+            "time": datetime.datetime.now().isoformat()
+        })
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/alerts/recent', methods=['GET'])
+@token_required
+def get_alerts():
+    """Fetch recent lot status alerts from the background monitor cache/database."""
+    limit = int(request.args.get('limit', 10))
+    alerts = get_recent_alerts(limit)
+    return jsonify({
+        "success": True,
+        "alerts": alerts,
+        "monitor_status": "alive" if 'monitor_thread' in globals() and monitor_thread.is_alive() else "down"
+    })
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "5000"))
     app.run(host="0.0.0.0", port=port, debug=True)
