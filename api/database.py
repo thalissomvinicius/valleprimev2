@@ -202,3 +202,21 @@ def update_proposal(proposal_id, obra_codigo, obra_nome, quadra, lote, payload):
 
 def delete_proposal(proposal_id):
     return _supabase_request('proposals', 'DELETE', f"id=eq.{proposal_id}")
+
+
+# --- ALERTS REPOSITORY ---
+
+def create_alert(obra_codigo, lote_id, status_anterior, novo_status, mensagem):
+    data = {
+        "obra_codigo": obra_codigo,
+        "lote_id": lote_id,
+        "status_anterior": status_anterior,
+        "novo_status": novo_status,
+        "mensagem": mensagem,
+        "created_at": datetime.datetime.now().isoformat()
+    }
+    return _supabase_request('lot_alerts', 'POST', data=data)
+
+def get_recent_alerts(limit=10):
+    result = _supabase_request('lot_alerts', 'GET', f"select=*&order=created_at.desc&limit={limit}")
+    return result if isinstance(result, list) else []

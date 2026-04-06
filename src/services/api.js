@@ -3,7 +3,7 @@ import axios from 'axios';
 // Em produção: use VITE_API_BASE se definido; senão fallback para a API no Render
 const ENV_API = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '');
 const isDev = import.meta.env.DEV;
-const PRODUCTION_API = 'https://valleprimev2-api-production.up.railway.app';
+const PRODUCTION_API = 'https://valleprimev2-api.onrender.com';
 // Se estiver no Cloudflare Pages (*.pages.dev), sempre usar a API no Render
 const isPagesDev = typeof window !== 'undefined' && /\.pages\.dev$/i.test(window.location?.hostname || '');
 const API_BASE_URL = ENV_API || (isPagesDev ? PRODUCTION_API : (isDev ? '' : PRODUCTION_API));
@@ -46,7 +46,7 @@ const requestWithRetry = async (fn, { retries = 2, baseDelay = 800 } = {}) => {
 };
 
 // Request interceptor: em *.pages.dev usar URL absoluta para o Render (garante que a requisição vá ao backend)
-const RENDER_API = 'https://valleprimev2-api-production.up.railway.app'; // Now using Railway
+const RENDER_API = 'https://valleprimev2-api.onrender.com'; // Now using Render
 api.interceptors.request.use(config => {
   if (typeof window !== 'undefined' && /\.pages\.dev$/i.test(window.location?.hostname || '') && config.url?.startsWith?.('/api')) {
     // Para /api/consulta e /api/generate_proposal, usamos as functions locais do Cloudflare Pages
@@ -267,8 +267,8 @@ export const printProposal = async (id) => {
 // URL base das APIs locais do corretor (Cloudflare tunnel — pode mudar a cada reinício)
 const CORRETORES_TUNNEL_URL = 'https://functional-stand-hobbies-stand.trycloudflare.com';
 
-// URL da API no Railway (sempre online) — usada como fallback de cache
-const RAILWAY_API = 'https://valleprimev2-api-production.up.railway.app';
+// URL da API no Render (sempre online) — usada como fallback de cache
+const RENDER_CLOUD_API = 'https://valleprimev2-api.onrender.com';
 
 // Lista estática de obras como fallback quando o túnel estiver offline
 const OBRAS_FALLBACK = [
@@ -334,7 +334,7 @@ export const fetchCorretoresData = async (filters = {}) => {
     if (mes) cacheParams.append('mes', mes);
 
     const cacheResponse = await axios.get(
-      `${RAILWAY_API}/api/integracao/cache/corretores?${cacheParams.toString()}`,
+      `${RENDER_CLOUD_API}/api/integracao/cache/corretores?${cacheParams.toString()}`,
       { timeout: 15000 }
     );
     return cacheResponse.data; // inclui atualizado_em e is_cache: true

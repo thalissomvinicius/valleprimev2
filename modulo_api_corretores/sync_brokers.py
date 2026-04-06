@@ -10,7 +10,7 @@ import requests
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from database_uau import get_db_connection
 
-API_BASE = "https://valleprimev2-api-production.up.railway.app"
+API_BASE = os.environ.get("API_BASE", "https://valleprimev2-api.onrender.com")
 
 def limpar_doc(doc):
     """Remove tudo que não é número do CPF/CNPJ"""

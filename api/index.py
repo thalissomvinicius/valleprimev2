@@ -10,6 +10,8 @@ import sys
 import requests
 import jwt
 from functools import wraps
+import threading
+import time
 
 # Importar gerador de PDF
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -29,7 +31,8 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'dev_secret_key_valle_prime_v2')
 from database import (
     get_user_by_id, get_user_by_username, get_all_users, create_user, update_user, delete_user, count_users,
     get_clients, check_duplicate_client, get_client_by_id, create_client, update_client, delete_client, count_clients, get_recent_clients,
-    get_proposals, get_proposal_by_id, count_proposals, create_proposal, update_proposal, delete_proposal
+    get_proposals, get_proposal_by_id, count_proposals, create_proposal, update_proposal, delete_proposal,
+    create_alert, get_recent_alerts
 )
 
 def hash_password(password):
@@ -1018,9 +1021,61 @@ def generate_proposal():
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
+# --- BROKER PERFORMANCE INTEGRATION (Ported from FastAPI) ---
+
+@app.route('/api/integracao/corretores', methods=['GET'])
+def get_integracao_corretores():
+    """
+    Exportação completa dos Corretores via Flask.
+    Tenta buscar do cache do Supabase primeiro se estiver em produção (Render).
+    """
+    empresa = request.args.get('empresa', 28, type=int)
+    obra = request.args.get('obra', "70100")
+    mes = request.args.get('mes') or datetime.datetime.now().strftime('%Y-%m')
+    
+    # Em produção (Render), sempre tentamos o cache primeiro pois não há acesso direto ao UAU SQL
+    try:
+        from modulo_api_corretores.cache_supabase import buscar_cache
+        cached = buscar_cache(empresa, obra, mes)
+        if cached:
+            return jsonify({
+                "total_corretores": len(cached['dados']),
+                "dados": cached['dados'],
+                "atualizado_em": cached['atualizado_em'],
+                "is_cache": True
+            })
+    except Exception as e:
+        print(f"[API] Erro ao buscar cache: {e}")
+
+    return jsonify({"error": "Dados não disponíveis no cache e conexão direta com UAU indisponível nesta instância."}), 503
+
+@app.route('/api/integracao/cache/corretores', methods=['GET'])
+def get_integracao_cache():
+    """Endpoint explícito para busca de cache."""
+    empresa = request.args.get('empresa', 28, type=int)
+    obra = request.args.get('obra', "70100")
+    mes = request.args.get('mes') or datetime.datetime.now().strftime('%Y-%m')
+    
+    try:
+        from modulo_api_corretores.cache_supabase import buscar_cache
+        cached = buscar_cache(empresa, obra, mes)
+        if cached:
+            return jsonify(cached)
+        return jsonify({"error": "Cache não encontrado"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/api/health')
 def health_check():
-    return jsonify({"status": "healthy", "python": sys.version})
+    return jsonify({"status": "healthy", "python": sys.version, "monitor_active": monitor_thread.is_alive()})
+
+@app.route('/api/alerts/recent', methods=['GET'])
+@token_required
+def get_alerts():
+    """Fetch recent lot status alerts from the background monitor"""
+    limit = int(request.args.get('limit', 10))
+    alerts = get_recent_alerts(limit)
+    return jsonify({"success": True, "alerts": alerts})
 
 @app.route('/api/debug-env', methods=['GET'])
 def debug_env():
@@ -1050,6 +1105,89 @@ def debug_env():
             proposals_health = str(e)
 
     return jsonify({"env": env_vars, "status": "alive", "proposals_health": proposals_health})
+
+# --- BACKGROUND MONITORING (1s Frequency) ---
+
+def monitor_lots_task():
+    """
+    Background Task that polls the company API every 1s to detect status changes.
+    This runs 24/7 in the cloud (Render) as long as the service is kept awake.
+    """
+    print("[MONITOR] Starting Background Monitoring Thread...")
+    
+    # We will monitor all active obras
+    OBRA_CODES = ['600', '601', '602', '603', '604', '605', '610', '616', '618', '620', '621', '623', '624', '625'] 
+    
+    last_status_cache = {} # In-memory cache for change detection
+    
+    # Pre-populate cache from last alerts to prevent duplicate notifications on restart
+    try:
+        recent_alerts = get_recent_alerts(50)
+        for al in recent_alerts:
+            l_id = al.get('lote_id')
+            if l_id and l_id not in last_status_cache:
+                last_status_cache[l_id] = al.get('novo_status')
+        print(f"[MONITOR] Pre-cached {len(last_status_cache)} lot statuses from Supabase.")
+    except Exception as e:
+        print(f"[MONITOR] Failed to pre-cache alerts: {e}")
+    
+    while True:
+        try:
+            for code in OBRA_CODES:
+                # 1. Fetch current status from company API
+                # We use the same fetch_consulta logic but simplified for the thread
+                headers = {
+                    'User-Agent': 'VallePrime-Cloud-Monitor/2.0',
+                    'Accept': 'application/json'
+                }
+                
+                # Note: We use the internal fetch_consulta logic but skip the Flask jsonify component
+                target_url = f"http://177.221.240.85:8000/api/consulta/{code}/"
+                
+                try:
+                    r = requests.get(target_url, headers=headers, timeout=5)
+                    if r.status_code == 200:
+                        data = r.json()
+                        lot_list = data.get('data', [])
+                        
+                        for lot in lot_list:
+                            lot_id = f"{code}-Q{lot.get('QD')}-L{lot.get('LT')}"
+                            current_status = lot.get('ST')
+                            
+                            # Detection of change
+                            if lot_id in last_status_cache:
+                                if last_status_cache[lot_id] != current_status:
+                                    msg = f"Lote {lot.get('LT')} (Q{lot.get('QD')}) alterado para {current_status}"
+                                    print(f"✨ [ALERT] {code}: {msg}")
+                                    
+                                    # Persist to Supabase
+                                    try:
+                                        create_alert(code, lot_id, last_status_cache[lot_id], current_status, msg)
+                                    except:
+                                        pass # Ignore DB alert errors in thread
+                                    
+                            last_status_cache[lot_id] = current_status
+                except Exception as e:
+                    # Silently ignore transient network errors in the thread
+                    pass
+                
+                # Internal sleep between codes to avoid burst
+                time.sleep(0.5) 
+                
+            # Main loop sleep
+            time.sleep(1)
+            
+        except Exception as e:
+            print(f"[MONITOR ERROR] {e}")
+            time.sleep(10) # Wait before retry on fatal error
+
+# Start the thread on app initialization
+try:
+    monitor_thread = threading.Thread(target=monitor_lots_task, daemon=True)
+    monitor_thread.start()
+    print("[STARTUP] Background Monitoring Thread launched.")
+except Exception as e:
+    print(f"[STARTUP] Failed to start monitor thread: {e}")
 
 # Check Supabase connectivity on startup
 try:
