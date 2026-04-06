@@ -22,26 +22,61 @@ except ImportError as e:
     generate_pdf_reportlab = None
 
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
+# Permitir tudo (configuração agressiva de CORS)
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
 @app.after_request
-def add_cors_headers(response):
-    """Ensure CORS headers are present even on errors."""
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
-    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+def after_request_func(response):
+    """Garante que todas as respostas tenham os cabeçalhos de permissão."""
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
     return response
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    """Captura qualquer erro interno e retorna JSON + CORS para não quebrar o navegador."""
+    error_msg = str(e)
+    if hasattr(e, 'description'): error_msg = e.description
+    print(f"[FATAL_ERR] {error_msg}")
+    return jsonify({
+        "success": False,
+        "message": "Erro interno do servidor",
+        "error": error_msg,
+        "type": type(e).__name__
+    }), 500
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'dev_secret_key_valle_prime_v2')
 
-# Supabase is the sole data source (configured via environment variables)
+# Supabase is the sole data source (late import helper)
+def get_db():
+    import database
+    return database
 
-from database import (
-    get_user_by_id, get_user_by_username, get_all_users, create_user, update_user, delete_user, count_users,
-    get_clients, check_duplicate_client, get_client_by_id, create_client, update_client, delete_client, count_clients, get_recent_clients,
-    get_proposals, get_proposal_by_id, count_proposals, create_proposal, update_proposal, delete_proposal,
-    create_alert, get_recent_alerts
-)
+# Late-binding database function proxies
+def get_user_by_id(*args, **kwargs): return get_db().get_user_by_id(*args, **kwargs)
+def get_user_by_username(*args, **kwargs): return get_db().get_user_by_username(*args, **kwargs)
+def get_all_users(*args, **kwargs): return get_db().get_all_users(*args, **kwargs)
+def create_user(*args, **kwargs): return get_db().create_user(*args, **kwargs)
+def update_user(*args, **kwargs): return get_db().update_user(*args, **kwargs)
+def delete_user(*args, **kwargs): return get_db().delete_user(*args, **kwargs)
+def count_users(*args, **kwargs): return get_db().count_users(*args, **kwargs)
+def get_clients(*args, **kwargs): return get_db().get_clients(*args, **kwargs)
+def check_duplicate_client(*args, **kwargs): return get_db().check_duplicate_client(*args, **kwargs)
+def get_client_by_id(*args, **kwargs): return get_db().get_client_by_id(*args, **kwargs)
+def create_client(*args, **kwargs): return get_db().create_client(*args, **kwargs)
+def update_client(*args, **kwargs): return get_db().update_client(*args, **kwargs)
+def delete_client(*args, **kwargs): return get_db().delete_client(*args, **kwargs)
+def count_clients(*args, **kwargs): return get_db().count_clients(*args, **kwargs)
+def get_recent_clients(*args, **kwargs): return get_db().get_recent_clients(*args, **kwargs)
+def get_proposals(*args, **kwargs): return get_db().get_proposals(*args, **kwargs)
+def get_proposal_by_id(*args, **kwargs): return get_db().get_proposal_by_id(*args, **kwargs)
+def count_proposals(*args, **kwargs): return get_db().count_proposals(*args, **kwargs)
+def create_proposal(*args, **kwargs): return get_db().create_proposal(*args, **kwargs)
+def update_proposal(*args, **kwargs): return get_db().update_proposal(*args, **kwargs)
+def delete_proposal(*args, **kwargs): return get_db().delete_proposal(*args, **kwargs)
+def create_alert(*args, **kwargs): return get_db().create_alert(*args, **kwargs)
+def get_recent_alerts(*args, **kwargs): return get_db().get_recent_alerts(*args, **kwargs)
 
 def hash_password(password):
     salt = secrets.token_hex(16)
@@ -94,6 +129,14 @@ def token_required(f):
             return jsonify({'message': 'Invalid token'}), 401
         return f(*args, **kwargs)
     return decorated
+
+@app.route('/')
+def index():
+    return jsonify({
+        "status": "online",
+        "message": "VallePrime API 2.0 (Stable)",
+        "docs": "/api/health"
+    })
 
 @app.route('/api/hello')
 def hello():
