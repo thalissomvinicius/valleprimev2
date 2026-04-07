@@ -624,9 +624,6 @@ def manage_clients():
 @app.route('/api/clients/<int:client_id>', methods=['DELETE'])
 @app.route('/api/manage-clients/<int:client_id>', methods=['DELETE'])
 @token_required
-@app.route('/api/clients/<int:client_id>', methods=['DELETE'])
-@app.route('/api/manage-clients/<int:client_id>', methods=['DELETE'])
-@token_required
 def delete_client_route(client_id):
     """Delete a client by ID"""
     try:
