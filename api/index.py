@@ -90,38 +90,22 @@ def delete_proposal(*args, **kwargs): return get_db().delete_proposal(*args, **k
 def create_alert(*args, **kwargs): return get_db().create_alert(*args, **kwargs)
 def get_recent_alerts(*args, **kwargs): return get_db().get_recent_alerts(*args, **kwargs)
 
-def hash_password(password):
-    salt = secrets.token_hex(16)
-    return hashlib.pbkdf2_hmac('sha256', password.encode(), salt.encode(), 100000).hex() + ':' + salt
+from use_cases.auth_logic import AuthUseCase
+from use_cases.proposal_logic import ProposalUseCase
+from use_cases.client_logic import ClientUseCase
+from background_tasks import start_monitor_thread
 
-def verify_password(stored_password, provided_password):
-    if not stored_password or not provided_password:
-        return False
-    try:
-        # Format 1: PBKDF2 with salt (hash:salt)
-        if ':' in stored_password:
-            password_hash, salt = stored_password.split(':')
-            new_hash = hashlib.pbkdf2_hmac('sha256', provided_password.encode(), salt.encode(), 100000).hex()
-            return new_hash == password_hash
-        
-        # Format 2: Simple MD5 hash
-        md5_hash = hashlib.md5(provided_password.encode()).hexdigest()
-        if stored_password == md5_hash:
-            return True
-        
-        # Format 3: Simple SHA256 hash
-        sha256_hash = hashlib.sha256(provided_password.encode()).hexdigest()
-        if stored_password == sha256_hash:
-            return True
-        
-        # Format 4: Plain text comparison (for testing only)
-        if stored_password == provided_password:
-            return True
-        
-        return False
-    except Exception as e:
-        print(f"[VERIFY_PASSWORD ERROR] {e}")
-        return False
+auth_service = AuthUseCase(SECRET_KEY)
+hash_password = auth_service.hash_password
+verify_password = auth_service.verify_password
+
+proposal_service = ProposalUseCase()
+client_service = ClientUseCase()
+
+# Global config for monitor
+OBRA_CODES = ['600', '601', '602', '603', '604', '605', '610', '616', '618', '620', '621', '623', '624', '625'] 
+monitor_thread = start_monitor_thread(OBRA_CODES, get_recent_alerts, create_alert)
+
 
 def token_required(f):
     @wraps(f)
@@ -134,11 +118,11 @@ def token_required(f):
         if not token:
             return jsonify({'message': 'Token missing'}), 401
         try:
-            data = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+            data = auth_service.verify_token(token)
             request.user_id = data['user_id']
             request.user_role = data.get('role')
-        except:
-            return jsonify({'message': 'Invalid token'}), 401
+        except ValueError as e:
+            return jsonify({'message': str(e)}), 401
         return f(*args, **kwargs)
     return decorated
 
@@ -158,8 +142,8 @@ def hello():
 def check_supabase_connection():
     """Verify Supabase connectivity and ensure default admin exists"""
     try:
-        from database import SUPABASE_URL, SUPABASE_KEY
-        if not SUPABASE_URL or not SUPABASE_KEY:
+        from database import SupabaseConfig
+        if not SupabaseConfig.URL or not SupabaseConfig.KEY:
             print("[STARTUP] WARNING: SUPABASE_URL or SUPABASE_KEY not set!")
             return False
             
@@ -182,7 +166,7 @@ def check_supabase_connection():
 @app.route('/api/debug/db')
 def debug_db():
     try:
-        from database import SUPABASE_URL, SUPABASE_KEY
+        from database import SupabaseConfig
         if request.args.get('test_insert') == 'true':
             create_client("Teste Manual", "00000000000", "PF", "system", {})
             return jsonify({"message": "Manual test insert executed. Refresh this page to see count."})
@@ -200,8 +184,8 @@ def debug_db():
             "users_total": users_count['count'] if users_count else 0,
             "last_clients": last_clients or [],
             "supabase_api": {
-                "active": bool(SUPABASE_URL and SUPABASE_KEY),
-                "url": SUPABASE_URL
+                "active": bool(SupabaseConfig.URL and SupabaseConfig.KEY),
+                "url": SupabaseConfig.URL
             },
             "env_check": env_vars
         })
@@ -214,28 +198,12 @@ def get_optional_user_from_token():
         return None, None
     token = auth_header.split(' ')[1]
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        payload = auth_service.verify_token(token)
         return payload.get('user_id'), payload.get('role')
     except:
         return None, None
 
-def extract_proposal_meta(payload):
-    obra_codigo = None
-    obra_nome = None
-    quadra = None
-    lote = None
-    if isinstance(payload, dict):
-        obra_nome = payload.get('obraName') or payload.get('obra_nome') or payload.get('obra')
-        obra_codigo = payload.get('obra_codigo')
-        lot = payload.get('lot')
-        if isinstance(lot, dict):
-            quadra = lot.get('QD') or lot.get('quadra')
-            lote = lot.get('LT') or lot.get('lote')
-            obra_codigo = obra_codigo or lot.get('CODIGO') or lot.get('codigo_obra') or lot.get('Empreendimento') or lot.get('Obra')
-        else:
-            quadra = payload.get('quadra')
-            lote = payload.get('lote')
-    return obra_codigo, obra_nome, quadra, lote
+extract_proposal_meta = proposal_service.extract_proposal_meta
 
 def store_proposal(payload, user_id):
     obra_codigo, obra_nome, quadra, lote = extract_proposal_meta(payload)
@@ -312,61 +280,20 @@ def login_get():
     username = request.args.get('username', '').strip()
     password = request.args.get('password', '')
     
-    if not username or not password:
-        return jsonify({'message': 'Credentials required'}), 400
-    
-
-    
     try:
-        user = get_user_by_username(username, active_only=True)
-        # If user not found and table might be empty, try to create admin once
-        if not user and username == 'admin' and password == 'admin123':
-            cnt_res = count_users()
-            if cnt_res and cnt_res.get('count', 0) == 0:
-                pw_hash = hash_password('admin123')
-                create_user('admin', pw_hash, 'Admin', 'admin', {"canViewAllClients": True}, True)
-                user = get_user_by_username('admin', active_only=True)
+        result = auth_service.execute_login(
+            username=username,
+            password=password,
+            get_user_fn=get_user_by_username,
+            count_users_fn=count_users,
+            create_user_fn=create_user
+        )
+        return jsonify(result)
+    except ValueError as e:
+        return jsonify({'message': str(e)}), 401
     except Exception as e:
-        print(f"[LOGIN-GET] Lookup failed: {e}")
-        user = None
-    
-    if not user:
-        return jsonify({'message': 'Invalid credentials'}), 401
-    
-    # Verify password
-    if not verify_password(user.get('password_hash', ''), password):
-        return jsonify({'message': 'Invalid credentials'}), 401
-    
-    # Generate token
-    try:
-        token = jwt.encode({
-            'user_id': user['id'],
-            'role': user['role'],
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=12)
-        }, SECRET_KEY, algorithm="HS256")
-        if isinstance(token, bytes): token = token.decode('utf-8')
-    except Exception as e:
-        print(f"[LOGIN-GET] Token generation failed: {e}")
-        return jsonify({'message': 'Internal error'}), 500
-    
-    # Parse permissions
-    perms = {}
-    if user.get('permissions'):
-        try:
-            perms = json.loads(user['permissions']) if isinstance(user['permissions'], str) else user['permissions']
-        except:
-            pass
-    
-    return jsonify({
-        'token': token,
-        'user': {
-            'id': user['id'],
-            'username': user['username'],
-            'nome': user.get('nome'),
-            'role': user['role'],
-            'permissions': perms
-        }
-    })
+        print(f"[LOGIN_GET ERROR] {e}")
+        return jsonify({'message': 'Internal Login Error', 'error': str(e)}), 500
 
 # ROTA ALTERNATIVA - para contornar problema de roteamento
 @app.route('/api/login', methods=['POST'])
@@ -375,60 +302,23 @@ def login_alt():
 
 @app.route('/api/auth/login', methods=['POST'])
 def login():
+    data = request.get_json(silent=True) or {}
+    username = data.get('username', '').strip()
+    password = data.get('password', '')
+    
     try:
-        data = request.get_json(silent=True) or {}
-        username = data.get('username', '').strip()
-        password = data.get('password', '')
-        
-        if not username or not password:
-            return jsonify({'message': 'Credentials required'}), 400
-        
-
-        
-        try:
-            user = get_user_by_username(username, active_only=True)
-            if not user and username == 'admin' and password == 'admin123':
-                cnt_res = count_users()
-                if cnt_res and cnt_res.get('count', 0) == 0:
-                    pw_hash = hash_password('admin123')
-                    create_user('admin', pw_hash, 'Admin', 'admin', {"canViewAllClients": True}, True)
-                    user = get_user_by_username('admin', active_only=True)
-        except Exception as e:
-            print(f"[LOGIN POST] Lookup failed: {e}")
-            user = None
-
-        if not user:
-            return jsonify({'message': 'Invalid credentials (User not found)'}), 401
-            
-        if not verify_password(user['password_hash'], password):
-            return jsonify({'message': 'Invalid credentials (Password mismatch)'}), 401
-        
-        try:
-            token = jwt.encode({
-                'user_id': user['id'],
-                'role': user['role'],
-                'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=12)
-            }, SECRET_KEY, algorithm="HS256")
-            if isinstance(token, bytes): token = token.decode('utf-8')
-        except Exception as jwt_err:
-            return jsonify({'message': 'JWT Encoding Error', 'error': str(jwt_err)}), 500
-        
-        perms = {}
-        if user['permissions']:
-            try: perms = json.loads(user['permissions'])
-            except: pass
-        
-        return jsonify({
-            'token': token,
-            'user': {
-                'id': user['id'],
-                'username': user['username'],
-                'nome': user.get('nome'),
-                'role': user['role'],
-                'permissions': perms
-            }
-        })
+        result = auth_service.execute_login(
+            username=username,
+            password=password,
+            get_user_fn=get_user_by_username,
+            count_users_fn=count_users,
+            create_user_fn=create_user
+        )
+        return jsonify(result)
+    except ValueError as e:
+        return jsonify({'message': str(e)}), 401
     except Exception as e:
+        print(f"[LOGIN ERROR] {e}")
         return jsonify({'message': 'Internal Login Error', 'error': str(e)}), 500
 
 @app.route('/api/proposals', methods=['GET'])
@@ -619,19 +509,33 @@ def fetch_consulta(numprod_psc):
 
     try:
         import time
-        connect_timeout = float(os.environ.get('CONSULTA_CONNECT_TIMEOUT', '12'))
-        read_timeout = float(os.environ.get('CONSULTA_READ_TIMEOUT', '20'))
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+
+        # --- PRIORIDADE 1: Fallback local (instantâneo) ---
+        fallback_path = os.path.join(base_dir, f'fallback_{numprod_psc}.json')
+        if os.path.exists(fallback_path):
+            try:
+                with open(fallback_path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    payload = enrich_payload(data)
+                    if isinstance(payload, dict):
+                        payload["success"] = True
+                        payload["_cached"] = True
+                        payload["_source"] = "local_fallback"
+                    print(f"[CONSULTA] Serving fallback for obra {numprod_psc}")
+                    return jsonify(payload)
+            except Exception as fb_err:
+                print(f"[WARN] Fallback load failed: {fb_err}")
+
+        # --- PRIORIDADE 2: Servidor externo (falha rápida em 3s) ---
+        connect_timeout = float(os.environ.get('CONSULTA_CONNECT_TIMEOUT', '3'))
+        read_timeout = float(os.environ.get('CONSULTA_READ_TIMEOUT', '8'))
         retries = int(os.environ.get('CONSULTA_RETRIES', '1'))
         last_error = None
-        
-        # Headers para simular navegador real e evitar bloqueio por WAF/Firewall
+
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
             'Accept': 'application/json, text/javascript, */*; q=0.01',
-            'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
-            'Referer': 'http://177.221.240.85:8000/',
-            'Origin': 'http://177.221.240.85:8000',
-            'Connection': 'keep-alive'
         }
 
         for attempt in range(retries + 1):
@@ -650,29 +554,15 @@ def fetch_consulta(numprod_psc):
                 last_error = f"HTTP {resp.status_code}"
             except Exception as e:
                 last_error = str(e)
-            time.sleep(0.6 * (attempt + 1))
-        
-        # Fallback para arquivo local se a API externa falhar
-        try:
-            fallback_path = os.path.join(os.path.dirname(__file__), f'fallback_{numprod_psc}.json')
-            if os.path.exists(fallback_path):
-                print(f"[WARN] API externa falhou ({last_error}). Usando fallback local: {fallback_path}")
-                with open(fallback_path, 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                    # Tenta enriquecer dados do fallback também
-                    payload = enrich_payload(data)
-                    if isinstance(payload, dict):
-                        payload["success"] = True
-                        payload["_cached"] = True
-                        payload["_error"] = str(last_error)
-                    return jsonify(payload)
-        except Exception as fallback_err:
-            print(f"[ERROR] Falha ao ler fallback: {fallback_err}")
+            time.sleep(0.5 * (attempt + 1))
 
+        # --- SEM FALLBACK E SEM SERVIDOR ---
+        print(f"[CONSULTA] Obra {numprod_psc} indisponível: {last_error}")
         return jsonify({
             "success": False,
             "data": [],
-            "error": f"Consulta indisponivel. {last_error}"
+            "error": f"Consulta indisponível para obra {numprod_psc}. Servidor externo offline e sem cache local.",
+            "_last_error": str(last_error)
         }), 503
     except Exception as e:
         print(f"[consulta] external fetch failed: {e}")
@@ -682,163 +572,79 @@ def fetch_consulta(numprod_psc):
             "error": str(e)
         })
 
+
 @app.route('/api/clients', methods=['GET', 'POST'])
 @app.route('/api/manage-clients', methods=['GET', 'POST'])
 @token_required
 def manage_clients():
     if request.method == 'GET':
-        print(f"[DEBUG] GET Clients for user_id: {request.user_id}, role: {request.user_role}")
-        
-        # Get type filter (pf or pj)
-        client_type = request.args.get('type', 'pf').upper()  # 'PF' or 'PJ'
-        print(f"[DEBUG] Filtering by tipo_pessoa: {client_type}")
-        
-        can_see_all = request.user_role == 'admin'
-        if not can_see_all:
-             # Check specific permissions
-             user = get_user_by_id(request.user_id)
-             perms = user.get('permissions', {}) if user else {}
-             if isinstance(perms, str):
-                 try:
-                     perms = json.loads(perms)
-                 except:
-                     perms = {}
-             can_see_all = perms.get('canViewAllClients', False)
-
+        client_type = request.args.get('type', 'PF').upper()
         created_by = request.args.get('created_by')
-        force_created_by = None
-        if created_by and (request.user_role == 'admin' or str(created_by) == str(request.user_id)):
-            force_created_by = str(created_by)
         
-        if can_see_all:
-            clients = get_clients(client_type, force_created_by if force_created_by else None)
-        else:
-            clients = get_clients(client_type, str(request.user_id))
+        clients = client_service.fetch_clients(
+            user_id=request.user_id,
+            user_role=request.user_role,
+            client_type=client_type,
+            requested_created_by=created_by,
+            get_user_fn=get_user_by_id,
+            get_clients_fn=get_clients
+        )
         
-        print(f"[DEBUG] Found {len(clients) if clients else 0} clients")
-        # Normalize response for frontend
-        if isinstance(clients, list):
-            return jsonify({
-                "success": True,
-                "clients": clients,
-                "total_count": len(clients)
-            })
-        return jsonify({"success": True, "clients": [], "total_count": 0})
+        return jsonify({
+            "success": True,
+            "clients": clients or [],
+            "total_count": len(clients) if clients else 0
+        })
 
     if request.method == 'POST':
         try:
             data = request.get_json()
-            print(f"[DEBUG] Received data: {data}")
+            result = client_service.save_client(
+                user_id=request.user_id,
+                user_role=request.user_role,
+                data=data,
+                get_user_fn=get_user_by_id,
+                get_client_by_id_fn=get_client_by_id,
+                get_clients_fn=get_clients,
+                create_client_fn=create_client,
+                update_client_fn=update_client
+            )
+            return jsonify(result)
 
-            if not data:
-                return jsonify({'success': False, 'error': 'No data provided'}), 400
-
-            client_id_raw = data.get('client_id')
-            client_id = None
-            if client_id_raw:
-                import re
-                match = re.search(r'\d+', str(client_id_raw))
-                if match:
-                    client_id = int(match.group())
-
-            nome = data.get('nome') or data.get('nome_proponente') or data.get('razao_social_proponente')
-            cpf_cnpj = data.get('cpf_cnpj') or data.get('cpf_cnpj_proponente')
-            tipo_pessoa = data.get('tipo_pessoa', 'PF')
-
-            print(f"[DEBUG] Extracted - nome: {nome}, cpf_cnpj: {cpf_cnpj}, tipo_pessoa: {tipo_pessoa}, client_id: {client_id}")
-
-            if not nome or not cpf_cnpj:
-                return jsonify({
-                    'success': False,
-                    'error': 'Campos obrigatórios faltando',
-                    'message': 'Nome e CPF/CNPJ são obrigatórios',
-                    'required': ['nome or nome_proponente', 'cpf_cnpj or cpf_cnpj_proponente']
-                }), 400
-
-            if client_id:
-                existing = get_client_by_id(client_id)
-                if not existing:
-                    return jsonify({'success': False, 'error': 'Cliente não encontrado'}), 404
-
-                can_update_any = request.user_role == 'admin'
-                if not can_update_any:
-                    user = get_user_by_id(request.user_id)
-                    perms = json.loads(user['permissions']) if user and isinstance(user.get('permissions'), str) else (user.get('permissions') or {})
-                    can_update_any = perms.get('canViewAllClients', False)
-
-                if not can_update_any and str(existing.get('created_by')) != str(request.user_id):
-                    return jsonify({'success': False, 'error': 'Sem permissão para atualizar este cliente'}), 403
-
-                updated_at = datetime.datetime.now().isoformat()
-                print(f"[DEBUG] Attempting to update client: {client_id} - {nome} - {cpf_cnpj}")
-                success = update_client(client_id, nome, cpf_cnpj, tipo_pessoa, data, updated_at)
-                print(f"[DEBUG] Update result: {success}")
-                if success:
-                    return jsonify({'success': True, 'message': 'Cliente atualizado com sucesso', 'database': 'supabase-rest'})
-                return jsonify({'success': False, 'error': 'Falha ao atualizar no banco de dados Supabase'}), 500
-
-            existing_id = None
-            for c in get_clients(tipo_pessoa, str(request.user_id)):
-                if c.get('cpf_cnpj') == cpf_cnpj:
-                    existing_id = c.get('id')
-                    break
-            if existing_id:
-                updated_at = datetime.datetime.now().isoformat()
-                print(f"[DEBUG] Attempting to update existing client by CPF/CNPJ: {existing_id}")
-                success = update_client(existing_id, nome, cpf_cnpj, tipo_pessoa, data, updated_at)
-                print(f"[DEBUG] Update result: {success}")
-                if success:
-                    return jsonify({'success': True, 'message': 'Cliente atualizado com sucesso', 'database': 'supabase-rest'})
-                return jsonify({'success': False, 'error': 'Falha ao atualizar no banco de dados Supabase'}), 500
-
-            print(f"[DEBUG] Attempting to insert client: {nome} - {cpf_cnpj}")
-            success = create_client(nome, cpf_cnpj, tipo_pessoa, str(request.user_id), data)
-            print(f"[DEBUG] Insert result: {success}")
-
-            if success:
-                return jsonify({'success': True, 'message': 'Cliente salvo com sucesso', 'database': 'supabase-rest'})
-            else:
-                return jsonify({'success': False, 'error': 'Falha ao inserir no banco de dados Supabase'}), 500
-
+        except (ValueError, KeyError) as e:
+            return jsonify({'success': False, 'error': str(e)}), 400
+        except PermissionError as e:
+            return jsonify({'success': False, 'error': str(e)}), 403
         except Exception as e:
-            import traceback
-            error_trace = traceback.format_exc()
-            print(f"[ERROR] Exception saving client: {str(e)}")
-            print(f"[ERROR] Traceback: {error_trace}")
-            return jsonify({
-                'success': False, 
-                'error': f'Erro ao salvar cliente: {str(e)}',
-                'message': str(e),
-                'trace': error_trace if os.getenv('VERCEL') else None  # Only show trace in production for debugging
-            }), 500
+            print(f"[ERROR] manage_clients POST: {str(e)}")
+            return jsonify({'success': False, 'error': 'Internal server error'}), 500
 
 
+@app.route('/api/clients/<int:client_id>', methods=['DELETE'])
+@app.route('/api/manage-clients/<int:client_id>', methods=['DELETE'])
+@token_required
 @app.route('/api/clients/<int:client_id>', methods=['DELETE'])
 @app.route('/api/manage-clients/<int:client_id>', methods=['DELETE'])
 @token_required
 def delete_client_route(client_id):
     """Delete a client by ID"""
     try:
-        print(f"[DEBUG] Deleting client {client_id} by user {request.user_id}")
+        success = client_service.delete_client(
+            client_id=client_id,
+            user_id=request.user_id,
+            user_role=request.user_role,
+            get_user_fn=get_user_by_id,
+            delete_client_fn=_db_delete_client
+        )
         
-        can_delete_any = request.user_role == 'admin'
-        if not can_delete_any:
-            user = get_user_by_id(request.user_id)
-            perms = json.loads(user['permissions']) if user and isinstance(user.get('permissions'), str) else (user.get('permissions') or {})
-            can_delete_any = perms.get('canViewAllClients', False)
-        
-        result = _db_delete_client(client_id, None if can_delete_any else str(request.user_id))
-        
-        if result:
+        if success:
             return jsonify({'success': True, 'message': 'Cliente excluído com sucesso'})
         else:
             return jsonify({'success': False, 'error': 'Cliente não encontrado ou sem permissão'}), 404
             
     except Exception as e:
-        print(f"[ERROR] delete_client_route: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        print(f"[ERROR] delete_client: {str(e)}")
+        return jsonify({'success': False, 'error': 'Internal server error'}), 500
 
 
 @app.route('/api/clients/check-duplicate', methods=['GET'])
@@ -921,153 +727,34 @@ def user_ops(user_id):
 
 @app.route('/api/generate_proposal', methods=['POST'])
 def generate_proposal():
-    """Generate PDF proposal from client and lot data"""
+    """Generate PDF proposal from client and lot data via Clean UseCase"""
     try:
         data = request.get_json()
         if not data:
             return jsonify({'error': 'No data provided'}), 400
-        
+            
         print(f"[DEBUG] Generating proposal with data keys: {list(data.keys())}")
         user_id, _ = get_optional_user_from_token()
         
-        # Check if PDF generator is available
-        if not generate_pdf_reportlab:
-            return jsonify({'error': 'PDF generator not available'}), 500
-        
-        # Define paths
         base_dir = os.path.dirname(os.path.abspath(__file__))
         positions_path = os.path.join(base_dir, 'posicoes_campos.json')
         background_path = os.path.join(base_dir, 'PROPOSTA LIMPA.jpg')
         output_path = os.path.join(base_dir, 'proposta_output.pdf')
         
-        # -- BEGIN MAPPING FOR PDF GENERATOR --
-        try:
-            if 'lot' in data and isinstance(data['lot'], dict):
-                lot = data['lot']
-                data.setdefault('lote', lot.get('LT'))
-                data.setdefault('quadra', lot.get('QD'))
-                data.setdefault('area', lot.get('M2'))
-                data.setdefault('cidade_empreendimento', lot.get('Cidade', ''))
-                data.setdefault('estado_empreendimento', lot.get('UF', ''))
+        # Dependency Injection wrapper
+        def store_fn(payload, uid):
+            store_proposal(payload, uid)
             
-            # Handle Empreendimento and City properly
-            obra_name = data.get('obraName', '')
-            
-            # Known Obras from Frontend
-            OBRAS = [
-                {'codigo': '600', 'descricao': 'RESIDENCIAL JARDIM DO VALLE - DOM ELISEU', 'cidade': 'DOM ELISEU', 'uf': 'PA'},
-                {'codigo': '601', 'descricao': 'RESIDENCIAL JARDIM AMERICA - CAPANEMA', 'cidade': 'CAPANEMA', 'uf': 'PA'},
-                {'codigo': '602', 'descricao': 'RESIDENCIAL SALLES JARDIM - CASTANHAL', 'cidade': 'CASTANHAL', 'uf': 'PA'},
-                {'codigo': '603', 'descricao': 'RESIDENCIAL JARDIM CASTANHAL - CASTANHAL', 'cidade': 'CASTANHAL', 'uf': 'PA'},
-                {'codigo': '604', 'descricao': 'RESIDENCIAL IPITINGA - TOMÉ-AÇU', 'cidade': 'TOMÉ-AÇU', 'uf': 'PA'},
-                {'codigo': '605', 'descricao': 'RESIDENCIAL VALLE DO IPITINGA - TOMÉ-AÇU', 'cidade': 'TOMÉ-AÇU', 'uf': 'PA'},
-                {'codigo': '610', 'descricao': 'RESIDENCIAL JARDIM DO VALLE - TAILANDIA', 'cidade': 'TAILÂNDIA', 'uf': 'PA'},
-                {'codigo': '616', 'descricao': 'RESIDENCIAL JARDIM DO VALLE - BARCARENA', 'cidade': 'BARCARENA', 'uf': 'PA'},
-                {'codigo': '618', 'descricao': 'RESIDENCIAL JARDIM DO VALLE II - TAILANDIA', 'cidade': 'TAILÂNDIA', 'uf': 'PA'},
-                {'codigo': '620', 'descricao': 'RESIDENCIAL JARDIM VALLE DO URAIM - PARAGOMINAS', 'cidade': 'PARAGOMINAS', 'uf': 'PA'},
-                {'codigo': '621', 'descricao': 'RESIDENCIAL PARQUE DO VALLE - RONDON', 'cidade': 'RONDON DO PARÁ', 'uf': 'PA'},
-                {'codigo': '623', 'descricao': 'RESIDENCIAL JARDIM CASTANHAL III - CASTANHAL', 'cidade': 'CASTANHAL', 'uf': 'PA'},
-                {'codigo': '624', 'descricao': 'RESIDENCIAL VALLE DO IPITINGA II - TOMÉ-AÇU', 'cidade': 'TOMÉ-AÇU', 'uf': 'PA'},
-                {'codigo': '625', 'descricao': 'RESIDENCIAL VALLE DO IPÊS - TOMÉ AÇU', 'cidade': 'TOMÉ-AÇU', 'uf': 'PA'}
-            ]
-            
-            obra_info = next((o for o in OBRAS if o['descricao'].upper() == obra_name.upper()), None)
-            
-            if obra_info:
-                # Se achou no dict, usamos o nome base (antes do " - CIDADE") para o Empreendimento, se houver
-                nome_base = obra_info['descricao'].split(' - ')[0] if ' - ' in obra_info['descricao'] else obra_info['descricao']
-                data['empreendimento'] = nome_base
-                data['cidade_empreendimento'] = obra_info['cidade']
-                data['estado_empreendimento'] = obra_info['uf']
-                data['cidade_proposta_final'] = f"{obra_info['cidade']}/{obra_info['uf']}"
-            else:
-                data.setdefault('empreendimento', obra_name)
-                # Fallback: tentar quebrar pelo traço
-                if ' - ' in obra_name:
-                    partes = obra_name.rsplit(' - ', 1)
-                    data['empreendimento'] = partes[0].strip()
-                    data.setdefault('cidade_empreendimento', partes[1].strip() if not data.get('cidade_empreendimento') else data['cidade_empreendimento'])
-                    data.setdefault('cidade_proposta_final', partes[1].strip() if not data.get('cidade_proposta_final') else data['cidade_proposta_final'])
-            
-            def format_currency(val):
-                try:
-                    if not val: return ""
-                    v = float(val)
-                    return f"{v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-                except:
-                    return str(val)
-
-            if 'lotValue' in data: data.setdefault('valor_inicial', format_currency(data['lotValue']))
-            if 'downPaymentTotal' in data: data.setdefault('valor_sinal', format_currency(data['downPaymentTotal']))
-            if 'remainingBalance' in data: data.setdefault('valor_saldo_parcelar', format_currency(data['remainingBalance']))
-
-            # ENTRADA: Ocultar dados se for zerada ou desabilitada
-            entrada_enabled = data.get('entradaEnabled', False)
-            entrada_val = 0
-            if 'entradaValue' in data:
-                try: entrada_val = float(data['entradaValue'])
-                except: pass
-                
-            if not entrada_enabled or entrada_val <= 0:
-                for k in ['valor_total_entrada', 'entrada_qtd_parcelas', 'entrada_valor_parcela', 'entrada_dia', 'entrada_mes', 'entrada_ano', 'entrada_periodicidade']:
-                    data[k] = ""
-            else:
-                data['valor_total_entrada'] = format_currency(entrada_val)
-
-            if 'balanceInstallments' in data:
-                try:
-                    installments = int(data['balanceInstallments'])
-                    data.setdefault('saldo_qtd_parcelas', str(installments).zfill(2))
-                    if 'remainingBalance' in data:
-                        rem_bal = float(data['remainingBalance'])
-                        val_parc = (rem_bal / installments) if installments > 0 else 0
-                        data.setdefault('saldo_valor_parcela', format_currency(val_parc))
-                    data.setdefault('saldo_periodicidade', 'MENSAL')
-                    
-                    if installments == 1:
-                        tipo = "FIXA"
-                    elif installments <= 36:
-                        tipo = "FIXAS"
-                    elif installments <= 72:
-                        tipo = "CORRIGIDAS"
-                    else:
-                        tipo = "REAJUSTÁVEIS"
-                        
-                    data.setdefault('saldo_tipo_parcela', tipo)
-                except:
-                    pass
-
-            if 'proposta_data' in data and '-' in data['proposta_data']:
-                parts = data['proposta_data'].split('-')
-                if len(parts) == 3:
-                    ano, mes, dia = parts
-                    meses = ["", "JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUNHO", "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO"]
-                    idx_mes = int(mes)
-                    nome_mes = meses[idx_mes] if 1 <= idx_mes <= 12 else mes
-                    data['dia_proposta_final'] = dia
-                    data['mes_proposta_final'] = nome_mes.upper()
-                    data['ano_proposta_final'] = ano[-2:]
-        except Exception as e:
-            print(f"[WARN] Error mapping PDF fields: {e}")
-        # -- END MAPPING --
+        proposal_service.process_and_generate_proposal(
+            data=data,
+            user_id=user_id,
+            store_proposal_fn=store_fn,
+            generate_pdf_fn=generate_pdf_reportlab,
+            background_path=background_path,
+            positions_path=positions_path,
+            output_path=output_path
+        )
         
-        # Store formatted proposal history
-        if user_id:
-            try:
-                store_proposal(data, user_id)
-            except Exception as e:
-                print(f"[WARN] Failed to store proposal history: {e}")
-        else:
-            print("[WARN] No user_id provided for proposal. Skipping history retention.")
-
-        # Generate PDF
-        generate_pdf_reportlab(data, background_path, positions_path, output_path)
-        
-        # Check if file was created
-        if not os.path.exists(output_path):
-            return jsonify({'error': 'Failed to generate PDF'}), 500
-        
-        # Return the PDF file
         return send_file(
             output_path,
             mimetype='application/pdf',
@@ -1075,6 +762,10 @@ def generate_proposal():
             download_name='proposta.pdf'
         )
         
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+    except RuntimeError as e:
+        return jsonify({'error': str(e)}), 500
     except Exception as e:
         print(f"[ERROR] generate_proposal: {str(e)}")
         traceback.print_exc()
@@ -1127,89 +818,9 @@ def get_integracao_cache():
 
 # --- BACKGROUND MONITORING (1s Frequency) ---
 
-def monitor_lots_task():
-    """
-    Background Task that polls the company API every 1s to detect status changes.
-    This runs 24/7 in the cloud (Render) as long as the service is kept awake.
-    """
-    print("[MONITOR] Starting Background Monitoring Thread...")
-    
-    # We will monitor all active obras
-    OBRA_CODES = ['600', '601', '602', '603', '604', '605', '610', '616', '618', '620', '621', '623', '624', '625'] 
-    
-    last_status_cache = {} # In-memory cache for change detection
-    
-    # Pre-populate cache from last alerts to prevent duplicate notifications on restart
-    try:
-        # Give some time for DB environment to be fully ready
-        time.sleep(5)
-        recent_alerts = get_recent_alerts(50)
-        if recent_alerts and isinstance(recent_alerts, list):
-            for al in recent_alerts:
-                l_id = al.get('lote_id')
-                if l_id and l_id not in last_status_cache:
-                    last_status_cache[l_id] = al.get('novo_status')
-            print(f"[MONITOR] Pre-cached {len(last_status_cache)} lot statuses from Supabase.")
-    except Exception as e:
-        print(f"[MONITOR] Failed to pre-cache alerts: {e}")
-    
-    while True:
-        try:
-            for code in OBRA_CODES:
-                # 1. Fetch current status from company API
-                # We use the same fetch_consulta logic but simplified for the thread
-                headers = {
-                    'User-Agent': 'VallePrime-Cloud-Monitor/2.0',
-                    'Accept': 'application/json'
-                }
-                
-                # Note: We use the internal fetch_consulta logic but skip the Flask jsonify component
-                target_url = f"http://177.221.240.85:8000/api/consulta/{code}/"
-                
-                try:
-                    r = requests.get(target_url, headers=headers, timeout=5)
-                    if r.status_code == 200:
-                        data = r.json()
-                        lot_list = data.get('data', [])
-                        
-                        for lot in lot_list:
-                            lot_id = f"{code}-Q{lot.get('QD')}-L{lot.get('LT')}"
-                            current_status = lot.get('ST')
-                            
-                            # Detection of change
-                            if lot_id in last_status_cache:
-                                if last_status_cache[lot_id] != current_status:
-                                    msg = f"Lote {lot.get('LT')} (Q{lot.get('QD')}) alterado para {current_status}"
-                                    print(f"✨ [ALERT] {code}: {msg}")
-                                    
-                                    # Persist to Supabase
-                                    try:
-                                        create_alert(code, lot_id, last_status_cache[lot_id], current_status, msg)
-                                    except:
-                                        pass # Ignore DB alert errors in thread
-                                    
-                            last_status_cache[lot_id] = current_status
-                except Exception as e:
-                    # Silently ignore transient network errors in the thread
-                    pass
-                
-                # Internal sleep between codes to avoid burst
-                time.sleep(0.5) 
-                
-            # Main loop sleep
-            time.sleep(1)
-            
-        except Exception as e:
-            print(f"[MONITOR ERROR] {e}")
-            time.sleep(10) # Wait before retry on fatal error
+# Background monitor is started from background_tasks.py above.
+# The monitor thread uses get_recent_alerts and create_alert passed as dependency logic.
 
-# Start the thread on app initialization
-try:
-    monitor_thread = threading.Thread(target=monitor_lots_task, daemon=True)
-    monitor_thread.start()
-    print("[STARTUP] Background Monitoring Thread launched.")
-except Exception as e:
-    print(f"[STARTUP] Failed to start monitor thread: {e}")
 
 # --- STARTUP CHECK ---
 try:
