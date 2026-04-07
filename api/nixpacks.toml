@@ -5,4 +5,4 @@ nixPkgs = ["python311", "pip"]
 cmds = ["pip install -r requirements.txt"]
 
 [start]
-cmd = "gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 4 index:app"
+cmd = "gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 4 api.index:app"

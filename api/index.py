@@ -62,11 +62,11 @@ def update_user(*args, **kwargs): return get_db().update_user(*args, **kwargs)
 def delete_user(*args, **kwargs): return get_db().delete_user(*args, **kwargs)
 def count_users(*args, **kwargs): return get_db().count_users(*args, **kwargs)
 def get_clients(*args, **kwargs): return get_db().get_clients(*args, **kwargs)
-def check_duplicate_client(*args, **kwargs): return get_db().check_duplicate_client(*args, **kwargs)
+def _db_check_duplicate_client(*args, **kwargs): return get_db().check_duplicate_client(*args, **kwargs)
 def get_client_by_id(*args, **kwargs): return get_db().get_client_by_id(*args, **kwargs)
 def create_client(*args, **kwargs): return get_db().create_client(*args, **kwargs)
 def update_client(*args, **kwargs): return get_db().update_client(*args, **kwargs)
-def delete_client(*args, **kwargs): return get_db().delete_client(*args, **kwargs)
+def _db_delete_client(*args, **kwargs): return get_db().delete_client(*args, **kwargs)
 def count_clients(*args, **kwargs): return get_db().count_clients(*args, **kwargs)
 def get_recent_clients(*args, **kwargs): return get_db().get_recent_clients(*args, **kwargs)
 def get_proposals(*args, **kwargs): return get_db().get_proposals(*args, **kwargs)
@@ -417,7 +417,6 @@ def login():
             }
         })
     except Exception as e:
-        if conn: conn.close()
         return jsonify({'message': 'Internal Login Error', 'error': str(e)}), 500
 
 @app.route('/api/proposals', methods=['GET'])
@@ -805,19 +804,18 @@ def manage_clients():
 @app.route('/api/clients/<int:client_id>', methods=['DELETE'])
 @app.route('/api/manage-clients/<int:client_id>', methods=['DELETE'])
 @token_required
-def delete_client(client_id):
+def delete_client_route(client_id):
     """Delete a client by ID"""
     try:
         print(f"[DEBUG] Deleting client {client_id} by user {request.user_id}")
         
-        # Check permissions - only admin or the user who created the client can delete
         can_delete_any = request.user_role == 'admin'
         if not can_delete_any:
             user = get_user_by_id(request.user_id)
             perms = json.loads(user['permissions']) if user and isinstance(user.get('permissions'), str) else (user.get('permissions') or {})
             can_delete_any = perms.get('canViewAllClients', False)
         
-        result = delete_client(client_id, None if can_delete_any else str(request.user_id))
+        result = _db_delete_client(client_id, None if can_delete_any else str(request.user_id))
         
         if result:
             return jsonify({'success': True, 'message': 'Cliente excluído com sucesso'})
@@ -825,7 +823,7 @@ def delete_client(client_id):
             return jsonify({'success': False, 'error': 'Cliente não encontrado ou sem permissão'}), 404
             
     except Exception as e:
-        print(f"[ERROR] delete_client: {str(e)}")
+        print(f"[ERROR] delete_client_route: {str(e)}")
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -834,7 +832,7 @@ def delete_client(client_id):
 @app.route('/api/clients/check-duplicate', methods=['GET'])
 @app.route('/api/manage-clients/check-duplicate', methods=['GET'])
 @token_required
-def check_duplicate_client():
+def check_duplicate_route():
     """Check if CPF/CNPJ already exists"""
     try:
         cpf_cnpj = request.args.get('cpf_cnpj', '').strip()
@@ -844,16 +842,14 @@ def check_duplicate_client():
         if not cpf_cnpj:
             return jsonify({'exists': False})
         
-        # Extract numeric ID from client_id (may be in format "PF:123" or just "123")
         client_id = None
         if client_id_raw:
-            # Try to extract numeric part
             import re
             match = re.search(r'\d+', str(client_id_raw))
             if match:
                 client_id = int(match.group())
         
-        existing = check_duplicate_client(cpf_cnpj, client_id)
+        existing = _db_check_duplicate_client(cpf_cnpj, client_id)
         
         if existing:
             return jsonify({'exists': True, 'client_name': existing['nome'], 'client_id': existing['id']})
@@ -861,7 +857,7 @@ def check_duplicate_client():
         return jsonify({'exists': False})
         
     except Exception as e:
-        print(f"[ERROR] check_duplicate_client: {str(e)}")
+        print(f"[ERROR] check_duplicate_route: {str(e)}")
         return jsonify({'exists': False, 'error': str(e)})
 
 
