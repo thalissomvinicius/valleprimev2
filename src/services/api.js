@@ -1,19 +1,24 @@
 import axios from 'axios';
 
-// Em produção: use VITE_API_BASE se definido; senão fallback para a API no Render
+// STRATEGY:
+// - In Cloudflare Pages (*.pages.dev): use relative /api/* URLs
+//   → Cloudflare Pages Function at functions/api/[[path]].js proxies to Render
+//   → NO CORS issues because it's same-origin
+// - In local dev: proxy via vite.config.js (already configured)
+// - Only fall back to absolute Render URL if explicitly set via env var
+
 const ENV_API = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '');
 const isDev = import.meta.env.DEV;
-const PRODUCTION_API = 'https://valleprimev2-api.onrender.com';
-// Se estiver no Cloudflare Pages (*.pages.dev), sempre usar a API no Render
-const isPagesDev = typeof window !== 'undefined' && /\.pages\.dev$/i.test(window.location?.hostname || '');
-const API_BASE_URL = ENV_API || (isPagesDev ? PRODUCTION_API : (isDev ? '' : PRODUCTION_API));
+
+// Always use relative URLs in production (Cloudflare Pages handles the proxy)
+const API_BASE_URL = ENV_API || (isDev ? 'http://localhost:5000' : '');
 
 const CLIENT_BASE = '/api/manage-clients';
 const API_BASE = '/api/consulta';
 const USERS_BASE = '/api/users';
 const AUTH_BASE = '/api/auth';
 
-// Create axios instance
+// Create axios instance with relative base URL
 const api = axios.create({
   baseURL: API_BASE_URL || undefined,
   timeout: 15000,
@@ -45,16 +50,8 @@ const requestWithRetry = async (fn, { retries = 2, baseDelay = 800 } = {}) => {
   throw lastError;
 };
 
-// Request interceptor: em *.pages.dev usar URL absoluta para o Render (garante que a requisição vá ao backend)
-const RENDER_API = 'https://valleprimev2-api.onrender.com'; // Now using Render
+// Request interceptor: add auth token
 api.interceptors.request.use(config => {
-  if (typeof window !== 'undefined' && /\.pages\.dev$/i.test(window.location?.hostname || '') && config.url?.startsWith?.('/api')) {
-    // Para /api/consulta e /api/generate_proposal, usamos as functions locais do Cloudflare Pages
-    if (!config.url.startsWith('/api/consulta') && !config.url.startsWith('/api/generate_proposal')) {
-      config.url = RENDER_API + config.url; // URL absoluta → axios ignora baseURL
-    }
-    config.baseURL = '';
-  }
   const token = localStorage.getItem('valle_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
