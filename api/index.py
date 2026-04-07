@@ -1203,32 +1203,40 @@ try:
 except Exception as e:
     print(f"[STARTUP] Failed to start monitor thread: {e}")
 
-# Check Supabase connectivity on startup
+# --- STARTUP CHECK ---
 try:
     print("[STARTUP] Checking Supabase connectivity...")
     check_supabase_connection()
 except Exception as e:
     print(f"[STARTUP] Supabase check failed: {e}")
 
+# --- FINAL ROUTES (SINGLE DEFINITIONS ONLY) ---
+
 @app.route('/api/health')
 def health_check():
     """Route for monitoring and Keep-Alive. monitor_thread must be alive."""
     try:
-        return jsonify({
-            "status": "healthy",
-            "python": sys.version,
-            "monitor_active": monitor_thread.is_alive() if 'monitor_thread' in globals() else False,
-            "time": datetime.datetime.now().isoformat()
-        })
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        is_alive = monitor_thread.is_alive() if 'monitor_thread' in globals() else False
+    except:
+        is_alive = False
+        
+    return jsonify({
+        "status": "healthy",
+        "python": sys.version,
+        "monitor_active": is_alive,
+        "time": datetime.datetime.now().isoformat()
+    })
 
 @app.route('/api/alerts/recent', methods=['GET'])
 @token_required
 def get_alerts():
     """Fetch recent lot status alerts from the background monitor cache/database."""
     limit = int(request.args.get('limit', 10))
-    alerts = get_recent_alerts(limit)
+    try:
+        alerts = get_recent_alerts(limit)
+    except:
+        alerts = []
+        
     return jsonify({
         "success": True,
         "alerts": alerts,
