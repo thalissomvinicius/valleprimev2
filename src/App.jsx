@@ -469,6 +469,34 @@ function MainApp() {
                 </div>
               </div>
             )}
+
+            {(searchTerms.status === 'TODOS' || searchTerms.status === '7 - Suspenso') && (
+              <div className="stat-card" style={{ backgroundColor: '#f8fafc', borderLeft: '4px solid #64748b' }}>
+                <div className="stat-icon-wrapper" style={{ color: '#64748b', backgroundColor: '#e2e8f0' }}>
+                  <Building2 size={24} />
+                </div>
+                <div className="stat-info">
+                  <span className="stat-value">
+                    {data.filter(item => item.Status_Terreno.includes('7 - Suspenso')).length}
+                  </span>
+                  <span className="stat-label">SUSPENSOS</span>
+                </div>
+              </div>
+            )}
+
+            {(searchTerms.status === 'TODOS' || searchTerms.status === '8 - Fora de venda') && (
+              <div className="stat-card" style={{ backgroundColor: '#faf2f2', borderLeft: '4px solid #94a3b8' }}>
+                <div className="stat-icon-wrapper" style={{ color: '#94a3b8', backgroundColor: '#e2e8f0' }}>
+                  <Lock size={24} />
+                </div>
+                <div className="stat-info">
+                  <span className="stat-value">
+                    {data.filter(item => item.Status_Terreno.includes('8 - Fora de venda')).length}
+                  </span>
+                  <span className="stat-label">FORA DE VENDA</span>
+                </div>
+              </div>
+            )}
           </div>
         )
       }
