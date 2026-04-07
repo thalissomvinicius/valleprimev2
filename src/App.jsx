@@ -410,22 +410,65 @@ function MainApp() {
               </div>
               <div className="stat-info">
                 <span className="stat-value">{data.length}</span>
-                <span className="stat-label">Total de Lotes</span>
+                <span className="stat-label">TOTAL DE LOTES</span>
               </div>
             </div>
 
-            <div className="stat-card available">
-              <div className="stat-icon-wrapper">
-                <CheckCircle size={24} />
+            {(searchTerms.status === 'TODOS' || searchTerms.status === '0 - Disponível') && (
+              <div className="stat-card available">
+                <div className="stat-icon-wrapper">
+                  <CheckCircle size={24} />
+                </div>
+                <div className="stat-info">
+                  <span className="stat-value">
+                    {data.filter(item => item.Status_Terreno.includes('0 - Disponível')).length}
+                  </span>
+                  <span className="stat-label">DISPONÍVEIS</span>
+                </div>
               </div>
-              <div className="stat-info">
-                <span className="stat-value">
-                  {data.filter(item => item.Status_Terreno.includes('0 - Disponível')).length}
-                </span>
-                <span className="stat-label">Disponíveis</span>
-              </div>
-            </div>
+            )}
 
+            {(searchTerms.status === 'TODOS' || searchTerms.status === '1 - Vendido') && (
+              <div className="stat-card" style={{ backgroundColor: '#fff5f5', borderLeft: '4px solid #ef4444' }}>
+                <div className="stat-icon-wrapper" style={{ color: '#ef4444', backgroundColor: '#fee2e2' }}>
+                  <Lock size={24} />
+                </div>
+                <div className="stat-info">
+                  <span className="stat-value">
+                    {data.filter(item => item.Status_Terreno.includes('1 - Vendido')).length}
+                  </span>
+                  <span className="stat-label">VENDIDOS</span>
+                </div>
+              </div>
+            )}
+
+            {(searchTerms.status === 'TODOS' || searchTerms.status === '2 - Reservado') && (
+              <div className="stat-card" style={{ backgroundColor: '#fffbeb', borderLeft: '4px solid #f59e0b' }}>
+                <div className="stat-icon-wrapper" style={{ color: '#f59e0b', backgroundColor: '#fef3c7' }}>
+                  <FileText size={24} />
+                </div>
+                <div className="stat-info">
+                  <span className="stat-value">
+                    {data.filter(item => item.Status_Terreno.includes('2 - Reservado')).length}
+                  </span>
+                  <span className="stat-label">RESERVADOS</span>
+                </div>
+              </div>
+            )}
+
+            {(searchTerms.status === 'TODOS' || searchTerms.status === '4 - Quitado') && (
+              <div className="stat-card" style={{ backgroundColor: '#f0fdf4', borderLeft: '4px solid #22c55e' }}>
+                <div className="stat-icon-wrapper" style={{ color: '#22c55e', backgroundColor: '#dcfce7' }}>
+                  <Shield size={24} />
+                </div>
+                <div className="stat-info">
+                  <span className="stat-value">
+                    {data.filter(item => item.Status_Terreno.includes('4 - Quitado')).length}
+                  </span>
+                  <span className="stat-label">QUITADOS</span>
+                </div>
+              </div>
+            )}
           </div>
         )
       }
