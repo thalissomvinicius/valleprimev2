@@ -265,7 +265,7 @@ export const printProposal = async (id) => {
 
 
 // URL base das APIs locais do corretor (Cloudflare tunnel — pode mudar a cada reinício)
-const CORRETORES_TUNNEL_URL = 'https://functional-stand-hobbies-stand.trycloudflare.com';
+const CORRETORES_TUNNEL_URL = 'https://arrangement-finder-descriptions-estimated.trycloudflare.com';
 
 // URL da API no Render (sempre online) — usada como fallback de cache
 const RENDER_CLOUD_API = 'https://valleprimev2.onrender.com';
