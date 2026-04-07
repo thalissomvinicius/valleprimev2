@@ -540,8 +540,9 @@ def fetch_consulta(numprod_psc):
 
         for attempt in range(retries + 1):
             try:
+                # Usar o proxy Vercel antigo do cliente que ignora o bloqueio do IP local
                 resp = requests.get(
-                    f"http://177.221.240.85:8000/api/consulta/{numprod_psc}/",
+                    f"https://valleprime.vercel.app/api/consulta/{numprod_psc}/",
                     params={"t": int(time.time())},
                     headers=headers,
                     timeout=(connect_timeout, read_timeout)

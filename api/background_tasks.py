@@ -38,7 +38,7 @@ def monitor_lots_task(
                     'Accept': 'application/json'
                 }
                 
-                target_url = f"http://177.221.240.85:8000/api/consulta/{code}/"
+                target_url = f"https://valleprime.vercel.app/api/consulta/{code}/"
                 
                 try:
                     r = requests.get(target_url, headers=headers, timeout=5)
