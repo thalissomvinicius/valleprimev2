@@ -330,7 +330,7 @@ ${sinalSection}
         const [saldoYear, saldoMonth, saldoDay] = saldoFirstDate.split('-');
 
         try {
-            const proposalUrl = '/api/generate_proposal';
+            const proposalUrl = 'https://valleprimev2.onrender.com/api/generate_proposal';
             const token = localStorage.getItem('valle_token');
             const response = await fetch(proposalUrl, {
                 method: 'POST',
