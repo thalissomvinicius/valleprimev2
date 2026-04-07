@@ -1,17 +1,20 @@
 import axios from 'axios';
 
 // STRATEGY:
+// STRATEGY:
 // - In Cloudflare Pages (*.pages.dev): use relative /api/* URLs
 //   → Cloudflare Pages Function at functions/api/[[path]].js proxies to Render
 //   → NO CORS issues because it's same-origin
 // - In local dev: proxy via vite.config.js (already configured)
-// - Only fall back to absolute Render URL if explicitly set via env var
+// - We actively ignore VITE_API_BASE if we are on Pages, because the user
+//   might have an old Vercel URL stuck in their Cloudflare env vars!
 
-const ENV_API = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '');
+let ENV_API = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '');
 const isDev = import.meta.env.DEV;
+const isPagesDev = typeof window !== 'undefined' && /\.pages\.dev$/i.test(window.location?.hostname || '');
 
-// Always use relative URLs in production (Cloudflare Pages handles the proxy)
-const API_BASE_URL = ENV_API || (isDev ? 'http://localhost:5000' : '');
+// Force relative URL on Pages, even if ENV_API is stuck with an old Vercel URL
+const API_BASE_URL = isPagesDev ? '' : (ENV_API || (isDev ? 'http://localhost:5000' : ''));
 
 const CLIENT_BASE = '/api/manage-clients';
 const API_BASE = '/api/consulta';
