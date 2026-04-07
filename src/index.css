@@ -369,45 +369,21 @@ body {
 @media (max-width: 600px) {
   .stats-container {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr 1fr;
     gap: 0;
-    background: white;
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 0;
-    margin: 0.75rem 0;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-    overflow: hidden;
+    padding: 0.5rem 0.75rem;
+    margin: 0.5rem 0;
   }
 
   .stat-card {
-    flex-direction: column;
+    display: flex;
     align-items: center;
-    justify-content: center;
-    text-align: center;
     background: transparent !important;
-    border: none;
-    border-radius: 0;
-    box-shadow: none;
-    padding: 0.6rem 0.25rem;
-    gap: 0.15rem;
-    border-right: 1px solid var(--bg-secondary);
-    border-bottom: 1px solid var(--bg-secondary);
-  }
-
-  .stat-card:nth-child(2n) {
-    border-right: none;
-  }
-
-  /* Remove bottom border from last row */
-  .stat-card:nth-last-child(-n+2) {
-    border-bottom: none;
-  }
-
-  /* When odd number of items, last one spans full width */
-  .stat-card:last-child:nth-child(odd) {
-    grid-column: 1 / -1;
-    border-right: none;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 0.3rem 0.25rem;
+    gap: 0.4rem;
   }
 
   .stat-card:hover {
@@ -416,36 +392,40 @@ body {
   }
 
   .stat-icon-wrapper {
+    width: 8px;
+    height: 8px;
+    min-width: 8px;
+    border-radius: 50%;
+    display: block;
+  }
+
+  .stat-icon-wrapper svg {
     display: none;
   }
 
   .stat-info {
-    flex-direction: column;
-    align-items: center;
-    gap: 0.1rem;
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 0.3rem;
   }
 
   .stat-value {
-    font-size: 1.25rem;
+    font-size: 0.85rem;
     font-weight: 800;
   }
 
   .stat-label {
-    font-size: 0.55rem;
-    font-weight: 700;
+    font-size: 0.7rem;
+    font-weight: 600;
     color: var(--text-muted);
-    line-height: 1.1;
   }
 
   .stat-card.update-info {
     grid-column: 1 / -1;
-    margin-top: 0;
     justify-content: center;
     text-align: center;
-    padding: 0.35rem;
-    border-bottom: none;
-    border-right: none;
-    background: var(--bg-secondary) !important;
+    padding: 0.2rem;
   }
 }
 
