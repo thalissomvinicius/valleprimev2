@@ -369,7 +369,7 @@ body {
 @media (max-width: 600px) {
   .stats-container {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 0;
     background: white;
     border: 1px solid var(--border-color);
@@ -395,13 +395,19 @@ body {
     border-bottom: 1px solid var(--bg-secondary);
   }
 
-  .stat-card:nth-child(3n) {
+  .stat-card:nth-child(2n) {
     border-right: none;
   }
 
   /* Remove bottom border from last row */
-  .stat-card:nth-last-child(-n+3) {
+  .stat-card:nth-last-child(-n+2) {
     border-bottom: none;
+  }
+
+  /* When odd number of items, last one spans full width */
+  .stat-card:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+    border-right: none;
   }
 
   .stat-card:hover {
