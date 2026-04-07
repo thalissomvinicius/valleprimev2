@@ -268,7 +268,7 @@ export const printProposal = async (id) => {
 const CORRETORES_TUNNEL_URL = 'https://functional-stand-hobbies-stand.trycloudflare.com';
 
 // URL da API no Render (sempre online) — usada como fallback de cache
-const RENDER_CLOUD_API = 'https://valleprimev2-api.onrender.com';
+const RENDER_CLOUD_API = 'https://valleprimev2.onrender.com';
 
 // Lista estática de obras como fallback quando o túnel estiver offline
 const OBRAS_FALLBACK = [

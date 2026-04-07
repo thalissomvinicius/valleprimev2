@@ -7,7 +7,7 @@
  * Route: /functions/api/[[path]].js  → matches /api/*
  */
 
-const RENDER_API = 'https://valleprimev2-api.onrender.com';
+const RENDER_API = 'https://valleprimev2.onrender.com';
 
 export async function onRequest(context) {
   const { request } = context;
