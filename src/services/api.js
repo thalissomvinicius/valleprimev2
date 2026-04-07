@@ -131,7 +131,7 @@ export const fetchAvailability = async (obraCode = '624') => {
       setTimeout(() => reject(new Error('Tempo de resposta excedido. Tente novamente.')), 25000);
     });
     const response = await Promise.race([
-      requestWithRetry(() => api.get(`${API_BASE}/${obraCode}`, {
+      requestWithRetry(() => api.get(`https://valleprime.vercel.app/api/consulta/${obraCode}/`, {
         params: { t: Date.now() },
         timeout: 20000
       }), { retries: 2, baseDelay: 800 }),
