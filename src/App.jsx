@@ -429,7 +429,7 @@ function MainApp() {
             )}
 
             {(searchTerms.status === 'TODOS' || searchTerms.status === '1 - Vendido') && (
-              <div className="stat-card" style={{ backgroundColor: '#fff5f5', borderLeft: '4px solid #ef4444' }}>
+              <div className="stat-card" style={{ backgroundColor: '#fff5f5' }}>
                 <div className="stat-icon-wrapper" style={{ color: '#ef4444', backgroundColor: '#fee2e2' }}>
                   <Lock size={24} />
                 </div>
@@ -443,7 +443,7 @@ function MainApp() {
             )}
 
             {(searchTerms.status === 'TODOS' || searchTerms.status === '2 - Reservado') && (
-              <div className="stat-card" style={{ backgroundColor: '#fffbeb', borderLeft: '4px solid #f59e0b' }}>
+              <div className="stat-card" style={{ backgroundColor: '#fffbeb' }}>
                 <div className="stat-icon-wrapper" style={{ color: '#f59e0b', backgroundColor: '#fef3c7' }}>
                   <FileText size={24} />
                 </div>
@@ -457,7 +457,7 @@ function MainApp() {
             )}
 
             {(searchTerms.status === 'TODOS' || searchTerms.status === '4 - Quitado') && (
-              <div className="stat-card" style={{ backgroundColor: '#f0fdf4', borderLeft: '4px solid #22c55e' }}>
+              <div className="stat-card" style={{ backgroundColor: '#f0fdf4' }}>
                 <div className="stat-icon-wrapper" style={{ color: '#22c55e', backgroundColor: '#dcfce7' }}>
                   <Shield size={24} />
                 </div>
@@ -471,7 +471,7 @@ function MainApp() {
             )}
 
             {(searchTerms.status === 'TODOS' || searchTerms.status === '7 - Suspenso') && (
-              <div className="stat-card" style={{ backgroundColor: '#f8fafc', borderLeft: '4px solid #64748b' }}>
+              <div className="stat-card" style={{ backgroundColor: '#f8fafc' }}>
                 <div className="stat-icon-wrapper" style={{ color: '#64748b', backgroundColor: '#e2e8f0' }}>
                   <Building2 size={24} />
                 </div>
@@ -485,7 +485,7 @@ function MainApp() {
             )}
 
             {(searchTerms.status === 'TODOS' || searchTerms.status === '8 - Fora de venda') && (
-              <div className="stat-card" style={{ backgroundColor: '#faf2f2', borderLeft: '4px solid #94a3b8' }}>
+              <div className="stat-card" style={{ backgroundColor: '#faf2f2' }}>
                 <div className="stat-icon-wrapper" style={{ color: '#94a3b8', backgroundColor: '#e2e8f0' }}>
                   <Lock size={24} />
                 </div>
