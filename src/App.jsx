@@ -562,6 +562,7 @@ function MainApp() {
               onRowClick={handleLotClick}
               onSort={handleSort}
               sortConfig={sortConfig}
+              totalCount={data.length}
             />
           )
         }

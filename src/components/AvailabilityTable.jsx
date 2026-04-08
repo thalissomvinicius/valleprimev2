@@ -48,7 +48,7 @@ const SortableHeader = ({ label, mobileLabel, sortKey, onSort, renderSortIcon })
     </th>
 );
 
-const AvailabilityTable = ({ data, loading, onRowClick, onSort, sortConfig }) => {
+const AvailabilityTable = ({ data, loading, onRowClick, onSort, sortConfig, totalCount = 0 }) => {
     if (loading) {
         return (
             <div className="table-container">
@@ -82,7 +82,12 @@ const AvailabilityTable = ({ data, loading, onRowClick, onSort, sortConfig }) =>
     }
 
     if (!data || data.length === 0) {
-        return <div className="no-results">Nenhum lote encontrado.</div>;
+        return (
+            <div className="table-container">
+                <div className="table-results-count">Exibindo <strong>0</strong> de <strong>{totalCount}</strong> lotes</div>
+                <div className="no-results">Nenhum lote encontrado com os filtros selecionados.</div>
+            </div>
+        );
     }
 
     const renderSortIcon = (key) => {
@@ -92,6 +97,7 @@ const AvailabilityTable = ({ data, loading, onRowClick, onSort, sortConfig }) =>
 
     return (
         <div className="table-container">
+            <div className="table-results-count">Exibindo <strong>{data.length}</strong> de <strong>{totalCount}</strong> lotes</div>
             <table className="data-table">
                 <thead>
                     <tr>
