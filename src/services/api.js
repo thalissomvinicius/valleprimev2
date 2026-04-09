@@ -266,7 +266,7 @@ export const printProposal = async (id) => {
 
 // URL base das APIs locais do corretor (Cloudflare tunnel — URL muda a cada reinício do PC)
 // Deixe vazio '' para desabilitar. Preencha apenas quando o PC estiver rodando o script local.
-const CORRETORES_TUNNEL_URL = ''; // Ex: 'https://abc-123.trycloudflare.com'
+const CORRETORES_TUNNEL_URL = ''; // Ex: 'https://limits-racing-expect-assist.trycloudflare.com'
 
 // URL da API no Render (sempre online) — fonte primária de dados de cache do Supabase
 const RENDER_CLOUD_API = 'https://valleprimev2.onrender.com';
