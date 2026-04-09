@@ -133,13 +133,16 @@ export function AuthProvider({ children }) {
 
     const updateUserPermissions = useCallback(async (userId, data) => {
         try {
-            const payload = {
-                permissions: {
-                    obrasPermitidas: Array.isArray(data?.obrasPermitidas) ? data.obrasPermitidas : [],
-                    statusPermitidos: Array.isArray(data?.statusPermitidos) ? data.statusPermitidos : [],
-                    canViewAllClients: !!data?.canViewAllClients,
-                }
+            const permissions = {
+                obrasPermitidas: Array.isArray(data?.obrasPermitidas) ? data.obrasPermitidas : [],
+                statusPermitidos: Array.isArray(data?.statusPermitidos) ? data.statusPermitidos : [],
+                canViewAllClients: !!data?.canViewAllClients,
             };
+            // Inclui uau_corretor_id apenas se estiver preenchido
+            if (data?.uau_corretor_id !== '' && data?.uau_corretor_id !== null && data?.uau_corretor_id !== undefined) {
+                permissions.uau_corretor_id = parseInt(data.uau_corretor_id);
+            }
+            const payload = { permissions };
             await updateUser(userId, payload);
             await loadUsers();
             return { success: true };

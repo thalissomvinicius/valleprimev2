@@ -33,10 +33,14 @@ function AdminPanel() {
 
     const startEdit = (user) => {
         setEditingUser(user.id);
+        // Extrai uau_corretor_id das permissions (vem como objeto ou string JSON)
+        let perms = user.permissions;
+        if (typeof perms === 'string') { try { perms = JSON.parse(perms); } catch { perms = {}; } }
         setEditData({
             obrasPermitidas: [...user.obrasPermitidas],
             statusPermitidos: [...user.statusPermitidos],
             canViewAllClients: !!user.canViewAllClients,
+            uau_corretor_id: perms?.uau_corretor_id || '',
         });
         setExpandedUser(user.id);
     };
@@ -478,6 +482,52 @@ function AdminPanel() {
                                                             />
                                                             <span>Visualizar TODOS os clientes (ignora restrição de dono)</span>
                                                         </label>
+                                                    </div>
+                                                </div>
+
+                                                {/* Campo ID do Corretor UAU — vincula o login ao registro de vendas */}
+                                                <div className="permission-group">
+                                                    <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                        <Shield size={18} />
+                                                        Vínculo de Corretor (UAU)
+                                                    </h4>
+                                                    <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary, #94a3b8)', marginBottom: '0.75rem', lineHeight: '1.4' }}>
+                                                        ID do corretor no banco UAU. Quando preenchido, esse usuário só verá as <strong>próprias vendas</strong> no Dashboard de Performance.
+                                                    </p>
+                                                    <div className="permission-list" style={{ flexDirection: 'column', gap: '0.5rem' }}>
+                                                        {editingUser === user.id ? (
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                                                <input
+                                                                    type="number"
+                                                                    min="0"
+                                                                    placeholder="Ex: 538"
+                                                                    value={editData.uau_corretor_id || ''}
+                                                                    onChange={(e) => setEditData(prev => ({ ...prev, uau_corretor_id: e.target.value ? parseInt(e.target.value) : '' }))}
+                                                                    style={{
+                                                                        padding: '0.5rem 0.75rem',
+                                                                        borderRadius: '8px',
+                                                                        border: '1px solid var(--border-color, #334155)',
+                                                                        background: 'var(--surface-2, #1e293b)',
+                                                                        color: 'var(--text-primary, #f1f5f9)',
+                                                                        fontSize: '0.9rem',
+                                                                        width: '140px'
+                                                                    }}
+                                                                />
+                                                                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #64748b)' }}>
+                                                                    {editData.uau_corretor_id ? `✅ Vinculado: ID ${editData.uau_corretor_id}` : '⬜ Sem vínculo (admin vê tudo)'}
+                                                                </span>
+                                                            </div>
+                                                        ) : (
+                                                            <span style={{
+                                                                fontSize: '0.85rem',
+                                                                padding: '0.4rem 0.8rem',
+                                                                borderRadius: '8px',
+                                                                background: (() => { let p = user.permissions; if (typeof p === 'string') try { p = JSON.parse(p); } catch { p = {}; } return p?.uau_corretor_id ? 'rgba(16,185,129,0.12)' : 'rgba(100,116,139,0.10)'; })(),
+                                                                color: (() => { let p = user.permissions; if (typeof p === 'string') try { p = JSON.parse(p); } catch { p = {}; } return p?.uau_corretor_id ? '#10b981' : '#64748b'; })()
+                                                            }}>
+                                                                {(() => { let p = user.permissions; if (typeof p === 'string') try { p = JSON.parse(p); } catch { p = {}; } return p?.uau_corretor_id ? `✅ ID UAU: ${p.uau_corretor_id}` : '⬜ Sem vínculo UAU'; })()}
+                                                            </span>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </div>
