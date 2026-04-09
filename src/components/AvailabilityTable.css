@@ -15,6 +15,27 @@
     margin-right: auto;
 }
 
+.table-results-count {
+    margin: 0 0 0.9rem;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.table-results-count strong {
+    color: var(--text-color);
+}
+
+.no-results {
+    padding: 2.25rem 1rem;
+    border: 1px dashed var(--border-color);
+    border-radius: var(--radius-md);
+    text-align: center;
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.55);
+    font-weight: 600;
+}
+
 .clickable-row {
     cursor: pointer;
     transition: all 0.2s ease;
@@ -47,6 +68,9 @@
     text-transform: uppercase;
     letter-spacing: 0.08em;
     border-bottom: 2px solid rgba(49, 130, 206, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 2;
 }
 
 .table-container .data-table thead th,
@@ -245,6 +269,11 @@
         margin: 1rem 0;
         padding: 0.75rem 0.5rem;
         overflow-x: auto;
+    }
+
+    .table-results-count {
+        font-size: 0.8rem;
+        margin-bottom: 0.75rem;
     }
 
     .data-table {
