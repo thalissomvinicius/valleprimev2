@@ -58,13 +58,18 @@ const BrokersPage = () => {
             }
 
             // Se não for admin, filtramos apenas pelo corretor logado
-            const uauId = currentUser?.permissions?.uau_corretor_id;
+            // permissions pode vir como string JSON ou objeto — parseamos de forma segura
+            let perms = currentUser?.permissions;
+            if (typeof perms === 'string') {
+                try { perms = JSON.parse(perms); } catch { perms = {}; }
+            }
+            const uauId = perms?.uau_corretor_id;
             // Fallback for mes to avoid sending an empty string if date-picker is cleared
             const activeMonth = selectedMonth || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
 
             const filters = {
                 mes: activeMonth,
-                corretor_id: isAdmin ? null : (uauId || currentUser?.id),
+                corretor_id: isAdmin ? null : (uauId || null), // null = retorna todos (só admin sem uau_id configurado)
                 empresa: empresa,
                 obra: obra
             };

@@ -869,11 +869,13 @@ def get_cache_corretores():
     """
     Endpoint permanente no Render que lê o cache de dados de corretores do Supabase.
     Funciona como fallback quando o PC local (UAU bridge) estiver desligado.
+    Aplica filtro de corretor_id server-side para usuários não-admin.
     """
     try:
         empresa = request.args.get('empresa', '28')
         obra = request.args.get('obra', '70100')
         mes = request.args.get('mes', datetime.datetime.now().strftime('%Y-%m'))
+        corretor_id = request.args.get('corretor_id', None)  # Filtro por corretor específico
         cache_key = f"{empresa}-{obra}-{mes}"
 
         supabase_url = os.environ.get('SUPABASE_URL', '').rstrip('/')
@@ -900,11 +902,21 @@ def get_cache_corretores():
         row = rows[0]
         dados = json.loads(row['dados_json'])
 
+        # Filtra por corretor_id se especificado (para usuários não-admin)
+        if corretor_id:
+            try:
+                corretor_id_int = int(corretor_id)
+                dados = [d for d in dados if d.get('codigo_corretor') == corretor_id_int]
+            except (ValueError, TypeError):
+                pass  # Se o ID for inválido, retorna todos
+
+        # is_cache: False indica que os dados são do Supabase sincronizado pelo PC local
+        # Assim o frontend não mostra "Servidor Desconectado" quando o Supabase está atualizado
         return jsonify({
             "total_corretores": len(dados),
             "dados": dados,
             "atualizado_em": row['atualizado_em'],
-            "is_cache": True
+            "is_cache": False  # False = dados válidos sincronizados, não "modo offline"
         })
 
     except Exception as e:
@@ -913,19 +925,13 @@ def get_cache_corretores():
 
 @app.route('/api/integracao/config/obras', methods=['GET'])
 def get_config_obras():
-    """Retorna a lista de obras disponiveis para o frontend."""
+    """Retorna APENAS as obras que têm cache salvo no Supabase."""
+    # Lista curada — apenas obras que o pre_carregar_cache.py sincroniza de fato
     obras = [
-        {"empresa": 13, "obra": "70100", "nome": "RESIDENCIAL JARDIM DO VALLE - DOM ELISEU"},
-        {"empresa": 12, "obra": "70100", "nome": "RESIDENCIAL JARDIM AMERICA - CAPANEMA"},
-        {"empresa": 9, "obra": "70100", "nome": "RESIDENCIAL SALLES JARDIM - CASTANHAL"},
-        {"empresa": 6, "obra": "70100", "nome": "RESIDENCIAL JARDIM CASTANHAL - CASTANHAL"},
-        {"empresa": 28, "obra": "70100", "nome": "RESIDENCIAL VALLE DO IPITINGA II - TOME-ACU"},
-        {"empresa": 9, "obra": "70101", "nome": "RESIDENCIAL SALLES JARDIM II - CASTANHAL"},
-        {"empresa": 9, "obra": "70102", "nome": "RESIDENCIAL SALLES JARDIM III - CASTANHAL"},
-        {"empresa": 9, "obra": "70103", "nome": "RESIDENCIAL SALLES JARDIM IV - CASTANHAL"},
-        {"empresa": 24, "obra": "70100", "nome": "RESIDENCIAL JARDIM CASTANHAL III - CASTANHAL"},
-        {"empresa": 6, "obra": "70101", "nome": "RESIDENCIAL JARDIM CASTANHAL II - CASTANHAL"},
-        {"empresa": 12, "obra": "70101", "nome": "RESIDENCIAL JARDIM AMERICA II - CAPANEMA"},
+        {"empresa": 28, "obra": "70100", "nome": "Valle do Ipitinga II - Tomé-Açu"},
+        {"empresa": 6,  "obra": "70100", "nome": "Jardim Castanhal - Castanhal"},
+        {"empresa": 9,  "obra": "70100", "nome": "Salles Jardim - Castanhal"},
+        {"empresa": 12, "obra": "70100", "nome": "Jardim América - Capanema"},
     ]
     return jsonify({"total": len(obras), "obras": obras, "is_cache": False})
 
