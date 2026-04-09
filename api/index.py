@@ -860,6 +860,76 @@ def get_alerts():
         "monitor_status": "alive" if 'monitor_thread' in globals() and monitor_thread.is_alive() else "down"
     })
 
+# ===========================
+# INTEGRAÇÃO CORRETORES CACHE
+# ===========================
+
+@app.route('/api/integracao/cache/corretores', methods=['GET'])
+def get_cache_corretores():
+    """
+    Endpoint permanente no Render que lê o cache de dados de corretores do Supabase.
+    Funciona como fallback quando o PC local (UAU bridge) estiver desligado.
+    """
+    try:
+        empresa = request.args.get('empresa', '28')
+        obra = request.args.get('obra', '70100')
+        mes = request.args.get('mes', datetime.datetime.now().strftime('%Y-%m'))
+        cache_key = f"{empresa}-{obra}-{mes}"
+
+        supabase_url = os.environ.get('SUPABASE_URL', '').rstrip('/')
+        supabase_key = os.environ.get('SUPABASE_SERVICE_ROLE_KEY') or os.environ.get('SUPABASE_ANON_KEY', '')
+
+        if not supabase_url or not supabase_key:
+            return jsonify({"success": False, "error": "Supabase nao configurado no servidor."}), 503
+
+        headers_sb = {
+            'apikey': supabase_key,
+            'Authorization': f'Bearer {supabase_key}',
+        }
+
+        url = f"{supabase_url}/rest/v1/cache_corretores?cache_key=eq.{cache_key}&select=dados_json,atualizado_em&limit=1"
+        r = requests.get(url, headers=headers_sb, timeout=8)
+
+        rows = r.json() if r.status_code == 200 else []
+        if not rows:
+            return jsonify({
+                "success": False,
+                "error": f"Nenhum cache para {cache_key}. Ligue o script local para sincronizar."
+            }), 404
+
+        row = rows[0]
+        dados = json.loads(row['dados_json'])
+
+        return jsonify({
+            "total_corretores": len(dados),
+            "dados": dados,
+            "atualizado_em": row['atualizado_em'],
+            "is_cache": True
+        })
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route('/api/integracao/config/obras', methods=['GET'])
+def get_config_obras():
+    """Retorna a lista de obras disponiveis para o frontend."""
+    obras = [
+        {"empresa": 13, "obra": "70100", "nome": "RESIDENCIAL JARDIM DO VALLE - DOM ELISEU"},
+        {"empresa": 12, "obra": "70100", "nome": "RESIDENCIAL JARDIM AMERICA - CAPANEMA"},
+        {"empresa": 9, "obra": "70100", "nome": "RESIDENCIAL SALLES JARDIM - CASTANHAL"},
+        {"empresa": 6, "obra": "70100", "nome": "RESIDENCIAL JARDIM CASTANHAL - CASTANHAL"},
+        {"empresa": 28, "obra": "70100", "nome": "RESIDENCIAL VALLE DO IPITINGA II - TOME-ACU"},
+        {"empresa": 9, "obra": "70101", "nome": "RESIDENCIAL SALLES JARDIM II - CASTANHAL"},
+        {"empresa": 9, "obra": "70102", "nome": "RESIDENCIAL SALLES JARDIM III - CASTANHAL"},
+        {"empresa": 9, "obra": "70103", "nome": "RESIDENCIAL SALLES JARDIM IV - CASTANHAL"},
+        {"empresa": 24, "obra": "70100", "nome": "RESIDENCIAL JARDIM CASTANHAL III - CASTANHAL"},
+        {"empresa": 6, "obra": "70101", "nome": "RESIDENCIAL JARDIM CASTANHAL II - CASTANHAL"},
+        {"empresa": 12, "obra": "70101", "nome": "RESIDENCIAL JARDIM AMERICA II - CAPANEMA"},
+    ]
+    return jsonify({"total": len(obras), "obras": obras, "is_cache": False})
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "5000"))
     app.run(host="0.0.0.0", port=port, debug=True)

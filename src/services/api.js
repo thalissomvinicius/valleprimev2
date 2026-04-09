@@ -264,43 +264,35 @@ export const printProposal = async (id) => {
 
 
 
-// URL base das APIs locais do corretor (Cloudflare tunnel — pode mudar a cada reinício)
-const CORRETORES_TUNNEL_URL = 'https://arrangement-finder-descriptions-estimated.trycloudflare.com';
+// URL base das APIs locais do corretor (Cloudflare tunnel — URL muda a cada reinício do PC)
+// Deixe vazio '' para desabilitar. Preencha apenas quando o PC estiver rodando o script local.
+const CORRETORES_TUNNEL_URL = ''; // Ex: 'https://abc-123.trycloudflare.com'
 
-// URL da API no Render (sempre online) — usada como fallback de cache
+// URL da API no Render (sempre online) — fonte primária de dados de cache do Supabase
 const RENDER_CLOUD_API = 'https://valleprimev2.onrender.com';
 
-// Lista estática de obras como fallback quando o túnel estiver offline
+// Lista estática de obras como fallback quando o Render também falhar
 const OBRAS_FALLBACK = [
   { empresa: 13, obra: '70100', nome: 'RESIDENCIAL JARDIM DO VALLE - DOM ELISEU' },
   { empresa: 12, obra: '70100', nome: 'RESIDENCIAL JARDIM AMERICA - CAPANEMA' },
   { empresa: 9, obra: '70100', nome: 'RESIDENCIAL SALLES JARDIM - CASTANHAL' },
   { empresa: 6, obra: '70100', nome: 'RESIDENCIAL JARDIM CASTANHAL - CASTANHAL' },
-  { empresa: 6, obra: '70400', nome: 'RESIDENCIAL IPITINGA - TOMÉ-AÇU' },
   { empresa: 28, obra: '70100', nome: 'RESIDENCIAL VALLE DO IPITINGA II - TOMÉ-AÇU' },
-  { empresa: 6, obra: '70300', nome: 'RESIDENCIAL JARDIM DO VALLE - TAILANDIA' },
-  { empresa: 15, obra: '70100', nome: 'RESIDENCIAL JARDIM DO VALLE - BARCARENA' },
-  { empresa: 22, obra: '70100', nome: 'RESIDENCIAL JARDIM DO VALLE II - TAILANDIA' },
-  { empresa: 983, obra: '70100', nome: 'RESIDENCIAL JARDIM VALLE DO URAIM - PARAGOMINAS' },
-  { empresa: 6, obra: '70500', nome: 'RESIDENCIAL PARQUE DO VALLE - RONDON' },
-  { empresa: 24, obra: '70100', nome: 'RESIDENCIAL JARDIM CASTANHAL III - CASTANHAL' },
-  { empresa: 29, obra: '70100', nome: 'RESIDENCIAL VALLE DOS IPÊS - TOMÉ AÇU' },
-  { empresa: 12, obra: '70101', nome: 'RESIDENCIAL JARDIM AMÉRICA II - CAPANEMA' },
-  { empresa: 6, obra: '70101', nome: 'RESIDENCIAL JARDIM CASTANHAL II - CASTANHAL' },
   { empresa: 9, obra: '70101', nome: 'RESIDENCIAL SALLES JARDIM II - CASTANHAL' },
   { empresa: 9, obra: '70102', nome: 'RESIDENCIAL SALLES JARDIM III - CASTANHAL' },
   { empresa: 9, obra: '70103', nome: 'RESIDENCIAL SALLES JARDIM IV - CASTANHAL' },
+  { empresa: 24, obra: '70100', nome: 'RESIDENCIAL JARDIM CASTANHAL III - CASTANHAL' },
+  { empresa: 12, obra: '70101', nome: 'RESIDENCIAL JARDIM AMERICA II - CAPANEMA' },
 ];
 
 export const fetchConfigObras = async () => {
   try {
-    const response = await axios.get(`${CORRETORES_TUNNEL_URL}/api/integracao/config/obras`, {
+    const response = await axios.get(`${RENDER_CLOUD_API}/api/integracao/config/obras`, {
       timeout: 10000
     });
     return response.data;
   } catch {
-    // Túnel offline: retorna lista estática embutida
-    console.warn('[fetchConfigObras] Túnel offline, usando lista estática de obras.');
+    console.warn('[fetchConfigObras] Render offline, usando lista estática de obras.');
     return { total: OBRAS_FALLBACK.length, obras: OBRAS_FALLBACK, is_cache: true };
   }
 };
@@ -315,31 +307,56 @@ export const fetchCorretoresData = async (filters = {}) => {
   if (data_inicio) params.append('data_inicio', data_inicio);
   if (data_fim) params.append('data_fim', data_fim);
 
-  // 1ª tentativa: túnel Cloudflare (dados ao vivo do UAU)
-  try {
-    const response = await axios.get(
-      `${CORRETORES_TUNNEL_URL}/api/integracao/corretores?${params.toString()}`,
-      { timeout: 30000 }
-    );
-    return response.data; // inclui atualizado_em e is_cache: false
-  } catch {
-    console.warn('[fetchCorretoresData] Túnel offline. Tentando cache do Supabase via Railway...');
+  // Cache local do navegador (UX instantânea)
+  const cacheKey = `corretores_${empresa}_${obra}_${mes || 'all'}`;
+  const cachedData = localStorage.getItem(cacheKey);
+  
+  if (cachedData) {
+    try {
+      const parsed = JSON.parse(cachedData);
+      setTimeout(() => fetchFreshData(params, cacheKey), 100);
+      return { ...parsed, is_cache: true, cache_local: true };
+    } catch (e) {
+      localStorage.removeItem(cacheKey);
+    }
   }
 
-  // 2ª tentativa: cache no Supabase (via Railway — sempre online)
-  try {
-    const cacheParams = new URLSearchParams();
-    cacheParams.append('empresa', empresa);
-    cacheParams.append('obra', obra);
-    if (mes) cacheParams.append('mes', mes);
+  return await fetchFreshData(params, cacheKey);
+};
 
+// Função auxiliar para buscar dados frescos
+const fetchFreshData = async (params, cacheKey) => {
+  // 1ª tentativa: túnel Cloudflare local (dados ao vivo) — só tenta se URL estiver definida
+  if (CORRETORES_TUNNEL_URL) {
+    try {
+      const response = await axios.get(
+        `${CORRETORES_TUNNEL_URL}/api/integracao/corretores?${params.toString()}`,
+        { 
+          timeout: 8000,
+          headers: { 'Bypass-Tunnel-Reminder': 'true' }
+        }
+      );
+      if (response.data && cacheKey) {
+        localStorage.setItem(cacheKey, JSON.stringify(response.data));
+      }
+      return response.data;
+    } catch {
+      console.warn('[fetchCorretoresData] Túnel local offline. Buscando cache do Render...');
+    }
+  }
+
+  // 2ª tentativa (primária quando túnel está off): cache no Supabase via Render
+  try {
     const cacheResponse = await axios.get(
-      `${RENDER_CLOUD_API}/api/integracao/cache/corretores?${cacheParams.toString()}`,
+      `${RENDER_CLOUD_API}/api/integracao/cache/corretores?${params.toString()}`,
       { timeout: 15000 }
     );
-    return cacheResponse.data; // inclui atualizado_em e is_cache: true
+    if (cacheResponse.data && cacheKey) {
+      localStorage.setItem(cacheKey, JSON.stringify(cacheResponse.data));
+    }
+    return cacheResponse.data;
   } catch (cacheError) {
-    console.error('[fetchCorretoresData] Cache também indisponível:', cacheError);
-    throw new Error('Servidor offline e sem cache disponível para este período. Inicie o script e tente novamente.');
+    console.error('[fetchCorretoresData] Cache indisponível:', cacheError);
+    throw new Error('Dados indisponíveis. Execute o script local no PC do escritório e aguarde 1 minuto.');
   }
 };
