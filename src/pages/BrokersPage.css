@@ -684,54 +684,119 @@
 
 @media (max-width: 768px) {
     .brokers-hero {
-        padding: 1.5rem 1rem;
-        margin: 1rem 0 2rem 0;
+        padding: 1rem 0.75rem;
+        margin: 0.75rem 0 1.5rem 0;
     }
 
     .hero-content {
         flex-direction: column;
         align-items: flex-start;
-        gap: 1.5rem;
+        gap: 1rem;
+        border-bottom: none;
+        padding-bottom: 0.75rem;
     }
 
+    .hero-title h1 {
+        font-size: 1.4rem;
+    }
+
+    .hero-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+    }
+
+    /* Filtros como Chips Horizontais Deslizantes */
     .broker-filters { 
-        flex-direction: column; 
-        align-items: stretch;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
         width: 100%;
-        gap: 1rem;
+        gap: 0.6rem;
+        padding-bottom: 0.5rem;
+    }
+
+    .broker-filters::-webkit-scrollbar {
+        height: 3px;
+    }
+
+    .broker-filters::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
     }
     
     .filter-group {
-        width: 100%;
-        background: rgba(255, 255, 255, 0.5);
-        padding: 0.75rem 1rem;
-        border-radius: 12px;
-        border: 1px solid rgba(226, 232, 240, 0.5);
+        flex: 0 0 auto;
+        width: auto;
+        scroll-snap-align: start;
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        white-space: nowrap;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        padding: 0.5rem 0.85rem;
+        border-radius: 20px;
+        border: 1px solid rgba(226, 232, 240, 0.6);
+        min-width: 0;
+    }
+
+    .filter-group.search-box {
+        min-width: 180px;
     }
 
     .minimal-select, 
     .minimal-date-picker,
     .minimal-search {
-        width: 100%;
-        max-width: none;
-        font-size: 0.85rem;
+        width: auto;
+        max-width: 150px;
+        font-size: 0.8rem;
     }
 
-    .header-divider { display: none; }
+    .header-divider { display: none !important; }
     
     /* Stats */
-    .stat-main-value { font-size: 1.5rem; }
+    .brokers-stats-grid {
+        gap: 0.75rem;
+    }
+
+    .broker-stat-card {
+        padding: 1rem;
+    }
+
+    .stat-main-value { font-size: 1.3rem; }
 
     /* Client Cards */
+    .client-card {
+        margin-bottom: 0.75rem;
+        border-radius: 16px;
+    }
+
     .client-card-header {
         flex-direction: column;
         align-items: flex-start;
         gap: 0.75rem;
+        padding: 1rem;
+    }
+
+    .client-card-body {
+        padding: 1rem;
     }
 
     .client-card-right {
         width: 100%;
         justify-content: space-between;
+    }
+
+    .client-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.2rem;
+    }
+
+    .client-meta .meta-divider {
+        display: none;
     }
 
     .three-blocks-grid {
@@ -743,7 +808,7 @@
         left: 12px;
         right: 12px;
         max-width: none;
-        bottom: 12px;
+        bottom: 80px;
     }
 }
 
@@ -909,66 +974,15 @@
    PREMIUM MOBILE EXPERIENCE (FINTECH STYLE)
    ===================================================== */
 @media(max-width: 768px) {
-    /* 1. Chips Horizontais para Filtros (Desatolando o header) */
-    .broker-filters {
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        scroll-snap-type: x mandatory;
-        padding-bottom: 0.75rem;
-        justify-content: flex-start;
-        -webkit-overflow-scrolling: touch;
-    }
-    
-    .broker-filters::-webkit-scrollbar {
-        height: 4px;
-    }
-    
-    .filter-group {
-        flex: 0 0 auto;
-        scroll-snap-align: start;
-        background: rgba(255, 255, 255, 0.8);
-        white-space: nowrap;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-        padding: 0.5rem 0.85rem;
-        border-radius: 20px;
-        min-width: 140px;
-    }
-
-    .filter-group .minimal-select, .filter-group .minimal-search {
-        max-width: 160px;
-    }
-
-    .header-divider {
-        display: none !important;
-    }
-
-    /* 2. Otimização de Espaçamento dos Cards de Cliente */
-    .client-card {
-        margin-bottom: 1rem;
-        border-radius: 16px;
-    }
-
-    .client-card-header {
-        padding: 1.25rem 1rem;
-    }
-
-    .client-card-body {
-        padding: 1.25rem 1rem;
-    }
-    
-    .client-meta {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.25rem;
-    }
-    
-    .client-meta .meta-divider {
-        display: none;
-    }
-
-    /* 3. Transformando Tabelas em Mini-Cards Verticais */
+    /* Transformando Tabelas em Mini-Cards Verticais */
     .parcelas-table thead {
         display: none;
+    }
+
+    .parcelas-table,
+    .parcelas-table tbody {
+        display: block;
+        width: 100%;
     }
 
     .parcelas-table tr {
@@ -977,10 +991,15 @@
         background: #ffffff;
         border: 1px solid #e2e8f0;
         border-radius: 12px;
-        margin-bottom: 1rem;
+        margin-bottom: 0.75rem;
         padding: 0.75rem 1rem;
         box-shadow: 0 2px 5px rgba(0,0,0,0.02);
         position: relative;
+    }
+
+    .parcelas-table tr.row-atrasado {
+        border-left: 3px solid #ef4444;
+        background: #fef2f2;
     }
 
     .parcelas-table td {
@@ -988,8 +1007,9 @@
         justify-content: space-between;
         align-items: center;
         border-bottom: 1px dashed #f1f5f9;
-        padding: 0.6rem 0;
+        padding: 0.5rem 0;
         text-align: right;
+        font-size: 0.85rem;
     }
 
     .parcelas-table td:last-child {
@@ -1001,7 +1021,7 @@
         content: attr(data-label);
         font-weight: 700;
         color: #94a3b8;
-        font-size: 0.75rem;
+        font-size: 0.7rem;
         text-transform: uppercase;
         letter-spacing: 0.05em;
         text-align: left;
@@ -1012,9 +1032,9 @@
         text-align: right;
     }
 
-    /* 4. Action Toolbar como 'Dock' Inferior (Floating Bottom Bar) */
+    /* Action Toolbar como 'Dock' Inferior (Floating Bottom Bar) */
     .brokers-container {
-        padding-bottom: 120px; /* Espaço para a doca flutuante */
+        padding-bottom: 140px;
     }
 
     .action-toolbar {
@@ -1029,36 +1049,82 @@
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
         background: rgba(255, 255, 255, 0.95);
-        padding: 1rem 1.25rem env(safe-area-inset-bottom, 1rem);
+        padding: 0.75rem 1rem env(safe-area-inset-bottom, 0.75rem);
         border: 1px solid rgba(226, 232, 240, 0.8);
+        flex-direction: column;
+        gap: 0.65rem;
+        align-items: stretch;
     }
     
     .cancelados-toggle-bar {
-        font-size: 0.8rem;
+        font-size: 0.75rem;
+        flex-wrap: nowrap;
+        gap: 0.5rem;
     }
     
-    .cancelados-toggle-bar span {
-        max-width: 140px;
-        line-height: 1.1;
+    .cancelados-toggle-bar > span:first-of-type {
+        max-width: 110px;
+        line-height: 1.15;
+    }
+
+    .cancelados-toggle-bar .meta-divider {
+        display: none;
+    }
+
+    .parcel-filter-select {
+        margin-left: auto;
+    }
+
+    .parcel-filter-select .minimal-select {
+        font-size: 0.75rem;
+        max-width: 130px;
     }
 
     .toolbar-actions {
         width: 100%;
-        justify-content: space-between;
+        justify-content: center;
     }
     
     .toolbar-actions .total-count {
-        display: none; /* Esconde texto longo para focar no botão */
+        display: none;
     }
 
     .btn-cobranca {
         width: 100%;
         justify-content: center;
         padding: 0.85rem;
-        font-size: 0.95rem;
+        font-size: 0.9rem;
+        font-weight: 700;
         border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(220, 38, 38, 0.2);
-        animation: pulseSoft 2s infinite;
+        box-shadow: 0 4px 15px rgba(220, 38, 38, 0.25);
+        animation: pulseSoft 2.5s infinite;
+    }
+
+    /* Rankings compacto */
+    .admin-rankings-section {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .ranking-panel {
+        padding: 1rem;
+        border-radius: 14px;
+    }
+
+    .ranking-panel h3 {
+        font-size: 0.85rem;
+    }
+
+    .ranking-item {
+        padding: 0.6rem 0.75rem;
+    }
+
+    .rank-name {
+        font-size: 0.8rem;
+    }
+
+    .rank-value {
+        font-size: 0.8rem;
     }
 }
 
