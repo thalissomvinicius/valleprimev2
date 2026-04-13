@@ -93,7 +93,7 @@ def executar_sincronizacao():
         logger.error(f"Erro de conexão: {e}")
         return
 
-    meses = gerar_meses_recentes(3)  # últimos 3 meses
+    meses = ['all']  # Trazendo o pacote completo de vendas por empreendimento, sem cortar o histórico
     sucessos = 0
     falhas = 0
     start_time = time.time()
@@ -111,7 +111,7 @@ def executar_sincronizacao():
         for mes in meses:
             atual += 1
             try:
-                # 1. PULL - SQL Server
+                # 1. PULL - SQL Server (Trará tudo ignorando as datas, pois mes='all')
                 dados = fetch_dados_corretores(
                     conn=conn,
                     empresa=empresa,
@@ -119,21 +119,20 @@ def executar_sincronizacao():
                     mes=mes
                 )
 
-                # 2. PUSH - Supabase (mesmo vazios, salvamos para resetar cache)
+                # 2. PUSH - Supabase
                 if dados is None: dados = []
 
                 if salvar_cache(empresa, obra, mes, dados):
                     sucessos += 1
-                    logger.info(f"[{atual}/{total_ops}] PUSH ok | {mes} | {len(dados)} corretores")
+                    logger.info(f"[{atual}/{total_ops}] PUSH ok | Historico COMPLETO | {len(dados)} corretores")
                 else:
                     falhas += 1
                     logger.warning(f"[{atual}/{total_ops}] PUSH falhou | {mes}")
 
             except Exception as e:
-                logger.error(f"Erro ao processar {nome} no mês {mes}: {e}")
+                logger.error(f"Erro ao processar {nome}: {e}")
                 falhas += 1
             
-            # Delay curto para não travar CPU nem a API do Supabase
             time.sleep(0.5)
 
     try:

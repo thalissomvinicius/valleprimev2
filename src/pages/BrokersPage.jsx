@@ -32,13 +32,11 @@ const BrokersPage = () => {
     const [isCacheData, setIsCacheData] = useState(false);
     
     // Filters
-    const [selectedMonth, setSelectedMonth] = useState(() => {
-        const now = new Date();
-        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    });
+    const [selectedMonth, setSelectedMonth] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
     
-    // Obra selection
+    // Obra/Period select options
+    const [availableMonths, setAvailableMonths] = useState([]);
     const [obrasList, setObrasList] = useState([]);
     const [selectedObraId, setSelectedObraId] = useState(''); // "empresa-obra"
 
@@ -64,11 +62,8 @@ const BrokersPage = () => {
                 try { perms = JSON.parse(perms); } catch { perms = {}; }
             }
             const uauId = perms?.uau_corretor_id;
-            // Fallback for mes to avoid sending an empty string if date-picker is cleared
-            const activeMonth = selectedMonth || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
-
             const filters = {
-                mes: activeMonth,
+                mes: 'all',
                 corretor_id: isAdmin ? null : (uauId || null), // null = retorna todos (só admin sem uau_id configurado)
                 empresa: empresa,
                 obra: obra
@@ -80,29 +75,24 @@ const BrokersPage = () => {
             setLastUpdate(result.atualizado_em || null);
             setIsCacheData(result.is_cache || false);
 
-            // Calculate global stats for the cards
-            let vgv = 0;
-            let sales = 0;
-            let pending = 0;
-
-            brokersList.forEach(broker => {
-                vgv += broker.resumo.vgv_total || 0;
-                sales += broker.resumo.vendas_total_obra || 0;
-                
-                broker.vendas_detalhadas.forEach(venda => {
-                    if (venda.sinal_negocio.situacao === 'Em Atraso') {
-                        pending += venda.sinal_negocio.valor_em_atraso || 0;
+            // Populate available months dynamically based on the data
+            const monthsSet = new Set();
+            brokersList.forEach(b => {
+                b.vendas_detalhadas?.forEach(v => {
+                    if (v.data_venda && v.data_venda.length >= 7) {
+                        monthsSet.add(v.data_venda.substring(0, 7)); // 'YYYY-MM'
                     }
                 });
             });
+            const sortedMonths = Array.from(monthsSet).sort().reverse();
+            setAvailableMonths(sortedMonths);
 
-            setStats({ totalVgv: vgv, totalSales: sales, totalPending: pending });
         } catch (error) {
             console.error("Error loading brokers page:", error);
         } finally {
             setLoading(false);
         }
-    }, [selectedMonth, currentUser?.id, isAdmin, currentUser?.permissions?.uau_corretor_id, selectedObraId, obrasList.length]);
+    }, [currentUser?.id, isAdmin, currentUser?.permissions, selectedObraId, obrasList.length]);
 
     useEffect(() => {
         const fetchObras = async () => {
@@ -127,14 +117,72 @@ const BrokersPage = () => {
         }
     }, [loadData, selectedObraId]);
 
-    const filteredBrokers = useMemo(() => {
-        if (!searchTerm) return data;
-        const lowerSearch = searchTerm.toLowerCase();
-        return data.filter(b => 
-            b.corretor.toLowerCase().includes(lowerSearch) || 
-            b.diretoria_equipe.toLowerCase().includes(lowerSearch)
-        );
-    }, [data, searchTerm]);
+    const processedData = useMemo(() => {
+        let globalVgv = 0;
+        let globalSales = 0;
+        let globalPending = 0;
+
+        const filtered = data.map(broker => {
+            let vendas_filtradas = broker.vendas_detalhadas || [];
+            if (selectedMonth !== 'all') {
+                vendas_filtradas = vendas_filtradas.filter(v => v.data_venda && v.data_venda.startsWith(selectedMonth));
+            }
+
+            // Recalculate broker stats specifically for the selected month
+            let vgv_mes = 0;
+            let vendas_mes = 0;
+            
+            vendas_filtradas.forEach(v => {
+                if (v.status_codigo === 0 || v.status_codigo === 3 || v.status_venda === 'Normal' || v.status_venda === 'Quitada') {
+                    vgv_mes += v.valor_venda || 0;
+                    vendas_mes += 1;
+                }
+            });
+
+            // As Pending/Atraso é uma carteira global, não filtramos ela por mês na visualizção
+            // Somamos apenas para exibir no painel "Geral", usando o array original completo
+            broker.vendas_detalhadas?.forEach(venda => {
+                if (venda.sinal_negocio?.situacao === 'Em Atraso') {
+                    globalPending += venda.sinal_negocio.valor_em_atraso || 0;
+                }
+            });
+
+            return {
+                ...broker,
+                vendas_detalhadas: vendas_filtradas,
+                resumo: {
+                    ...broker.resumo,
+                    vgv_total: vgv_mes,
+                    vendas_total_obra: vendas_mes
+                }
+            };
+        }).filter(broker => {
+            // Se estamos buscando um termo de texto
+            if (searchTerm) {
+                const lowerSearch = searchTerm.toLowerCase();
+                if (!broker.corretor.toLowerCase().includes(lowerSearch) && 
+                    !broker.diretoria_equipe.toLowerCase().includes(lowerSearch)) {
+                    return false;
+                }
+            }
+            // Se filtramos por um mês específico, só mostra o corretor se ele tiver feito vendas no mês
+            if (selectedMonth !== 'all' && broker.resumo.vendas_total_obra === 0) {
+                return false;
+            }
+            return true;
+        });
+
+        // Sum the filtered VGV and Sales globally
+        filtered.forEach(b => {
+            globalVgv += b.resumo.vgv_total || 0;
+            globalSales += b.resumo.vendas_total_obra || 0;
+        });
+
+        // Set the stats for the UI
+        setStats({ totalVgv: globalVgv, totalSales: globalSales, totalPending: globalPending });
+        return filtered;
+
+    }, [data, searchTerm, selectedMonth]);
 
     const formatCurrency = (val) => {
         return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
@@ -181,12 +229,18 @@ const BrokersPage = () => {
 
                             <div className="filter-group">
                                 <Calendar size={16} />
-                                <input 
-                                    type="month" 
-                                    className="minimal-date-picker"
+                                <select 
+                                    className="minimal-select"
                                     value={selectedMonth}
                                     onChange={(e) => setSelectedMonth(e.target.value)}
-                                />
+                                >
+                                    <option value="all">Todo o Período</option>
+                                    {availableMonths.map(m => {
+                                        const [yyyy, mm] = m.split('-');
+                                        const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+                                        return <option key={m} value={m}>{monthNames[parseInt(mm)-1]} de {yyyy}</option>
+                                    })}
+                                </select>
                             </div>
 
                             <div className="header-divider"></div>
@@ -253,14 +307,14 @@ const BrokersPage = () => {
                             <Loader2 className="loading-spinner-large" size={48} />
                             <p>Carregando dados do servidor Valle...</p>
                         </div>
-                    ) : filteredBrokers.length === 0 ? (
+                    ) : processedData.length === 0 ? (
                         <div className="empty-state">
                             <Info size={48} style={{ opacity: 0.2, marginBottom: '1rem' }} />
                             <h3>Nenhum dado encontrado</h3>
                             <p>Não há registros de vendas para os filtros aplicados.</p>
                         </div>
                     ) : (
-                        filteredBrokers.map(broker => (
+                        processedData.map(broker => (
                             <div key={broker.codigo_corretor} className="broker-row">
                                 <div 
                                     className="broker-row-header"

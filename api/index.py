@@ -832,7 +832,7 @@ def get_cache_corretores():
     try:
         empresa = request.args.get('empresa', '28')
         obra = request.args.get('obra', '70100')
-        mes = request.args.get('mes', datetime.datetime.now().strftime('%Y-%m'))
+        mes = request.args.get('mes', 'all')
         corretor_id = request.args.get('corretor_id', None)  # Filtro por corretor específico
         cache_key = f"{empresa}-{obra}-{mes}"
 

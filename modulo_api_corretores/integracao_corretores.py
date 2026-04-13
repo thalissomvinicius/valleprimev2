@@ -18,20 +18,21 @@ def fetch_dados_corretores(conn, empresa, obra, corretor_id=None, data_inicio=No
     """
     Lista os corretores com base nos filtros dinâmicos de Data, Obra e Corretor passados pela Request.
     """
-    # Fallback to current month if NO date filter is provided at all
+    # Fallback to current month se nada foi passado (mas suporta 'all')
     if not mes and not data_inicio and not data_fim:
-        mes = datetime.now().strftime('%Y-%m')
+        mes = 'all'
 
-    # Trata data_inicio e data_fim se "mes" for passado
-    if mes:
+    # Trata data_inicio e data_fim se "mes" for passado e não for 'all'
+    if mes and mes != 'all':
         try:
             # Ex: "2026-03" -> inicio: 20260301 / fim: 20260331
+            import pandas as pd
             dt = datetime.strptime(mes, '%Y-%m')
             ultimo_dia = pd.Period(mes).days_in_month
             data_inicio = dt.strftime('%Y%m') + '01'
             data_fim = dt.strftime('%Y%m') + str(ultimo_dia).zfill(2)
         except ValueError:
-            raise HTTPException(status_code=400, detail="Formato de mês inválido. Use AAAA-MM")
+            pass # ignore se vier formato zoado, pega tudo
             
         print(f"DEBUG FILTER: mes={mes} -> data_inicio={data_inicio}, data_fim={data_fim}")
 
