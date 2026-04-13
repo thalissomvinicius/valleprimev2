@@ -620,10 +620,10 @@ const BrokersPage = () => {
                                                                     <tbody>
                                                                         {filteredAbertos.map((parc, idx) => (
                                                                             <tr key={idx} className={parc.is_atrasado === 1 ? 'row-atrasado' : ''}>
-                                                                                <td className="parcela-id">{parc.tipo} ({parc.parcela})</td>
-                                                                                <td>{formatDate(parc.data_vencimento)}</td>
-                                                                                <td className="parcela-valor">{formatCurrency(parc.valor_aberto)}</td>
-                                                                                <td>
+                                                                                <td className="parcela-id" data-label="Parcela">{parc.tipo} ({parc.parcela})</td>
+                                                                                <td data-label="Vencimento">{formatDate(parc.data_vencimento)}</td>
+                                                                                <td className="parcela-valor" data-label="Valor">{formatCurrency(parc.valor_aberto)}</td>
+                                                                                <td data-label="Status">
                                                                                     {parc.is_atrasado === 1 
                                                                                         ? <span className="badge-atrasado">Atrasado</span> 
                                                                                         : <span className="badge-avencer">A Vencer</span>
@@ -669,10 +669,10 @@ const BrokersPage = () => {
                                                                     <tbody>
                                                                         {venda.raw_sinais_pagos.lista.map((parc, idx) => (
                                                                             <tr key={idx}>
-                                                                                <td className="parcela-id">{parc.tipo} ({parc.parcela})</td>
-                                                                                <td>{formatDate(parc.data_vencimento)}</td>
-                                                                                <td className="data-pagamento">{formatDate(parc.data_pagamento)}</td>
-                                                                                <td className="parcela-valor pago">{formatCurrency(parc.valor_pago)}</td>
+                                                                                <td className="parcela-id" data-label="Parcela">{parc.tipo} ({parc.parcela})</td>
+                                                                                <td data-label="Vencimento">{formatDate(parc.data_vencimento)}</td>
+                                                                                <td className="data-pagamento" data-label="Pagamento">{formatDate(parc.data_pagamento)}</td>
+                                                                                <td className="parcela-valor pago" data-label="Valor">{formatCurrency(parc.valor_pago)}</td>
                                                                             </tr>
                                                                         ))}
                                                                     </tbody>
