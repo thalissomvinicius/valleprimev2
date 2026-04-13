@@ -421,7 +421,7 @@ const BrokersPage = () => {
                                                                 )}
                                                             </td>
                                                             <td style={{fontSize: '0.85rem', color: '#64748b'}}>
-                                                                {new Date(venda.data_venda).toLocaleDateString('pt-BR')}
+                                                                {new Date(venda.data_venda + "T12:00:00").toLocaleDateString('pt-BR')}
                                                             </td>
                                                         </tr>
                                                     ))}
