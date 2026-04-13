@@ -34,6 +34,7 @@ const BrokersPage = () => {
     // Filters
     const [selectedMonth, setSelectedMonth] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
+    const [showCancelados, setShowCancelados] = useState(false);
     
     // Obra/Period select options
     const [availableMonths, setAvailableMonths] = useState([]);
@@ -121,68 +122,62 @@ const BrokersPage = () => {
         let globalVgv = 0;
         let globalSales = 0;
         let globalPending = 0;
+        
+        let flatVendas = [];
 
-        const filtered = data.map(broker => {
-            let vendas_filtradas = broker.vendas_detalhadas || [];
-            if (selectedMonth !== 'all') {
-                vendas_filtradas = vendas_filtradas.filter(v => v.data_venda && v.data_venda.startsWith(selectedMonth));
-            }
-
-            // Recalculate broker stats specifically for the selected month
-            let vgv_mes = 0;
-            let vendas_mes = 0;
+        data.forEach(broker => {
+            const vendas = broker.vendas_detalhadas || [];
             
-            vendas_filtradas.forEach(v => {
-                if (v.status_codigo === 0 || v.status_codigo === 3 || v.status_venda === 'Normal' || v.status_venda === 'Quitada') {
-                    vgv_mes += v.valor_venda || 0;
-                    vendas_mes += 1;
-                }
-            });
-
             // As Pending/Atraso é uma carteira global, não filtramos ela por mês na visualizção
             // Somamos apenas para exibir no painel "Geral", usando o array original completo
-            broker.vendas_detalhadas?.forEach(venda => {
+            vendas.forEach(venda => {
                 if (venda.sinal_negocio?.situacao === 'Em Atraso') {
                     globalPending += venda.sinal_negocio.valor_em_atraso || 0;
                 }
             });
 
-            return {
-                ...broker,
-                vendas_detalhadas: vendas_filtradas,
-                resumo: {
-                    ...broker.resumo,
-                    vgv_total: vgv_mes,
-                    vendas_total_obra: vendas_mes
+            vendas.forEach(v => {
+                // Apply month filter
+                if (selectedMonth !== 'all' && v.data_venda && !v.data_venda.startsWith(selectedMonth)) {
+                    return; // Skip this sale because it's not in the selected month
                 }
-            };
-        }).filter(broker => {
-            // Se estamos buscando um termo de texto
-            if (searchTerm) {
-                const lowerSearch = searchTerm.toLowerCase();
-                if (!broker.corretor.toLowerCase().includes(lowerSearch) && 
-                    !broker.diretoria_equipe.toLowerCase().includes(lowerSearch)) {
-                    return false;
+                
+                // Apply 'ativos' vs 'cancelados' filter
+                const isCancelado = v.status_venda === 'Cancelada' || v.status_codigo === 1;
+                if (!showCancelados && isCancelado) {
+                    return; // Hide cancelled if toggle is false
                 }
-            }
-            // Se filtramos por um mês específico, só mostra o corretor se ele tiver feito vendas no mês
-            if (selectedMonth !== 'all' && broker.resumo.vendas_total_obra === 0) {
-                return false;
-            }
-            return true;
-        });
 
-        // Sum the filtered VGV and Sales globally
-        filtered.forEach(b => {
-            globalVgv += b.resumo.vgv_total || 0;
-            globalSales += b.resumo.vendas_total_obra || 0;
+                // Apply search term filter (Search across client, broker, or lote)
+                if (searchTerm) {
+                    const lowerSearch = searchTerm.toLowerCase();
+                    const matchClient = (v.cliente?.nome || v.client?.nome || '').toLowerCase().includes(lowerSearch);
+                    const matchBroker = broker.corretor.toLowerCase().includes(lowerSearch);
+                    const matchLote = `${v.quadra} ${v.lote}`.toLowerCase().includes(lowerSearch);
+                    
+                    if (!matchClient && !matchBroker && !matchLote) return; // Skip if no match
+                }
+
+                // Calculate valid VGV
+                if (v.status_codigo === 0 || v.status_codigo === 3 || v.status_venda === 'Normal' || v.status_venda === 'Quitada') {
+                    globalVgv += v.valor_venda || 0;
+                    globalSales += 1;
+                }
+
+                // Inject broker data into the sale for display purposes
+                flatVendas.push({
+                    ...v,
+                    corretorNome: broker.corretor,
+                    gerenteNome: broker.diretoria_equipe
+                });
+            });
         });
 
         // Set the stats for the UI
         setStats({ totalVgv: globalVgv, totalSales: globalSales, totalPending: globalPending });
-        return filtered;
+        return flatVendas;
 
-    }, [data, searchTerm, selectedMonth]);
+    }, [data, searchTerm, selectedMonth, showCancelados]);
 
     const formatCurrency = (val) => {
         return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
@@ -293,199 +288,211 @@ const BrokersPage = () => {
                     </div>
                 </section>
 
-                <section className="brokers-list-section animate-fade-in-up">
-                    <div className="list-header">
-                        <span>Corretor / Consultor</span>
-                        <span>Equipe / Gerência</span>
-                        <span>VGV Unidades</span>
-                        <span>Vendas</span>
-                        <span></span>
+                <section className="brokers-list-section animate-fade-in-up" style={{padding: '0'}}>
+                    <div className="filter-cancelados-bar" style={{padding: '1rem', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '0.75rem', background: '#fafbfc', borderTopLeftRadius: '12px', borderTopRightRadius: '12px'}}>
+                        <label className="toggle-switch">
+                            <input type="checkbox" checked={showCancelados} onChange={(e) => setShowCancelados(e.target.checked)} />
+                            <span className="slider"></span>
+                        </label>
+                        <span style={{fontSize: '0.85rem', fontWeight: '600', color: '#475569'}}>Exibir Cancelados e Distratados</span>
                     </div>
 
                     {loading ? (
-                        <div className="loading-container">
+                        <div className="loading-container" style={{padding: '3rem'}}>
                             <Loader2 className="loading-spinner-large" size={48} />
                             <p>Carregando dados do servidor Valle...</p>
                         </div>
                     ) : processedData.length === 0 ? (
-                        <div className="empty-state">
+                        <div className="empty-state" style={{padding: '3rem'}}>
                             <Info size={48} style={{ opacity: 0.2, marginBottom: '1rem' }} />
                             <h3>Nenhum dado encontrado</h3>
-                            <p>Não há registros de vendas para os filtros aplicados.</p>
+                            <p>Não há registros para os filtros aplicados.</p>
                         </div>
                     ) : (
-                        processedData.map(broker => (
-                            <div key={broker.codigo_corretor} className="broker-row">
-                                <div 
-                                    className="broker-row-header"
-                                    onClick={() => toggleBroker(broker.codigo_corretor)}
-                                >
-                                    <div className="broker-info-cell">
-                                        <div className="broker-avatar">
-                                            {broker.corretor.charAt(0)}
-                                        </div>
-                                        <div className="broker-name">
-                                            <span>{broker.corretor}</span>
-                                            <small>ID: {broker.codigo_corretor}</small>
-                                        </div>
-                                    </div>
-                                    <div className="team-cell">
-                                        <div className="flex-center" style={{gap: '0.5rem'}}>
-                                            <Briefcase size={14} style={{opacity: 0.5}} />
-                                            {broker.diretoria_equipe}
-                                        </div>
-                                    </div>
-                                    <div className="vgv-cell">
-                                        <span className="metric-label hide-desktop">VGV Total</span>
-                                        {formatCurrency(broker.resumo.vgv_total)}
-                                    </div>
-                                    <div className="sales-cell">
-                                        <span className="metric-label hide-desktop">Vendas</span>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                            <span className="sales-badge">{broker.resumo.vendas_total_obra}</span>
-                                            <small className="hide-mobile">unidades</small>
-                                        </div>
-                                    </div>
-                                    <div className={`chevron-cell ${openBrokerId === broker.codigo_corretor ? 'is-open' : ''}`}>
-                                        <ChevronDown size={20} />
-                                    </div>
-                                </div>
-
-                                {openBrokerId === broker.codigo_corretor && (
-                                    <div className="broker-details">
-                                        <div className="sale-section-title">
-                                            <TrendingUp size={14} /> Tabela de Fechamentos (Contratos)
-                                        </div>
-                                        <div className="sales-table-container">
-                                            <table className="sales-table">
-                                                <thead>
-                                                    <tr>
-                                                        <th>Unidade</th>
-                                                        <th>Cliente</th>
-                                                        <th>VGV</th>
-                                                        <th>Plano</th>
-                                                        <th>Situação do Sinal</th>
-                                                        <th>Status</th>
-                                                        <th>Data</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {broker.vendas_detalhadas.map(venda => (
-                                                        <tr key={venda.venda_id}>
-                                                            <td className="col-unit">
-                                                                <small>QD {venda.quadra}</small>
-                                                                LT {venda.lote}
-                                                            </td>
-                                                            <td className="col-client">
-                                                                <div className="client-data-card">
-                                                                    <div className="client-header">
-                                                                        <User size={14} className="icon-user" />
-                                                                        <span className="client-nome" title={venda.client?.nome || venda.cliente?.nome}>
-                                                                            {venda.client?.nome || venda.cliente?.nome}
-                                                                        </span>
-                                                                    </div>
-                                                                    
-                                                                    <div className="client-actions-row">
-                                                                        { (venda.client?.telefone || venda.cliente?.telefone) && (venda.client?.telefone || venda.cliente?.telefone).trim() !== '' ? (
-                                                                            <a href={`https://wa.me/55${(venda.client?.telefone || venda.cliente?.telefone || '').replace(/\D/g, '')}`} 
-                                                                               target="_blank" 
-                                                                               rel="noreferrer" 
-                                                                               className="contact-pill wpp-active">
-                                                                                <Phone size={10} />
-                                                                                {(venda.client?.telefone || venda.cliente?.telefone)}
-                                                                            </a>
-                                                                        ) : (
-                                                                            <span className="contact-pill wpp-inactive">
-                                                                                <Phone size={10} /> Sem Tel
-                                                                            </span>
-                                                                        )}
-
-                                                                        <div className="info-trigger-pill">
-                                                                            <Info size={11} /> Detalhes
-                                                                            <div className="client-popover expanded-popover">
-                                                                                <p><strong>CPF:</strong> {venda.client?.cpf || venda.cliente?.cpf}</p>
-                                                                                <p><strong>Endereço:</strong> {venda.client?.endereco || venda.cliente?.endereco || 'Não informado'}</p>
-                                                                                <div className="popover-footer">
-                                                                                    <strong>Nº Contrato:</strong> #{venda.venda_id}
-                                                                                </div>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </td>
-                                                            <td className="col-vgv">
-                                                                {formatCurrency(venda.valor_venda)}
-                                                            </td>
-                                                            <td style={{fontSize: '0.8rem', color: '#64748b'}}>
-                                                                <div>{venda.condicao_pagamento}</div>
-                                                                {venda.status_venda === 'Cessão' && venda.cessao && (
-                                                                    <div className="status-badge cessao" style={{marginTop: '4px', fontSize: '0.7rem', display: 'inline-block'}}>
-                                                                        Repassado: {venda.cessao.vendaId}
-                                                                    </div>
+                        <div className="sales-table-container">
+                            <table className="sales-table" style={{width: '100%'}}>
+                                <thead>
+                                    <tr>
+                                        <th>Unidade</th>
+                                        <th>Cliente</th>
+                                        <th>VGV</th>
+                                        <th>Plano</th>
+                                        <th>Situação do Sinal</th>
+                                        <th>Status</th>
+                                        <th>Data</th>
+                                        <th>Corretor</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {processedData.map(venda => (
+                                        <React.Fragment key={venda.venda_id}>
+                                            <tr>
+                                                <td className="col-unit">
+                                                    <small>QD {venda.quadra}</small><br/>
+                                                    <strong>LT {venda.lote}</strong>
+                                                </td>
+                                                <td className="col-client">
+                                                    <div className="client-data-card" style={{padding: 0, border: 'none', background: 'transparent'}}>
+                                                        <div className="client-header">
+                                                            <User size={14} className="icon-user" />
+                                                            <span className="client-nome" style={{fontSize: '0.8rem', fontWeight: 600}} title={venda.client?.nome || venda.cliente?.nome}>
+                                                                {venda.client?.nome || venda.cliente?.nome}
+                                                            </span>
+                                                        </div>
+                                                        <div className="client-actions-row" style={{marginTop: '4px'}}>
+                                                            { (venda.client?.telefone || venda.cliente?.telefone) && (venda.client?.telefone || venda.cliente?.telefone).trim() !== '' ? (
+                                                                <a href={`https://wa.me/55${(venda.client?.telefone || venda.cliente?.telefone || '').replace(/\D/g, '')}`} 
+                                                                   target="_blank" 
+                                                                   rel="noreferrer" 
+                                                                   className="contact-pill wpp-active">
+                                                                    <Phone size={10} />
+                                                                    {(venda.client?.telefone || venda.cliente?.telefone)}
+                                                                </a>
+                                                            ) : (
+                                                                <span className="contact-pill wpp-inactive">
+                                                                    <Phone size={10} /> Sem Tel
+                                                                </span>
+                                                            )}
+                                                            <div className="info-trigger-pill" style={{cursor: 'default'}}>
+                                                                <Info size={11} /> #{venda.venda_id}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="col-vgv">
+                                                    {formatCurrency(venda.valor_venda)}
+                                                </td>
+                                                <td style={{fontSize: '0.8rem', color: '#64748b'}}>
+                                                    <div>{venda.condicao_pagamento}</div>
+                                                    {venda.status_venda === 'Cessão' && venda.cessao && (
+                                                        <div className="status-badge cessao" style={{marginTop: '4px', fontSize: '0.7rem', display: 'inline-block'}}>
+                                                            Cessão: {venda.cessao.vendaId}
+                                                        </div>
+                                                    )}
+                                                </td>
+                                                <td className="col-signal">
+                                                    <div style={{display: 'flex', flexDirection: 'column', gap: '4px'}}>
+                                                        <div className="signal-text" style={{fontSize: '0.75rem', fontWeight: 'bold', color: venda.sinal_negocio?.situacao.includes('Atraso') ? '#ef4444' : '#10b981'}}>
+                                                            {venda.sinal_negocio?.situacao}
+                                                        </div>
+                                                        <button 
+                                                            className="btn-details-finance" 
+                                                            onClick={() => toggleBroker(venda.venda_id)}
+                                                            style={{
+                                                                padding: '4px 8px', fontSize: '0.7rem', borderRadius: '4px', 
+                                                                border: '1px solid #cbd5e1', background: '#f8fafc', cursor: 'pointer', textAlign: 'center'
+                                                            }}
+                                                        >
+                                                            Detalhes Financeiros {openBrokerId === venda.venda_id ? '▲' : '▼'}
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span className={`status-badge ${venda.status_venda.toLowerCase().replace('ã','a')}`} style={{padding: '4px 8px', fontSize: '0.7rem'}}>
+                                                        {venda.status_venda}
+                                                    </span>
+                                                    {venda.progresso_financiamento?.parcelas_em_atraso > 0 && (
+                                                        <div style={{color: '#be123c', fontSize: '0.65rem', fontWeight: '800', marginTop: '4px'}}>
+                                                            {venda.progresso_financiamento.parcelas_em_atraso} parc. atraso
+                                                        </div>
+                                                    )}
+                                                </td>
+                                                <td style={{fontSize: '0.85rem', color: '#64748b'}}>
+                                                    {new Date(venda.data_venda + "T12:00:00").toLocaleDateString('pt-BR')}
+                                                </td>
+                                                <td>
+                                                    <div style={{fontSize: '0.75rem', fontWeight: 'bold'}}>{venda.corretorNome}</div>
+                                                    <div style={{fontSize: '0.65rem', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100px'}} title={venda.gerenteNome}>{venda.gerenteNome}</div>
+                                                </td>
+                                            </tr>
+                                            {openBrokerId === venda.venda_id && (
+                                                <tr className="finance-details-row" style={{background: '#f8fafc'}}>
+                                                    <td colSpan="8" style={{padding: '1.5rem', borderBottom: '2px solid #e2e8f0'}}>
+                                                        <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem'}}>
+                                                            
+                                                            {/* Bloco A Pagar */}
+                                                            <div className="finance-block-apagar" style={{background: 'white', padding: '1rem', borderRadius: '8px', border: '1px solid #fca5a5', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'}}>
+                                                                <h4 style={{margin: '0 0 1rem 0', color: '#dc2626', display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+                                                                    <AlertCircle size={16} /> A Pagar (Abertos)
+                                                                </h4>
+                                                                {venda.raw_sinais_abertos?.lista && venda.raw_sinais_abertos.lista.length > 0 ? (
+                                                                    <table style={{width: '100%', fontSize: '0.75rem', borderCollapse: 'collapse'}}>
+                                                                        <thead>
+                                                                            <tr style={{borderBottom: '1px solid #e2e8f0', textAlign: 'left'}}>
+                                                                                <th style={{padding: '4px'}}>Tipo</th>
+                                                                                <th style={{padding: '4px'}}>Status</th>
+                                                                                <th style={{padding: '4px'}}>Vencimento</th>
+                                                                                <th style={{padding: '4px', textAlign: 'right'}}>Valor</th>
+                                                                            </tr>
+                                                                        </thead>
+                                                                        <tbody>
+                                                                            {venda.raw_sinais_abertos.lista.map((parc, idx) => (
+                                                                                <tr key={idx} style={{borderBottom: '1px solid #f1f5f9'}}>
+                                                                                    <td style={{padding: '6px 4px'}}>{parc.tipo} ({parc.parcela})</td>
+                                                                                    <td style={{padding: '6px 4px'}}>
+                                                                                        {parc.is_atrasado === 1 ? <span style={{color: '#dc2626', fontWeight: 'bold'}}>Em Atraso</span> : <span style={{color: '#64748b'}}>A Vencer</span>}
+                                                                                    </td>
+                                                                                    <td style={{padding: '6px 4px'}}>{new Date(parc.data_vencimento + "T12:00:00").toLocaleDateString('pt-BR')}</td>
+                                                                                    <td style={{padding: '6px 4px', textAlign: 'right', fontWeight: 'bold'}}>{formatCurrency(parc.valor_aberto)}</td>
+                                                                                </tr>
+                                                                            ))}
+                                                                            <tr style={{background: '#fef2f2', fontWeight: 'bold'}}>
+                                                                                <td colSpan="3" style={{padding: '8px 4px'}}>Total em Aberto:</td>
+                                                                                <td style={{padding: '8px 4px', textAlign: 'right', color: '#dc2626'}}>{formatCurrency(venda.sinal_negocio?.valor_a_pagar)}</td>
+                                                                            </tr>
+                                                                        </tbody>
+                                                                    </table>
+                                                                ) : (
+                                                                    <p style={{fontSize: '0.8rem', color: '#64748b'}}>Nenhuma parcela pendente.</p>
                                                                 )}
-                                                            </td>
-                                                            <td className="col-signal">
-                                                                {venda.status_venda === 'Cessão' && venda.cessao ? (
-                                                                    <div style={{background: 'rgba(234, 179, 8, 0.1)', padding: '6px', borderRadius: '8px', border: '1px dashed #eab308'}}>
-                                                                        <div className="signal-text" style={{fontSize: '0.75rem'}}>
-                                                                            <strong>Novo Cliente:</strong> {venda.cessao.situacao}
-                                                                        </div>
-                                                                        <div className="signal-bar">
-                                                                            <div 
-                                                                                className="signal-progress" 
-                                                                                style={{ 
-                                                                                    width: `${(venda.cessao.sinaisPagoValor / Math.max(1, venda.cessao.sinaisPagoValor + venda.cessao.sinaisAbertoValor)) * 100}%`,
-                                                                                    backgroundColor: venda.cessao.situacao.includes('Atraso') ? '#ef4444' : '#10b981'
-                                                                                }}
-                                                                            ></div>
-                                                                        </div>
-                                                                        <small style={{fontSize: '0.7rem', color: '#94a3b8', display: 'flex', justifyContent: 'space-between'}}>
-                                                                            <span>Pago: {formatCurrency(venda.cessao.sinaisPagoValor)}</span>
-                                                                            {venda.cessao.sinaisAbertoValor > 0 && <span style={{color: '#ef4444'}}>Falta: {formatCurrency(venda.cessao.sinaisAbertoValor)}</span>}
-                                                                        </small>
+                                                            </div>
+                                                            
+                                                            {/* Bloco Pago */}
+                                                            <div className="finance-block-pago" style={{background: 'white', padding: '1rem', borderRadius: '8px', border: '1px solid #86efac', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'}}>
+                                                                <h4 style={{margin: '0 0 1rem 0', color: '#16a34a', display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+                                                                    <DollarSign size={16} /> Pagos (Recebidos)
+                                                                </h4>
+                                                                {venda.raw_sinais_pagos?.lista && venda.raw_sinais_pagos.lista.length > 0 ? (
+                                                                    <div style={{maxHeight: '300px', overflowY: 'auto'}}>
+                                                                        <table style={{width: '100%', fontSize: '0.75rem', borderCollapse: 'collapse'}}>
+                                                                            <thead style={{position: 'sticky', top: 0, background: 'white', zIndex: 1}}>
+                                                                                <tr style={{borderBottom: '1px solid #e2e8f0', textAlign: 'left'}}>
+                                                                                    <th style={{padding: '4px'}}>Tipo</th>
+                                                                                    <th style={{padding: '4px'}}>Vencimento</th>
+                                                                                    <th style={{padding: '4px'}}>Pagamento</th>
+                                                                                    <th style={{padding: '4px', textAlign: 'right'}}>Valor</th>
+                                                                                </tr>
+                                                                            </thead>
+                                                                            <tbody>
+                                                                                {venda.raw_sinais_pagos.lista.map((parc, idx) => (
+                                                                                    <tr key={idx} style={{borderBottom: '1px solid #f1f5f9'}}>
+                                                                                        <td style={{padding: '6px 4px'}}>{parc.tipo} ({parc.parcela})</td>
+                                                                                        <td style={{padding: '6px 4px'}}>{parc.data_vencimento ? new Date(parc.data_vencimento + "T12:00:00").toLocaleDateString('pt-BR') : '-'}</td>
+                                                                                        <td style={{padding: '6px 4px', color: '#16a34a'}}>{parc.data_pagamento ? new Date(parc.data_pagamento + "T12:00:00").toLocaleDateString('pt-BR') : '-'}</td>
+                                                                                        <td style={{padding: '6px 4px', textAlign: 'right', fontWeight: 'bold'}}>{formatCurrency(parc.valor_pago)}</td>
+                                                                                    </tr>
+                                                                                ))}
+                                                                                <tr style={{background: '#f0fdf4', fontWeight: 'bold'}}>
+                                                                                    <td colSpan="3" style={{padding: '8px 4px'}}>Total Recebido:</td>
+                                                                                    <td style={{padding: '8px 4px', textAlign: 'right', color: '#16a34a'}}>{formatCurrency(venda.sinal_negocio?.valor_ja_pago)}</td>
+                                                                                </tr>
+                                                                            </tbody>
+                                                                        </table>
                                                                     </div>
                                                                 ) : (
-                                                                    <>
-                                                                        <div className="signal-text">
-                                                                            {venda.sinal_negocio.situacao}
-                                                                        </div>
-                                                                        <div className="signal-bar">
-                                                                            <div 
-                                                                                className="signal-progress" 
-                                                                                style={{ 
-                                                                                    width: `${(venda.sinal_negocio.valor_ja_pago / Math.max(1, (venda.sinal_negocio.valor_ja_pago + (venda.sinal_negocio.valor_a_pagar || 0)))) * 100}%`,
-                                                                                    backgroundColor: venda.sinal_negocio.situacao.includes('Atraso') ? '#ef4444' : '#10b981'
-                                                                                }}
-                                                                            ></div>
-                                                                        </div>
-                                                                        <small style={{fontSize: '0.7rem', color: '#94a3b8'}}>
-                                                                            {formatCurrency(venda.sinal_negocio.valor_ja_pago)} de {formatCurrency(venda.sinal_negocio.valor_ja_pago + (venda.sinal_negocio.valor_a_pagar || 0))}
-                                                                        </small>
-                                                                    </>
+                                                                    <p style={{fontSize: '0.8rem', color: '#64748b'}}>Nenhuma parcela paga.</p>
                                                                 )}
-                                                            </td>
-                                                            <td>
-                                                                <span className={`status-badge ${venda.status_venda.toLowerCase().replace('ã','a')}`} style={{padding: '4px 8px', fontSize: '0.7rem'}}>
-                                                                    {venda.status_venda}
-                                                                </span>
-                                                                {venda.progresso_financiamento.parcelas_em_atraso > 0 && (
-                                                                    <div style={{color: '#be123c', fontSize: '0.65rem', fontWeight: '800', marginTop: '4px'}}>
-                                                                        {venda.progresso_financiamento.parcelas_em_atraso} parc. atraso
-                                                                    </div>
-                                                                )}
-                                                            </td>
-                                                            <td style={{fontSize: '0.85rem', color: '#64748b'}}>
-                                                                {new Date(venda.data_venda + "T12:00:00").toLocaleDateString('pt-BR')}
-                                                            </td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        ))
+                                                            </div>
+                                                            
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </React.Fragment>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     )}
                 </section>
             </main>

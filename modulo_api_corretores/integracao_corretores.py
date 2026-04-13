@@ -123,26 +123,28 @@ def fetch_dados_corretores(conn, empresa, obra, corretor_id=None, data_inicio=No
     query_sinais_abertos = f"""
     SELECT 
         cr.NumVend_prc as venda,
-        COUNT(cr.NumParc_Prc) as qtdAberto,
-        ISNULL(SUM(cr.Valor_Prc), 0) as valorAberto,
-        SUM(CASE WHEN cr.Data_Prc < CAST(GETDATE() AS DATE) THEN 1 ELSE 0 END) as qtdAtraso,
-        ISNULL(SUM(CASE WHEN cr.Data_Prc < CAST(GETDATE() AS DATE) THEN cr.Valor_Prc ELSE 0 END), 0) as valorAtraso,
-        FORMAT(MIN(CASE WHEN cr.Status_Prc = 0 THEN cr.Data_Prc END), 'yyyy-MM-dd') as proximoVencimento,
-        MAX(CASE WHEN cr.Data_Prc < CAST(GETDATE() AS DATE) THEN DATEDIFF(day, cr.Data_Prc, GETDATE()) ELSE 0 END) as diasAtraso
+        cr.NumParc_Prc as parcela,
+        cr.Valor_Prc as valor_aberto,
+        FORMAT(cr.Data_Prc, 'yyyy-MM-dd') as data_vencimento,
+        CASE WHEN cr.Data_Prc < CAST(GETDATE() AS DATE) THEN 1 ELSE 0 END as is_atrasado,
+        CASE WHEN cr.Data_Prc < CAST(GETDATE() AS DATE) THEN cr.Valor_Prc ELSE 0 END as valor_atraso,
+        cr.Tipo_Prc as tipo
     FROM ContasReceber cr WITH(NOLOCK)
     WHERE cr.Empresa_prc = {empresa} AND cr.Obra_Prc = '{obra}' AND cr.Tipo_Prc = 'S' AND cr.Status_Prc = 0
-    GROUP BY cr.NumVend_prc
+    ORDER BY cr.Data_Prc ASC
     """
     
     query_sinais_pagos = f"""
     SELECT 
         r.NumVend_Rec as venda,
-        COUNT(r.NumParc_Rec) as qtdPago,
-        ISNULL(SUM(r.Valor_Rec + r.ValorConf_Rec), 0) as valorPago,
-        FORMAT(MAX(r.Data_Rec), 'yyyy-MM-dd') as ultimaDataPagamento
+        r.NumParc_Rec as parcela,
+        (r.Valor_Rec + r.ValorConf_Rec) as valor_pago,
+        FORMAT(r.Data_Rec, 'yyyy-MM-dd') as data_pagamento,
+        FORMAT(r.DataVenci_Rec, 'yyyy-MM-dd') as data_vencimento,
+        r.Tipo_Rec as tipo
     FROM Recebidas r WITH(NOLOCK)
     WHERE r.Empresa_Rec = {empresa} AND r.Obra_Rec = '{obra}' AND r.Tipo_Rec = 'S'
-    GROUP BY r.NumVend_Rec
+    ORDER BY r.Data_Rec DESC
     """
 
     query_condicao_financiamento = f"""
@@ -181,8 +183,59 @@ def fetch_dados_corretores(conn, empresa, obra, corretor_id=None, data_inicio=No
 
     vendas_df.drop_duplicates(subset=['venda'], keep='first', inplace=True)
 
-    sinais_abertos_map = sinais_abertos_df.set_index('venda').to_dict('index') if not sinais_abertos_df.empty else {}
-    sinais_pagos_map = sinais_pagos_df.set_index('venda').to_dict('index') if not sinais_pagos_df.empty else {}
+    sinais_abertos_map = {}
+    if not sinais_abertos_df.empty:
+        for venda, group in sinais_abertos_df.groupby('venda'):
+            parcelas_lista = group.to_dict('records')
+            qtd_aberto = len(parcelas_lista)
+            valor_aberto = group['valor_aberto'].sum()
+            qtd_atraso = group['is_atrasado'].sum()
+            valor_atraso = group['valor_atraso'].sum()
+            
+            # Extract proximoVencimento and max atraso (safe fallback to 0)
+            proximo_venc = None
+            if not group['data_vencimento'].dropna().empty:
+                proximo_venc = group['data_vencimento'].min()
+
+            # dias_atraso calculated safely against today
+            hoje_dt = pd.Timestamp.now().normalize()
+            atrasos = []
+            for dt_str in group['data_vencimento'].dropna():
+                try:
+                    dt = pd.to_datetime(dt_str)
+                    if dt < hoje_dt:
+                        atrasos.append((hoje_dt - dt).days)
+                except:
+                    pass
+            dias_atraso = max(atrasos) if atrasos else 0
+
+            sinais_abertos_map[int(venda)] = {
+                'qtdAberto': qtd_aberto,
+                'valorAberto': valor_aberto,
+                'qtdAtraso': qtd_atraso,
+                'valorAtraso': valor_atraso,
+                'proximoVencimento': proximo_venc,
+                'diasAtraso': dias_atraso,
+                'lista': parcelas_lista
+            }
+            
+    sinais_pagos_map = {}
+    if not sinais_pagos_df.empty:
+        for venda, group in sinais_pagos_df.groupby('venda'):
+            parcelas_lista = group.to_dict('records')
+            qtd_pago = len(parcelas_lista)
+            valor_pago = group['valor_pago'].sum()
+            
+            ultima_data_pag = None
+            if not group['data_pagamento'].dropna().empty:
+                ultima_data_pag = group['data_pagamento'].max()
+
+            sinais_pagos_map[int(venda)] = {
+                'qtdPago': qtd_pago,
+                'valorPago': valor_pago,
+                'ultimaDataPagamento': ultima_data_pag,
+                'lista': parcelas_lista
+            }
     condicao_map = condicoes_df.set_index('venda').to_dict('index') if not condicoes_df.empty else {}
     prorrogacoes_map = prorrogacoes_df.set_index('venda').to_dict('index') if not prorrogacoes_df.empty else {}
 
@@ -289,6 +342,12 @@ def fetch_dados_corretores(conn, empresa, obra, corretor_id=None, data_inicio=No
                 "valor_em_atraso": float(aberto['valorAtraso']),
                 "dias_em_atraso_max": int(aberto['diasAtraso']),
                 "data_proximo_vencimento": aberto['proximoVencimento']
+            },
+            "raw_sinais_abertos": {
+                "lista": aberto.get('lista', [])
+            },
+            "raw_sinais_pagos": {
+                "lista": pago.get('lista', [])
             }
         }
         
