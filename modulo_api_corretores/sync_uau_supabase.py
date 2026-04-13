@@ -148,13 +148,13 @@ def executar_sincronizacao():
 
 if __name__ == "__main__":
     logger.info("Serviço de Sincronização Iniciado.")
-    logger.info("A sincronização vai rodar imediatamente e depois a cada 30 minutos.")
+    logger.info("A sincronização vai rodar imediatamente e depois a cada 5 minutos.")
     
     # Executa a primeira vez logo ao abrir
     executar_sincronizacao()
 
-    # Agenda a cada 30 minutos
-    schedule.every(30).minutes.do(executar_sincronizacao)
+    # Agenda a cada 5 minutos
+    schedule.every(5).minutes.do(executar_sincronizacao)
 
     while True:
         schedule.run_pending()

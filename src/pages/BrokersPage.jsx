@@ -14,7 +14,8 @@ import {
     MapPin, 
     Info,
     Loader2,
-    Briefcase
+    Briefcase,
+    X
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { fetchCorretoresData, fetchConfigObras } from '../services/api';
@@ -27,9 +28,9 @@ const BrokersPage = () => {
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState([]);
     const [stats, setStats] = useState({ totalVgv: 0, totalSales: 0, totalPending: 0 });
-    const [openBrokerId, setOpenBrokerId] = useState(null);
     const [lastUpdate, setLastUpdate] = useState(null);
     const [isCacheData, setIsCacheData] = useState(false);
+    const [showSyncBanner, setShowSyncBanner] = useState(true);
     
     // Filters
     const [selectedMonth, setSelectedMonth] = useState('all');
@@ -41,6 +42,16 @@ const BrokersPage = () => {
     const [obrasList, setObrasList] = useState([]);
     const [selectedObraId, setSelectedObraId] = useState(''); // "empresa-obra"
 
+    // Expanded client card
+    const [expandedVendaId, setExpandedVendaId] = useState(null);
+
+    // Auto-dismiss sync banner after 8 seconds
+    useEffect(() => {
+        if (showSyncBanner && lastUpdate && !isCacheData) {
+            const timer = setTimeout(() => setShowSyncBanner(false), 8000);
+            return () => clearTimeout(timer);
+        }
+    }, [showSyncBanner, lastUpdate, isCacheData]);
 
     const loadData = useCallback(async () => {
         if (obrasList.length > 0 && !selectedObraId) return; // Wait for initial selection
@@ -75,6 +86,7 @@ const BrokersPage = () => {
             setData(brokersList);
             setLastUpdate(result.atualizado_em || null);
             setIsCacheData(result.is_cache || false);
+            setShowSyncBanner(true); // Show banner on new data load
 
             // Populate available months dynamically based on the data
             const monthsSet = new Set();
@@ -118,6 +130,7 @@ const BrokersPage = () => {
         }
     }, [loadData, selectedObraId]);
 
+    // Flatten all vendas across all brokers
     const processedData = useMemo(() => {
         let globalVgv = 0;
         let globalSales = 0;
@@ -128,8 +141,7 @@ const BrokersPage = () => {
         data.forEach(broker => {
             const vendas = broker.vendas_detalhadas || [];
             
-            // As Pending/Atraso é uma carteira global, não filtramos ela por mês na visualizção
-            // Somamos apenas para exibir no painel "Geral", usando o array original completo
+            // As Pending/Atraso é uma carteira global, não filtramos ela por mês na visualização
             vendas.forEach(venda => {
                 if (venda.sinal_negocio?.situacao === 'Em Atraso') {
                     globalPending += venda.sinal_negocio.valor_em_atraso || 0;
@@ -139,23 +151,23 @@ const BrokersPage = () => {
             vendas.forEach(v => {
                 // Apply month filter
                 if (selectedMonth !== 'all' && v.data_venda && !v.data_venda.startsWith(selectedMonth)) {
-                    return; // Skip this sale because it's not in the selected month
+                    return;
                 }
                 
                 // Apply 'ativos' vs 'cancelados' filter
                 const isCancelado = v.status_venda === 'Cancelada' || v.status_codigo === 1;
                 if (!showCancelados && isCancelado) {
-                    return; // Hide cancelled if toggle is false
+                    return;
                 }
 
-                // Apply search term filter (Search across client, broker, or lote)
+                // Apply search term filter
                 if (searchTerm) {
                     const lowerSearch = searchTerm.toLowerCase();
                     const matchClient = (v.cliente?.nome || v.client?.nome || '').toLowerCase().includes(lowerSearch);
                     const matchBroker = broker.corretor.toLowerCase().includes(lowerSearch);
                     const matchLote = `${v.quadra} ${v.lote}`.toLowerCase().includes(lowerSearch);
                     
-                    if (!matchClient && !matchBroker && !matchLote) return; // Skip if no match
+                    if (!matchClient && !matchBroker && !matchLote) return;
                 }
 
                 // Calculate valid VGV
@@ -183,8 +195,15 @@ const BrokersPage = () => {
         return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
     };
 
-    const toggleBroker = (id) => {
-        setOpenBrokerId(openBrokerId === id ? null : id);
+    const formatDate = (dateStr) => {
+        if (!dateStr) return '-';
+        try {
+            return new Date(dateStr + "T12:00:00").toLocaleDateString('pt-BR');
+        } catch { return dateStr; }
+    };
+
+    const toggleExpand = (id) => {
+        setExpandedVendaId(expandedVendaId === id ? null : id);
     };
 
     return (
@@ -244,7 +263,7 @@ const BrokersPage = () => {
                                 <Search size={16} />
                                 <input 
                                     type="text" 
-                                    placeholder="Buscar corretor..."
+                                    placeholder="Buscar cliente ou corretor..."
                                     className="minimal-search"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -288,236 +307,242 @@ const BrokersPage = () => {
                     </div>
                 </section>
 
-                <section className="brokers-list-section animate-fade-in-up" style={{padding: '0'}}>
-                    <div className="filter-cancelados-bar" style={{padding: '1rem', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '0.75rem', background: '#fafbfc', borderTopLeftRadius: '12px', borderTopRightRadius: '12px'}}>
-                        <label className="toggle-switch">
-                            <input type="checkbox" checked={showCancelados} onChange={(e) => setShowCancelados(e.target.checked)} />
-                            <span className="slider"></span>
-                        </label>
-                        <span style={{fontSize: '0.85rem', fontWeight: '600', color: '#475569'}}>Exibir Cancelados e Distratados</span>
-                    </div>
+                {/* Toggle cancelados */}
+                <div className="cancelados-toggle-bar animate-fade-in-up">
+                    <label className="toggle-switch">
+                        <input type="checkbox" checked={showCancelados} onChange={(e) => setShowCancelados(e.target.checked)} />
+                        <span className="slider"></span>
+                    </label>
+                    <span>Exibir Cancelados e Distratados</span>
+                    <span className="total-count">{processedData.length} contratos</span>
+                </div>
 
+                {/* Client Cards */}
+                <section className="client-cards-section animate-fade-in-up">
                     {loading ? (
-                        <div className="loading-container" style={{padding: '3rem'}}>
+                        <div className="loading-container">
                             <Loader2 className="loading-spinner-large" size={48} />
                             <p>Carregando dados do servidor Valle...</p>
                         </div>
                     ) : processedData.length === 0 ? (
-                        <div className="empty-state" style={{padding: '3rem'}}>
+                        <div className="empty-state">
                             <Info size={48} style={{ opacity: 0.2, marginBottom: '1rem' }} />
                             <h3>Nenhum dado encontrado</h3>
                             <p>Não há registros para os filtros aplicados.</p>
                         </div>
                     ) : (
-                        <div className="sales-table-container">
-                            <table className="sales-table" style={{width: '100%'}}>
-                                <thead>
-                                    <tr>
-                                        <th>Unidade</th>
-                                        <th>Cliente</th>
-                                        <th>VGV</th>
-                                        <th>Plano</th>
-                                        <th>Situação do Sinal</th>
-                                        <th>Status</th>
-                                        <th>Data</th>
-                                        <th>Corretor</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {processedData.map(venda => (
-                                        <React.Fragment key={venda.venda_id}>
-                                            <tr>
-                                                <td className="col-unit">
-                                                    <small>QD {venda.quadra}</small><br/>
-                                                    <strong>LT {venda.lote}</strong>
-                                                </td>
-                                                <td className="col-client">
-                                                    <div className="client-data-card" style={{padding: 0, border: 'none', background: 'transparent'}}>
-                                                        <div className="client-header">
-                                                            <User size={14} className="icon-user" />
-                                                            <span className="client-nome" style={{fontSize: '0.8rem', fontWeight: 600}} title={venda.client?.nome || venda.cliente?.nome}>
-                                                                {venda.client?.nome || venda.cliente?.nome}
+                        processedData.map(venda => {
+                            const clientNome = venda.client?.nome || venda.cliente?.nome || 'Sem Nome';
+                            const clientTelefone = venda.client?.telefone || venda.cliente?.telefone || '';
+                            const clientCpf = venda.client?.cpf || venda.cliente?.cpf || '';
+                            const clientEmail = venda.client?.email || venda.cliente?.email || '';
+                            const isExpanded = expandedVendaId === venda.venda_id;
+                            const isCancelado = venda.status_venda === 'Cancelada' || venda.status_codigo === 1;
+                            const hasAtraso = venda.sinal_negocio?.situacao?.includes('Atraso');
+
+                            return (
+                                <div key={venda.venda_id} className={`client-card ${isCancelado ? 'cancelado' : ''} ${isExpanded ? 'expanded' : ''}`}>
+                                    {/* Card Header - clickable to expand */}
+                                    <div className="client-card-header" onClick={() => toggleExpand(venda.venda_id)}>
+                                        <div className="client-card-left">
+                                            <div className="client-avatar" style={{background: hasAtraso ? '#fef2f2' : '#f0fdf4', color: hasAtraso ? '#dc2626' : '#16a34a'}}>
+                                                {clientNome.charAt(0)}
+                                            </div>
+                                            <div className="client-main-info">
+                                                <h3 className="client-name">{clientNome}</h3>
+                                                <div className="client-meta">
+                                                    <span className="meta-unit">QD {venda.quadra} / LT {venda.lote}</span>
+                                                    <span className="meta-divider">•</span>
+                                                    <span className="meta-date">{formatDate(venda.data_venda)}</span>
+                                                    <span className="meta-divider">•</span>
+                                                    <span className="meta-broker">{venda.corretorNome}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="client-card-right">
+                                            <div className="client-vgv">{formatCurrency(venda.valor_venda)}</div>
+                                            <span className={`status-pill ${isCancelado ? 'cancelado' : hasAtraso ? 'atraso' : 'normal'}`}>
+                                                {venda.status_venda}
+                                            </span>
+                                            <ChevronDown size={18} className={`expand-chevron ${isExpanded ? 'rotated' : ''}`} />
+                                        </div>
+                                    </div>
+
+                                    {/* Expanded Detail Blocks */}
+                                    {isExpanded && (
+                                        <div className="client-card-body">
+                                            <div className="three-blocks-grid">
+
+                                                {/* Block 1: Dados do Cliente */}
+                                                <div className="detail-block block-dados">
+                                                    <div className="block-header">
+                                                        <User size={16} />
+                                                        <h4>Dados do Cliente</h4>
+                                                    </div>
+                                                    <div className="block-content">
+                                                        <div className="data-row">
+                                                            <span className="data-label">Nome</span>
+                                                            <span className="data-value">{clientNome}</span>
+                                                        </div>
+                                                        <div className="data-row">
+                                                            <span className="data-label">CPF</span>
+                                                            <span className="data-value">{clientCpf || 'Não informado'}</span>
+                                                        </div>
+                                                        <div className="data-row">
+                                                            <span className="data-label">Telefone</span>
+                                                            <span className="data-value">
+                                                                {clientTelefone.trim() ? (
+                                                                    <a href={`https://wa.me/55${clientTelefone.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="whatsapp-link">
+                                                                        <Phone size={12} /> {clientTelefone}
+                                                                    </a>
+                                                                ) : 'Não informado'}
                                                             </span>
                                                         </div>
-                                                        <div className="client-actions-row" style={{marginTop: '4px'}}>
-                                                            { (venda.client?.telefone || venda.cliente?.telefone) && (venda.client?.telefone || venda.cliente?.telefone).trim() !== '' ? (
-                                                                <a href={`https://wa.me/55${(venda.client?.telefone || venda.cliente?.telefone || '').replace(/\D/g, '')}`} 
-                                                                   target="_blank" 
-                                                                   rel="noreferrer" 
-                                                                   className="contact-pill wpp-active">
-                                                                    <Phone size={10} />
-                                                                    {(venda.client?.telefone || venda.cliente?.telefone)}
-                                                                </a>
-                                                            ) : (
-                                                                <span className="contact-pill wpp-inactive">
-                                                                    <Phone size={10} /> Sem Tel
-                                                                </span>
-                                                            )}
-                                                            <div className="info-trigger-pill" style={{cursor: 'default'}}>
-                                                                <Info size={11} /> #{venda.venda_id}
-                                                            </div>
+                                                        <div className="data-row">
+                                                            <span className="data-label">Email</span>
+                                                            <span className="data-value">{clientEmail || 'Não informado'}</span>
                                                         </div>
+                                                        <div className="data-row">
+                                                            <span className="data-label">Contrato</span>
+                                                            <span className="data-value">#{venda.venda_id}</span>
+                                                        </div>
+                                                        <div className="data-row">
+                                                            <span className="data-label">Condição</span>
+                                                            <span className="data-value">{venda.condicao_pagamento}</span>
+                                                        </div>
+                                                        <div className="data-row">
+                                                            <span className="data-label">Corretor</span>
+                                                            <span className="data-value">{venda.corretorNome}</span>
+                                                        </div>
+                                                        <div className="data-row">
+                                                            <span className="data-label">Equipe</span>
+                                                            <span className="data-value">{venda.gerenteNome}</span>
+                                                        </div>
+                                                        {venda.cessao && (
+                                                            <div className="cessao-note">
+                                                                <AlertCircle size={14} />
+                                                                <span>Cessão/Transferência — Venda #{venda.cessao.vendaId}</span>
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                </td>
-                                                <td className="col-vgv">
-                                                    {formatCurrency(venda.valor_venda)}
-                                                </td>
-                                                <td style={{fontSize: '0.8rem', color: '#64748b'}}>
-                                                    <div>{venda.condicao_pagamento}</div>
-                                                    {venda.status_venda === 'Cessão' && venda.cessao && (
-                                                        <div className="status-badge cessao" style={{marginTop: '4px', fontSize: '0.7rem', display: 'inline-block'}}>
-                                                            Cessão: {venda.cessao.vendaId}
-                                                        </div>
-                                                    )}
-                                                </td>
-                                                <td className="col-signal">
-                                                    <div style={{display: 'flex', flexDirection: 'column', gap: '4px'}}>
-                                                        <div className="signal-text" style={{fontSize: '0.75rem', fontWeight: 'bold', color: venda.sinal_negocio?.situacao.includes('Atraso') ? '#ef4444' : '#10b981'}}>
-                                                            {venda.sinal_negocio?.situacao}
-                                                        </div>
-                                                        <button 
-                                                            className="btn-details-finance" 
-                                                            onClick={() => toggleBroker(venda.venda_id)}
-                                                            style={{
-                                                                padding: '4px 8px', fontSize: '0.7rem', borderRadius: '4px', 
-                                                                border: '1px solid #cbd5e1', background: '#f8fafc', cursor: 'pointer', textAlign: 'center'
-                                                            }}
-                                                        >
-                                                            Detalhes Financeiros {openBrokerId === venda.venda_id ? '▲' : '▼'}
-                                                        </button>
+                                                </div>
+
+                                                {/* Block 2: Parcelas em Aberto (A Pagar) */}
+                                                <div className="detail-block block-apagar">
+                                                    <div className="block-header apagar">
+                                                        <AlertCircle size={16} />
+                                                        <h4>A Pagar (Abertos)</h4>
+                                                        {venda.sinal_negocio?.valor_a_pagar > 0 && (
+                                                            <span className="block-total apagar">{formatCurrency(venda.sinal_negocio.valor_a_pagar)}</span>
+                                                        )}
                                                     </div>
-                                                </td>
-                                                <td>
-                                                    <span className={`status-badge ${venda.status_venda.toLowerCase().replace('ã','a')}`} style={{padding: '4px 8px', fontSize: '0.7rem'}}>
-                                                        {venda.status_venda}
-                                                    </span>
-                                                    {venda.progresso_financiamento?.parcelas_em_atraso > 0 && (
-                                                        <div style={{color: '#be123c', fontSize: '0.65rem', fontWeight: '800', marginTop: '4px'}}>
-                                                            {venda.progresso_financiamento.parcelas_em_atraso} parc. atraso
-                                                        </div>
-                                                    )}
-                                                </td>
-                                                <td style={{fontSize: '0.85rem', color: '#64748b'}}>
-                                                    {new Date(venda.data_venda + "T12:00:00").toLocaleDateString('pt-BR')}
-                                                </td>
-                                                <td>
-                                                    <div style={{fontSize: '0.75rem', fontWeight: 'bold'}}>{venda.corretorNome}</div>
-                                                    <div style={{fontSize: '0.65rem', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100px'}} title={venda.gerenteNome}>{venda.gerenteNome}</div>
-                                                </td>
-                                            </tr>
-                                            {openBrokerId === venda.venda_id && (
-                                                <tr className="finance-details-row" style={{background: '#f8fafc'}}>
-                                                    <td colSpan="8" style={{padding: '1.5rem', borderBottom: '2px solid #e2e8f0'}}>
-                                                        <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem'}}>
-                                                            
-                                                            {/* Bloco A Pagar */}
-                                                            <div className="finance-block-apagar" style={{background: 'white', padding: '1rem', borderRadius: '8px', border: '1px solid #fca5a5', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'}}>
-                                                                <h4 style={{margin: '0 0 1rem 0', color: '#dc2626', display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
-                                                                    <AlertCircle size={16} /> A Pagar (Abertos)
-                                                                </h4>
-                                                                {venda.raw_sinais_abertos?.lista && venda.raw_sinais_abertos.lista.length > 0 ? (
-                                                                    <table style={{width: '100%', fontSize: '0.75rem', borderCollapse: 'collapse'}}>
-                                                                        <thead>
-                                                                            <tr style={{borderBottom: '1px solid #e2e8f0', textAlign: 'left'}}>
-                                                                                <th style={{padding: '4px'}}>Tipo</th>
-                                                                                <th style={{padding: '4px'}}>Status</th>
-                                                                                <th style={{padding: '4px'}}>Vencimento</th>
-                                                                                <th style={{padding: '4px', textAlign: 'right'}}>Valor</th>
+                                                    <div className="block-content">
+                                                        {venda.raw_sinais_abertos?.lista && venda.raw_sinais_abertos.lista.length > 0 ? (
+                                                            <div className="parcelas-table-wrapper">
+                                                                <table className="parcelas-table">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            <th>Parcela</th>
+                                                                            <th>Vencimento</th>
+                                                                            <th>Valor</th>
+                                                                            <th>Status</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        {venda.raw_sinais_abertos.lista.map((parc, idx) => (
+                                                                            <tr key={idx} className={parc.is_atrasado === 1 ? 'row-atrasado' : ''}>
+                                                                                <td className="parcela-id">{parc.tipo} ({parc.parcela})</td>
+                                                                                <td>{formatDate(parc.data_vencimento)}</td>
+                                                                                <td className="parcela-valor">{formatCurrency(parc.valor_aberto)}</td>
+                                                                                <td>
+                                                                                    {parc.is_atrasado === 1 
+                                                                                        ? <span className="badge-atrasado">Atrasado</span> 
+                                                                                        : <span className="badge-avencer">A Vencer</span>
+                                                                                    }
+                                                                                </td>
                                                                             </tr>
-                                                                        </thead>
-                                                                        <tbody>
-                                                                            {venda.raw_sinais_abertos.lista.map((parc, idx) => (
-                                                                                <tr key={idx} style={{borderBottom: '1px solid #f1f5f9'}}>
-                                                                                    <td style={{padding: '6px 4px'}}>{parc.tipo} ({parc.parcela})</td>
-                                                                                    <td style={{padding: '6px 4px'}}>
-                                                                                        {parc.is_atrasado === 1 ? <span style={{color: '#dc2626', fontWeight: 'bold'}}>Em Atraso</span> : <span style={{color: '#64748b'}}>A Vencer</span>}
-                                                                                    </td>
-                                                                                    <td style={{padding: '6px 4px'}}>{new Date(parc.data_vencimento + "T12:00:00").toLocaleDateString('pt-BR')}</td>
-                                                                                    <td style={{padding: '6px 4px', textAlign: 'right', fontWeight: 'bold'}}>{formatCurrency(parc.valor_aberto)}</td>
-                                                                                </tr>
-                                                                            ))}
-                                                                            <tr style={{background: '#fef2f2', fontWeight: 'bold'}}>
-                                                                                <td colSpan="3" style={{padding: '8px 4px'}}>Total em Aberto:</td>
-                                                                                <td style={{padding: '8px 4px', textAlign: 'right', color: '#dc2626'}}>{formatCurrency(venda.sinal_negocio?.valor_a_pagar)}</td>
+                                                                        ))}
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="no-data-msg">
+                                                                <DollarSign size={20} style={{opacity: 0.2}} />
+                                                                <p>Nenhuma parcela pendente</p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                {/* Block 3: Parcelas Pagas */}
+                                                <div className="detail-block block-pago">
+                                                    <div className="block-header pago">
+                                                        <DollarSign size={16} />
+                                                        <h4>Pagos (Recebidos)</h4>
+                                                        {venda.sinal_negocio?.valor_ja_pago > 0 && (
+                                                            <span className="block-total pago">{formatCurrency(venda.sinal_negocio.valor_ja_pago)}</span>
+                                                        )}
+                                                    </div>
+                                                    <div className="block-content">
+                                                        {venda.raw_sinais_pagos?.lista && venda.raw_sinais_pagos.lista.length > 0 ? (
+                                                            <div className="parcelas-table-wrapper">
+                                                                <table className="parcelas-table pago">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            <th>Parcela</th>
+                                                                            <th>Vencimento</th>
+                                                                            <th>Pagamento</th>
+                                                                            <th>Valor</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        {venda.raw_sinais_pagos.lista.map((parc, idx) => (
+                                                                            <tr key={idx}>
+                                                                                <td className="parcela-id">{parc.tipo} ({parc.parcela})</td>
+                                                                                <td>{formatDate(parc.data_vencimento)}</td>
+                                                                                <td className="data-pagamento">{formatDate(parc.data_pagamento)}</td>
+                                                                                <td className="parcela-valor pago">{formatCurrency(parc.valor_pago)}</td>
                                                                             </tr>
-                                                                        </tbody>
-                                                                    </table>
-                                                                ) : (
-                                                                    <p style={{fontSize: '0.8rem', color: '#64748b'}}>Nenhuma parcela pendente.</p>
-                                                                )}
+                                                                        ))}
+                                                                    </tbody>
+                                                                </table>
                                                             </div>
-                                                            
-                                                            {/* Bloco Pago */}
-                                                            <div className="finance-block-pago" style={{background: 'white', padding: '1rem', borderRadius: '8px', border: '1px solid #86efac', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'}}>
-                                                                <h4 style={{margin: '0 0 1rem 0', color: '#16a34a', display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
-                                                                    <DollarSign size={16} /> Pagos (Recebidos)
-                                                                </h4>
-                                                                {venda.raw_sinais_pagos?.lista && venda.raw_sinais_pagos.lista.length > 0 ? (
-                                                                    <div style={{maxHeight: '300px', overflowY: 'auto'}}>
-                                                                        <table style={{width: '100%', fontSize: '0.75rem', borderCollapse: 'collapse'}}>
-                                                                            <thead style={{position: 'sticky', top: 0, background: 'white', zIndex: 1}}>
-                                                                                <tr style={{borderBottom: '1px solid #e2e8f0', textAlign: 'left'}}>
-                                                                                    <th style={{padding: '4px'}}>Tipo</th>
-                                                                                    <th style={{padding: '4px'}}>Vencimento</th>
-                                                                                    <th style={{padding: '4px'}}>Pagamento</th>
-                                                                                    <th style={{padding: '4px', textAlign: 'right'}}>Valor</th>
-                                                                                </tr>
-                                                                            </thead>
-                                                                            <tbody>
-                                                                                {venda.raw_sinais_pagos.lista.map((parc, idx) => (
-                                                                                    <tr key={idx} style={{borderBottom: '1px solid #f1f5f9'}}>
-                                                                                        <td style={{padding: '6px 4px'}}>{parc.tipo} ({parc.parcela})</td>
-                                                                                        <td style={{padding: '6px 4px'}}>{parc.data_vencimento ? new Date(parc.data_vencimento + "T12:00:00").toLocaleDateString('pt-BR') : '-'}</td>
-                                                                                        <td style={{padding: '6px 4px', color: '#16a34a'}}>{parc.data_pagamento ? new Date(parc.data_pagamento + "T12:00:00").toLocaleDateString('pt-BR') : '-'}</td>
-                                                                                        <td style={{padding: '6px 4px', textAlign: 'right', fontWeight: 'bold'}}>{formatCurrency(parc.valor_pago)}</td>
-                                                                                    </tr>
-                                                                                ))}
-                                                                                <tr style={{background: '#f0fdf4', fontWeight: 'bold'}}>
-                                                                                    <td colSpan="3" style={{padding: '8px 4px'}}>Total Recebido:</td>
-                                                                                    <td style={{padding: '8px 4px', textAlign: 'right', color: '#16a34a'}}>{formatCurrency(venda.sinal_negocio?.valor_ja_pago)}</td>
-                                                                                </tr>
-                                                                            </tbody>
-                                                                        </table>
-                                                                    </div>
-                                                                ) : (
-                                                                    <p style={{fontSize: '0.8rem', color: '#64748b'}}>Nenhuma parcela paga.</p>
-                                                                )}
+                                                        ) : (
+                                                            <div className="no-data-msg">
+                                                                <DollarSign size={20} style={{opacity: 0.2}} />
+                                                                <p>Nenhuma parcela paga</p>
                                                             </div>
-                                                            
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            )}
-                                        </React.Fragment>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })
                     )}
                 </section>
             </main>
 
-            {lastUpdate && (
-                <div className={`cache-footer ${isCacheData ? 'is-cache' : 'is-live'}`}>
-                    <div className="cache-footer-content">
-                        {isCacheData ? (
-                            <>
-                                <span className="cache-icon warning">⚠️</span>
-                                <div>
-                                    <strong>Servidor de Sincronização Desconectado</strong>
-                                    <p>Exibindo dados em cache offline. Última atualização: {new Date(lastUpdate).toLocaleString('pt-BR')}</p>
-                                </div>
-                            </>
-                        ) : (
-                            <>
-                                <span className="cache-icon success">✅</span>
-                                <div>
-                                    <strong>Sincronização em Tempo Real Ativa</strong>
-                                    <p>Dados consultados diretamente do servidor UAU integrados em {new Date(lastUpdate).toLocaleString('pt-BR')}</p>
-                                </div>
-                            </>
-                        )}
+            {/* Sync Banner - auto-dismiss + close button */}
+            {lastUpdate && showSyncBanner && (
+                <div className={`sync-banner ${isCacheData ? 'warning' : 'success'}`}>
+                    <div className="sync-banner-content">
+                        <span className="sync-icon">{isCacheData ? '⚠️' : '✅'}</span>
+                        <div className="sync-text">
+                            <strong>{isCacheData ? 'Sincronização Offline' : 'Dados Atualizados'}</strong>
+                            <p>{isCacheData 
+                                ? `Exibindo cache. Última atualização: ${new Date(lastUpdate).toLocaleString('pt-BR')}`
+                                : `Servidor UAU sincronizado em ${new Date(lastUpdate).toLocaleString('pt-BR')}`
+                            }</p>
+                        </div>
+                        <button className="sync-close-btn" onClick={() => setShowSyncBanner(false)}>
+                            <X size={16} />
+                        </button>
                     </div>
+                    {!isCacheData && <div className="sync-progress-bar"></div>}
                 </div>
             )}
 
