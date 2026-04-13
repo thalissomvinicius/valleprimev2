@@ -305,19 +305,9 @@ export const fetchCorretoresData = async (filters = {}) => {
 
   // Cache local do navegador (UX instantânea)
   const cacheKey = `corretores_${empresa}_${obra}_${mes || 'all'}`;
-  const cachedData = localStorage.getItem(cacheKey);
   
-  if (cachedData) {
-    try {
-      const parsed = JSON.parse(cachedData);
-      // Fetch fresh data in background
-      setTimeout(() => fetchFreshData(params, cacheKey).catch(() => {}), 100);
-      return { ...parsed, is_cache: true, cache_local: true };
-    } catch (e) {
-      localStorage.removeItem(cacheKey);
-    }
-  }
-
+  // Vamos buscar diretamente da API do Render (fonte do Supabase) 
+  // O fallback para localStorage agora será tratado apenas se a API falhar.
   return await fetchFreshData(params, cacheKey);
 };
 
@@ -333,7 +323,16 @@ const fetchFreshData = async (params, cacheKey) => {
     }
     return response.data;
   } catch (error) {
-    console.error('[fetchCorretoresData] API indisponível:', error);
+    console.warn('[fetchCorretoresData] API Render indisponível, buscando cache local...');
+    const cachedData = localStorage.getItem(cacheKey);
+    if (cachedData) {
+        try {
+            const parsed = JSON.parse(cachedData);
+            return { ...parsed, is_cache: true, cache_local: true };
+        } catch(e) {}
+    }
+
+    console.error('[fetchCorretoresData] Sem dados na API e sem cache local:', error);
     throw new Error('Dados indisponíveis. O sincronizador local do UAU precisa estar rodando.');
   }
 };
