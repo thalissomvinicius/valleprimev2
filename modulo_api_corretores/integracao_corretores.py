@@ -119,7 +119,7 @@ def fetch_dados_corretores(conn, empresa, obra, corretor_id=None, data_inicio=No
     ) u
     ORDER BY v.Data_Ven DESC
     """
-       query_sinais_abertos = f"""
+    query_sinais_abertos = f"""
     SELECT 
         cr.NumVend_prc as venda,
         cr.NumParc_Prc as parcela,

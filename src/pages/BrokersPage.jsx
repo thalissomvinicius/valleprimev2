@@ -21,6 +21,8 @@ import { useAuth } from '../context/AuthContext';
 import { fetchCorretoresData, fetchConfigObras } from '../services/api';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import './BrokersPage.css';
 
 const BrokersPage = () => {
@@ -36,6 +38,8 @@ const BrokersPage = () => {
     const [selectedMonth, setSelectedMonth] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
     const [showCancelados, setShowCancelados] = useState(false);
+    const [parcelFilter, setParcelFilter] = useState('todos'); // 'todos' | 'atraso'
+    const [selectedAdminBroker, setSelectedAdminBroker] = useState('all');
     
     // Obra/Period select options
     const [availableMonths, setAvailableMonths] = useState([]);
@@ -160,6 +164,11 @@ const BrokersPage = () => {
                     return;
                 }
 
+                // Apply Admin Broker filter
+                if (isAdmin && selectedAdminBroker !== 'all' && broker.corretor !== selectedAdminBroker) {
+                    return;
+                }
+
                 // Apply search term filter
                 if (searchTerm) {
                     const lowerSearch = searchTerm.toLowerCase();
@@ -189,7 +198,90 @@ const BrokersPage = () => {
         setStats({ totalVgv: globalVgv, totalSales: globalSales, totalPending: globalPending });
         return flatVendas;
 
-    }, [data, searchTerm, selectedMonth, showCancelados]);
+    }, [data, searchTerm, selectedMonth, showCancelados, isAdmin, selectedAdminBroker]);
+
+    // Extrai a lista única de corretores para o filtro do Admin
+    const uniqueBrokers = useMemo(() => {
+        const brokersSet = new Set(data.map(b => b.corretor));
+        return Array.from(brokersSet).sort();
+    }, [data]);
+
+    // Processamento de Rankings de Admin (Top 5+ ranking boards)
+    const adminRankings = useMemo(() => {
+        if (!isAdmin) return null;
+        
+        const perfMap = {};
+        processedData.forEach(v => {
+            const cNome = v.corretorNome;
+            if (!perfMap[cNome]) perfMap[cNome] = { corretor: cNome, vgv: 0, recebido: 0, qtd_vendas: 0 };
+            
+            // Soma VGV Válido
+            if (v.status_codigo === 0 || v.status_codigo === 3 || v.status_venda === 'Normal' || v.status_venda === 'Quitada') {
+                perfMap[cNome].vgv += v.valor_venda || 0;
+                perfMap[cNome].qtd_vendas += 1;
+            }
+            // Soma Recebidos
+            if (v.raw_sinais_pagos?.lista) {
+                const pago = v.raw_sinais_pagos.lista.reduce((acc, p) => acc + (p.valor_pago || 0), 0);
+                perfMap[cNome].recebido += pago;
+            }
+        });
+
+        const brokersPerf = Object.values(perfMap);
+        const top5Vgv = [...brokersPerf].sort((a, b) => b.vgv - a.vgv).slice(0, 5);
+        const top5Recebido = [...brokersPerf].sort((a, b) => b.recebido - a.recebido).slice(0, 5);
+
+        return { top5Vgv, top5Recebido };
+    }, [processedData, isAdmin]);
+
+    // Função de Geração de Relatório de Cobrança PDF
+    const generateCollectionReport = () => {
+        const doc = new jsPDF();
+        
+        const titleY = 15;
+        doc.setFontSize(16);
+        doc.text("Relatório de Cobrança - Clientes em Atraso", 14, titleY);
+        doc.setFontSize(10);
+        doc.text(`Data Base: ${new Date().toLocaleDateString('pt-BR')}`, 14, titleY + 6);
+        
+        const tableData = [];
+        
+        processedData.forEach(v => {
+            if (!v.raw_sinais_abertos?.lista) return;
+            
+            // Applies global filter if user wants all delays OR if the report naturally implies ALL delays on the filtered data
+            const delayedParcels = v.raw_sinais_abertos.lista.filter(p => p.is_atrasado === 1);
+            if (delayedParcels.length > 0) {
+                const totalAtrasado = delayedParcels.reduce((acc, p) => acc + (p.valor_aberto || 0), 0);
+                const vencimentoMaisAntigo = delayedParcels[0]?.data_vencimento ? formatDate(delayedParcels[0].data_vencimento) : '-';
+                
+                tableData.push([
+                    v.cliente?.nome || v.client?.nome || 'Sem Nome',
+                    v.cliente?.telefone || 'Não Informado',
+                    `${v.venda_id} - ${v.quadra}/${v.lote}`,
+                    vencimentoMaisAntigo,
+                    delayedParcels.length.toString(),
+                    formatCurrency(totalAtrasado)
+                ]);
+            }
+        });
+
+        if (tableData.length === 0) {
+            alert('Não há clientes em atraso nos filtros atuais.');
+            return;
+        }
+
+        doc.autoTable({
+            startY: titleY + 12,
+            head: [['Cliente', 'Telefone', 'Contrato Q/L', 'Venc. Antigo', 'Qtd Parc', 'Total Atrasado']],
+            body: tableData,
+            theme: 'grid',
+            headStyles: { fillColor: [41, 128, 185] },
+            styles: { fontSize: 8 }
+        });
+
+        doc.save(`Relatorio_Cobranca_${new Date().toISOString().slice(0,10)}.pdf`);
+    };
 
     const formatCurrency = (val) => {
         return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
@@ -257,6 +349,25 @@ const BrokersPage = () => {
                                 </select>
                             </div>
 
+                            {isAdmin && (
+                                <>
+                                    <div className="header-divider"></div>
+                                    <div className="filter-group">
+                                        <Briefcase size={16} />
+                                        <select 
+                                            className="minimal-select"
+                                            value={selectedAdminBroker}
+                                            onChange={(e) => setSelectedAdminBroker(e.target.value)}
+                                        >
+                                            <option value="all">Todos Corretores</option>
+                                            {uniqueBrokers.map(b => (
+                                                <option key={b} value={b}>{b}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </>
+                            )}
+
                             <div className="header-divider"></div>
 
                             <div className="filter-group search-box">
@@ -307,14 +418,66 @@ const BrokersPage = () => {
                     </div>
                 </section>
 
-                {/* Toggle cancelados */}
-                <div className="cancelados-toggle-bar animate-fade-in-up">
-                    <label className="toggle-switch">
-                        <input type="checkbox" checked={showCancelados} onChange={(e) => setShowCancelados(e.target.checked)} />
-                        <span className="slider"></span>
-                    </label>
-                    <span>Exibir Cancelados e Distratados</span>
-                    <span className="total-count">{processedData.length} contratos</span>
+                {/* Admin Rankings (Se aplicável) */}
+                {adminRankings && (
+                    <section className="admin-rankings-section animate-fade-in-up">
+                        <div className="ranking-panel">
+                            <h3><TrendingUp size={16}/> Top 5 VGV (Vendas Totais)</h3>
+                            <div className="ranking-list">
+                                {adminRankings.top5Vgv.map((b, i) => (
+                                    <div key={b.corretor} className="ranking-item">
+                                        <div className="rank-position">{i + 1}º</div>
+                                        <div className="rank-info">
+                                            <span className="rank-name">{b.corretor}</span>
+                                            <span className="rank-sales">{b.qtd_vendas} vendas</span>
+                                        </div>
+                                        <div className="rank-value">{formatCurrency(b.vgv)}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="ranking-panel">
+                            <h3><DollarSign size={16}/> Top 5 Recebimentos (Sinais / Pagos)</h3>
+                            <div className="ranking-list">
+                                {adminRankings.top5Recebido.map((b, i) => (
+                                    <div key={b.corretor} className="ranking-item">
+                                        <div className="rank-position">{i + 1}º</div>
+                                        <div className="rank-info">
+                                            <span className="rank-name">{b.corretor}</span>
+                                        </div>
+                                        <div className="rank-value success">{formatCurrency(b.recebido)}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+                )}
+
+                {/* Toolbar Inferior */}
+                <div className="action-toolbar animate-fade-in-up">
+                    <div className="cancelados-toggle-bar">
+                        <label className="toggle-switch">
+                            <input type="checkbox" checked={showCancelados} onChange={(e) => setShowCancelados(e.target.checked)} />
+                            <span className="slider"></span>
+                        </label>
+                        <span>Exibir Cancelados e Distratados</span>
+                        <span className="meta-divider">•</span>
+                        
+                        <div className="parcel-filter-select">
+                            <Filter size={14}/>
+                            <select value={parcelFilter} onChange={e => setParcelFilter(e.target.value)} className="minimal-select">
+                                <option value="todos">Status das Parcelas: Todas</option>
+                                <option value="atraso">Status das Parcelas: Em Atraso</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className="toolbar-actions">
+                        <span className="total-count">{processedData.length} contratos localizados</span>
+                        <button className="btn-cobranca" onClick={generateCollectionReport}>
+                            <AlertCircle size={16} /> Relatório de Cobrança (PDF)
+                        </button>
+                    </div>
                 </div>
 
                 {/* Client Cards */}
@@ -339,6 +502,10 @@ const BrokersPage = () => {
                             const isExpanded = expandedVendaId === venda.venda_id;
                             const isCancelado = venda.status_venda === 'Cancelada' || venda.status_codigo === 1;
                             const hasAtraso = venda.sinal_negocio?.situacao?.includes('Atraso');
+
+                            // Filters parcerls
+                            const abertosSafe = venda.raw_sinais_abertos?.lista || [];
+                            const filteredAbertos = parcelFilter === 'atraso' ? abertosSafe.filter(p => p.is_atrasado === 1) : abertosSafe;
 
                             return (
                                 <div key={venda.venda_id} className={`client-card ${isCancelado ? 'cancelado' : ''} ${isExpanded ? 'expanded' : ''}`}>
@@ -432,14 +599,14 @@ const BrokersPage = () => {
                                                     <div className="block-header apagar">
                                                         <AlertCircle size={16} />
                                                         <h4>A Pagar (Abertos)</h4>
-                                                        {venda.raw_sinais_abertos?.lista && venda.raw_sinais_abertos.lista.length > 0 && (
+                                                        {filteredAbertos.length > 0 && (
                                                             <span className="block-total apagar">
-                                                                {formatCurrency(venda.raw_sinais_abertos.lista.reduce((acc, p) => acc + (p.valor_aberto || 0), 0))}
+                                                                {formatCurrency(filteredAbertos.reduce((acc, p) => acc + (p.valor_aberto || 0), 0))}
                                                             </span>
                                                         )}
                                                     </div>
                                                     <div className="block-content">
-                                                        {venda.raw_sinais_abertos?.lista && venda.raw_sinais_abertos.lista.length > 0 ? (
+                                                        {filteredAbertos.length > 0 ? (
                                                             <div className="parcelas-table-wrapper">
                                                                 <table className="parcelas-table">
                                                                     <thead>
@@ -451,7 +618,7 @@ const BrokersPage = () => {
                                                                         </tr>
                                                                     </thead>
                                                                     <tbody>
-                                                                        {venda.raw_sinais_abertos.lista.map((parc, idx) => (
+                                                                        {filteredAbertos.map((parc, idx) => (
                                                                             <tr key={idx} className={parc.is_atrasado === 1 ? 'row-atrasado' : ''}>
                                                                                 <td className="parcela-id">{parc.tipo} ({parc.parcela})</td>
                                                                                 <td>{formatDate(parc.data_vencimento)}</td>
@@ -470,7 +637,7 @@ const BrokersPage = () => {
                                                         ) : (
                                                             <div className="no-data-msg">
                                                                 <DollarSign size={20} style={{opacity: 0.2}} />
-                                                                <p>Nenhuma parcela pendente</p>
+                                                                <p>{parcelFilter === 'atraso' ? 'Nenhuma parcela em atraso' : 'Nenhuma parcela pendente'}</p>
                                                             </div>
                                                         )}
                                                     </div>
