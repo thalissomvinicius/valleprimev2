@@ -432,8 +432,10 @@ const BrokersPage = () => {
                                                     <div className="block-header apagar">
                                                         <AlertCircle size={16} />
                                                         <h4>A Pagar (Abertos)</h4>
-                                                        {venda.sinal_negocio?.valor_a_pagar > 0 && (
-                                                            <span className="block-total apagar">{formatCurrency(venda.sinal_negocio.valor_a_pagar)}</span>
+                                                        {venda.raw_sinais_abertos?.lista && venda.raw_sinais_abertos.lista.length > 0 && (
+                                                            <span className="block-total apagar">
+                                                                {formatCurrency(venda.raw_sinais_abertos.lista.reduce((acc, p) => acc + (p.valor_aberto || 0), 0))}
+                                                            </span>
                                                         )}
                                                     </div>
                                                     <div className="block-content">
@@ -479,8 +481,10 @@ const BrokersPage = () => {
                                                     <div className="block-header pago">
                                                         <DollarSign size={16} />
                                                         <h4>Pagos (Recebidos)</h4>
-                                                        {venda.sinal_negocio?.valor_ja_pago > 0 && (
-                                                            <span className="block-total pago">{formatCurrency(venda.sinal_negocio.valor_ja_pago)}</span>
+                                                        {venda.raw_sinais_pagos?.lista && venda.raw_sinais_pagos.lista.length > 0 && (
+                                                            <span className="block-total pago">
+                                                                {formatCurrency(venda.raw_sinais_pagos.lista.reduce((acc, p) => acc + (p.valor_pago || 0), 0))}
+                                                            </span>
                                                         )}
                                                     </div>
                                                     <div className="block-content">

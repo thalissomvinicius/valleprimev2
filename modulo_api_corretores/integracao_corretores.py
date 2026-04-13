@@ -119,8 +119,7 @@ def fetch_dados_corretores(conn, empresa, obra, corretor_id=None, data_inicio=No
     ) u
     ORDER BY v.Data_Ven DESC
     """
-    
-    query_sinais_abertos = f"""
+       query_sinais_abertos = f"""
     SELECT 
         cr.NumVend_prc as venda,
         cr.NumParc_Prc as parcela,
@@ -130,7 +129,7 @@ def fetch_dados_corretores(conn, empresa, obra, corretor_id=None, data_inicio=No
         CASE WHEN cr.Data_Prc < CAST(GETDATE() AS DATE) THEN cr.Valor_Prc ELSE 0 END as valor_atraso,
         cr.Tipo_Prc as tipo
     FROM ContasReceber cr WITH(NOLOCK)
-    WHERE cr.Empresa_prc = {empresa} AND cr.Obra_Prc = '{obra}' AND cr.Tipo_Prc = 'S' AND cr.Status_Prc = 0
+    WHERE cr.Empresa_prc = {empresa} AND cr.Obra_Prc = '{obra}' AND cr.Status_Prc = 0
     ORDER BY cr.Data_Prc ASC
     """
     
@@ -143,7 +142,7 @@ def fetch_dados_corretores(conn, empresa, obra, corretor_id=None, data_inicio=No
         FORMAT(r.DataVenci_Rec, 'yyyy-MM-dd') as data_vencimento,
         r.Tipo_Rec as tipo
     FROM Recebidas r WITH(NOLOCK)
-    WHERE r.Empresa_Rec = {empresa} AND r.Obra_Rec = '{obra}' AND r.Tipo_Rec = 'S'
+    WHERE r.Empresa_rec = {empresa} AND r.Obra_Rec = '{obra}'
     ORDER BY r.Data_Rec DESC
     """
 
