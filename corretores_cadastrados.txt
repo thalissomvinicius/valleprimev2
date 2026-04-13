@@ -1,0 +1,2685 @@
+╔══════════════════════════════════════════════════════════════════╗
+║        RELATÓRIO DE ACESSOS - SISTEMA VALLEPRIME               ║
+║        Corretores organizados por Empresa                      ║
+╚══════════════════════════════════════════════════════════════════╝
+
+Total de Corretores (PF): 431
+Total de Empresas (PJ):   86
+Senha padrão: Valle@ + 4 últimos dígitos do CPF
+==================================================================
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: 53.641.939 Anderson Carlos Avelino De Assis
+│ CNPJ:    53.641.939/0001-00
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Carlos Jordan Avelino Bezerra
+   Usuário: 02374465292
+   CPF:     023.744.652-92
+   Senha:   Valle@5292
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: A & D Consultoria Imobiliaria Ltda
+│ CNPJ:    64.368.258/0001-28
+│ Corretores: 2
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Adila Fernanda Dos Santos Perdigao
+   Usuário: 03197071212
+   CPF:     031.970.712-12
+   Senha:   Valle@1212
+   - - - - - - - - - - - - - - - - -
+   Nome:    Felipe Eduardo Farias Dantas
+   Usuário: 05151533207
+   CPF:     051.515.332-07
+   Senha:   Valle@3207
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: A Da Silva Santos Servicos
+│ CNPJ:    13.131.178/0001-13
+│ Corretores: 2
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Leidivane Araujo De Sousa Ribeiro
+   Usuário: 90746163215
+   CPF:     907.461.632-15
+   Senha:   Valle@3215
+   - - - - - - - - - - - - - - - - -
+   Nome:    Paulo Correia Da Silva
+   Usuário: 76398765249
+   CPF:     763.987.652-49
+   Senha:   Valle@5249
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: A Duarte De Almeida Ltda
+│ CNPJ:    24.595.585/0001-06
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Antonio Marcos De Almeida
+   Usuário: 39931986204
+   CPF:     399.319.862-04
+   Senha:   Valle@6204
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: A. F. Dias-Me
+│ CNPJ:    19.454.275/0001-23
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Diego De Souza Dias
+   Usuário: 00834888203
+   CPF:     008.348.882-03
+   Senha:   Valle@8203
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: A. J. Da S. Sousa Eireli
+│ CNPJ:    31.611.523/0001-06
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Antonio Jose Da Silva Sousa
+   Usuário: 59029684291
+   CPF:     590.296.842-91
+   Senha:   Valle@4291
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Adonai Imoveis & Corretora Ltda
+│ CNPJ:    18.733.663/0001-80
+│ Corretores: 2
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Adonis Adonai Reis
+   Usuário: 65579984200
+   CPF:     655.799.842-00
+   Senha:   Valle@4200
+   - - - - - - - - - - - - - - - - -
+   Nome:    Izan Pereira Do Nascimento
+   Usuário: 60144939215
+   CPF:     601.449.392-15
+   Senha:   Valle@9215
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Amanda C F Cruz Corretora
+│ CNPJ:    30.973.583/0001-06
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Amanda Cristina Cruz De Carvalho
+   Usuário: 02256699277
+   CPF:     022.566.992-77
+   Senha:   Valle@9277
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Antonia Nonata Leitao Soares
+│ CNPJ:    34.847.011/0001-23
+│ Corretores: 2
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Carlos Da Silva Oliveira
+   Usuário: 03156785261
+   CPF:     031.567.852-61
+   Senha:   Valle@5261
+   - - - - - - - - - - - - - - - - -
+   Nome:    Henrique Soares Melo Neto
+   Usuário: 77045114320
+   CPF:     770.451.143-20
+   Senha:   Valle@4320
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Araujo Gestao Imobiliaria Ltda
+│ CNPJ:    38.594.178/0001-80
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Enilcele Araujo Amorim
+   Usuário: 76533409204
+   CPF:     765.334.092-04
+   Senha:   Valle@9204
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Bonus
+│ CNPJ:    N/A
+│ Corretores: 2
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Ana Paula Barbosa Gonçalves
+   Usuário: 95753940200
+   CPF:     957.539.402-00
+   Senha:   Valle@0200
+   - - - - - - - - - - - - - - - - -
+   Nome:    Salvador Ribeiro Pedreira
+   Usuário: 09743871187
+   CPF:     097.438.711-87
+   Senha:   Valle@1187
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: C. V. A. Da M. Silva
+│ CNPJ:    10.171.351/0001-19
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Luis Carlos Da Silva Souza
+   Usuário: 61170070272
+   CPF:     611.700.702-72
+   Senha:   Valle@0272
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: C.D. Brasil-Me
+│ CNPJ:    04.947.120/0001-51
+│ Corretores: 2
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Carlos Eduardo Novaes Brasil
+   Usuário: 02149781255
+   CPF:     021.497.812-55
+   Senha:   Valle@1255
+   - - - - - - - - - - - - - - - - -
+   Nome:    Olinda Gleyssy Furtado Brasil
+   Usuário: 29232856204
+   CPF:     292.328.562-04
+   Senha:   Valle@6204
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Castanheira & Lemos Ltda
+│ CNPJ:    01.644.025/0001-90
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Ednir Olga De Lemos Silva
+   Usuário: 27075281291
+   CPF:     270.752.812-91
+   Senha:   Valle@1291
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Cesar E Almeida Negocios Imobiliarios Ltda
+│ CNPJ:    57.483.959/0001-42
+│ Corretores: 4
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Maria Eduarda Cesar Da Silva
+   Usuário: 02177140218
+   CPF:     021.771.402-18
+   Senha:   Valle@0218
+   - - - - - - - - - - - - - - - - -
+   Nome:    Maria Luciane Holanda De Sousa
+   Usuário: 93066813215
+   CPF:     930.668.132-15
+   Senha:   Valle@3215
+   - - - - - - - - - - - - - - - - -
+   Nome:    Milma Marques Dos Santos
+   Usuário: 01785069152
+   CPF:     017.850.691-52
+   Senha:   Valle@9152
+   - - - - - - - - - - - - - - - - -
+   Nome:    Paulo Ricardo Ferreira Almeida
+   Usuário: 00802269222
+   CPF:     008.022.692-22
+   Senha:   Valle@9222
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Construnorte Empreendimentos Imobiliario Ltda
+│ CNPJ:    52.395.269/0001-18
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Kleice Do Socorro Monteiro De Oliveira
+   Usuário: 78687608268
+   CPF:     786.876.082-68
+   Senha:   Valle@8268
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Construtora Elite Br Ltda
+│ CNPJ:    13.320.936/0001-41
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Jackson Do Carmo Freire
+   Usuário: 65243889253
+   CPF:     652.438.892-53
+   Senha:   Valle@9253
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Coordenador
+│ CNPJ:    N/A
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Bonus
+   Usuário: 00000001000
+   CPF:     000.000.010-00
+   Senha:   Valle@1000
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Cp Engenharia Civil E Consultoria De Imoveis Ltda
+│ CNPJ:    48.514.208/0001-55
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Maria Do Rosario Silva Da Silva
+   Usuário: 02859555277
+   CPF:     028.595.552-77
+   Senha:   Valle@5277
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: D M Nascimento Imobiliaria
+│ CNPJ:    28.802.535/0001-03
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Divanete Moura Nascimento
+   Usuário: 61990655300
+   CPF:     619.906.553-00
+   Senha:   Valle@5300
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: D. Cavalcante Da Silva Imobiliaria
+│ CNPJ:    21.712.723/0001-93
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Jozicleiton De Jesus Silva
+   Usuário: 00710724209
+   CPF:     007.107.242-09
+   Senha:   Valle@4209
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: E K S Dos Santos
+│ CNPJ:    51.827.510/0001-78
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Patricia Da Costa Maia
+   Usuário: 00272611239
+   CPF:     002.726.112-39
+   Senha:   Valle@1239
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: E. De O. Sousa Corretagem De Imoveis - Me
+│ CNPJ:    11.318.806/0001-49
+│ Corretores: 3
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Ariclenes Melo Dos Santos
+   Usuário: 03980018202
+   CPF:     039.800.182-02
+   Senha:   Valle@8202
+   - - - - - - - - - - - - - - - - -
+   Nome:    Esdras De Oliveira Sousa
+   Usuário: 76939600230
+   CPF:     769.396.002-30
+   Senha:   Valle@0230
+   - - - - - - - - - - - - - - - - -
+   Nome:    Willis De Oliveira Sousa
+   Usuário: 85843679268
+   CPF:     858.436.792-68
+   Senha:   Valle@9268
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Elisangela S Lima
+│ CNPJ:    39.994.724/0001-33
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Afonso Takashi Nobushige
+   Usuário: 29989094268
+   CPF:     299.890.942-68
+   Senha:   Valle@4268
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: F. Ferreira De Oliveira Brito
+│ CNPJ:    22.769.093/0001-56
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Luciano Melo De Almeida
+   Usuário: 60510064272
+   CPF:     605.100.642-72
+   Senha:   Valle@4272
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: F. V. Promotora De Credito E Consultoria Imobiliaria Ltda
+│ CNPJ:    53.257.149/0001-17
+│ Corretores: 2
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Fabricio Da Silva Vieira
+   Usuário: 87490374200
+   CPF:     874.903.742-00
+   Senha:   Valle@4200
+   - - - - - - - - - - - - - - - - -
+   Nome:    Marlon Silva Da Purificacao
+   Usuário: 53392388220
+   CPF:     533.923.882-20
+   Senha:   Valle@8220
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Flavio Vasconcelos Dos Santos Me
+│ CNPJ:    21.985.392/0001-65
+│ Corretores: 4
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Belchior Oliveira Sousa
+   Usuário: 77925904291
+   CPF:     779.259.042-91
+   Senha:   Valle@4291
+   - - - - - - - - - - - - - - - - -
+   Nome:    Flavio Vasconcelos Dos Santos
+   Usuário: 29666899272
+   CPF:     296.668.992-72
+   Senha:   Valle@9272
+   - - - - - - - - - - - - - - - - -
+   Nome:    Raimundo Cesar Alves Do Amaral
+   Usuário: 63052857215
+   CPF:     630.528.572-15
+   Senha:   Valle@7215
+   - - - - - - - - - - - - - - - - -
+   Nome:    Valdenice Da Costa Ipiranga
+   Usuário: 57387044287
+   CPF:     573.870.442-87
+   Senha:   Valle@4287
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Fs Consultoria E Gestão Imobiliaria Ltda
+│ CNPJ:    56.908.851/0001-91
+│ Corretores: 3
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Bruno Dos Santos Pinto
+   Usuário: 01188868276
+   CPF:     011.888.682-76
+   Senha:   Valle@8276
+   - - - - - - - - - - - - - - - - -
+   Nome:    Camilla Evangelista Da Rocha
+   Usuário: 00889303274
+   CPF:     008.893.032-74
+   Senha:   Valle@3274
+   - - - - - - - - - - - - - - - - -
+   Nome:    Iara Moreira Dos Santos
+   Usuário: 45524530259
+   CPF:     455.245.302-59
+   Senha:   Valle@0259
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: G E G Corretora De Imoveis Ltda Epp
+│ CNPJ:    24.947.709/0001-67
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Luciane Do Socorro Silva De Castro
+   Usuário: 90833422200
+   CPF:     908.334.222-00
+   Senha:   Valle@2200
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: G S M Correa Imobiliaria Eireli
+│ CNPJ:    11.884.481/0001-61
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Gabriel Salim Michel Correa
+   Usuário: 69526443268
+   CPF:     695.264.432-68
+   Senha:   Valle@3268
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Greicy Melenas Correa
+│ CNPJ:    61.790.142/0001-94
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Greicy Melenas Correa
+   Usuário: 74689401268
+   CPF:     746.894.012-68
+   Senha:   Valle@1268
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Habite Corretagem Ltda
+│ CNPJ:    32.708.054/0001-00
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Kelly Regina Pedroso
+   Usuário: 70915270200
+   CPF:     709.152.702-00
+   Senha:   Valle@0200
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: I. Barros Freitas Eireli
+│ CNPJ:    40.206.151/0001-15
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Izadora Barros Freitas
+   Usuário: 86210505287
+   CPF:     862.105.052-87
+   Senha:   Valle@5287
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: I.L. Rodrigues-Me
+│ CNPJ:    19.389.390/0001-61
+│ Corretores: 3
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Elisangela Silva Lima
+   Usuário: 37457055215
+   CPF:     374.570.552-15
+   Senha:   Valle@5215
+   - - - - - - - - - - - - - - - - -
+   Nome:    Igildo Lopes Rodrigues
+   Usuário: 12754297855
+   CPF:     127.542.978-55
+   Senha:   Valle@7855
+   - - - - - - - - - - - - - - - - -
+   Nome:    Maria Enilsa Berto Rodrigues
+   Usuário: 15728529844
+   CPF:     157.285.298-44
+   Senha:   Valle@9844
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Invest House Soluçoes Imobiliarias Ltda
+│ CNPJ:    50.791.678/0001-08
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Adalberto Costa Cutrim
+   Usuário: 01011454386
+   CPF:     010.114.543-86
+   Senha:   Valle@4386
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Ivandeide R De S Dos Santos Adm Imoveis
+│ CNPJ:    05.798.423/0001-12
+│ Corretores: 4
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Edilene Ribeiro De Sousa Da Rocha
+   Usuário: 59152257215
+   CPF:     591.522.572-15
+   Senha:   Valle@7215
+   - - - - - - - - - - - - - - - - -
+   Nome:    Ivaneide Rosa De Souza Dos Santos
+   Usuário: 21816883204
+   CPF:     218.168.832-04
+   Senha:   Valle@3204
+   - - - - - - - - - - - - - - - - -
+   Nome:    Luiz Otavio Santos Dos Santos
+   Usuário: 88251349249
+   CPF:     882.513.492-49
+   Senha:   Valle@9249
+   - - - - - - - - - - - - - - - - -
+   Nome:    Wictor Hugo Souza Dos Santos
+   Usuário: 89180097200
+   CPF:     891.800.972-00
+   Senha:   Valle@7200
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: J B Leao Imobiliaria Ltda
+│ CNPJ:    35.766.448/0001-03
+│ Corretores: 2
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Jeovane Dos Santos Leao
+   Usuário: 42736145291
+   CPF:     427.361.452-91
+   Senha:   Valle@5291
+   - - - - - - - - - - - - - - - - -
+   Nome:    Raimunda Soares Figueiredo
+   Usuário: 22820957234
+   CPF:     228.209.572-34
+   Senha:   Valle@7234
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: J L S Castello
+│ CNPJ:    63.854.269/0001-55
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Jorge Luis Da Silva Castello
+   Usuário: 09322671220
+   CPF:     093.226.712-20
+   Senha:   Valle@1220
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: J&A Solucoes Imobiliarias E Administrativas Ltda
+│ CNPJ:    37.361.802/0001-37
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Ederson Jorge De Sousa
+   Usuário: 80618430210
+   CPF:     806.184.302-10
+   Senha:   Valle@0210
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: J.M. De Castro Empreendimentos
+│ CNPJ:    22.200.815/0001-57
+│ Corretores: 2
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Gleidiane De Souza Siqueira
+   Usuário: 08051472250
+   CPF:     080.514.722-50
+   Senha:   Valle@2250
+   - - - - - - - - - - - - - - - - -
+   Nome:    Lorenna Borsato Pinheiro
+   Usuário: 04697768116
+   CPF:     046.977.681-16
+   Senha:   Valle@8116
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Jl Imobiliaria E Construtora Ltda
+│ CNPJ:    27.361.611/0001-11
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Lorran Donadia Naruse
+   Usuário: 00578346281
+   CPF:     005.783.462-81
+   Senha:   Valle@6281
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Jozicleiton De Jesus Silva
+│ CNPJ:    43.967.872/0001-36
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Jahline Balieiro Diniz
+   Usuário: 02779284277
+   CPF:     027.792.842-77
+   Senha:   Valle@4277
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Jsl Emprendimentos Imobiliarios Eireli  - Epp
+│ CNPJ:    26.202.897/0001-20
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Josiel Rodrigues Martins Junior
+   Usuário: 16314943841
+   CPF:     163.149.438-41
+   Senha:   Valle@3841
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Jvs Empreendimentos Imobiliarios Spe Ltda
+│ CNPJ:    20.474.705/0001-58
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Kleice De Nazare Souza Correa Cavalcante
+   Usuário: 75287439253
+   CPF:     752.874.392-53
+   Senha:   Valle@9253
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: K&K Oliveira Ltda
+│ CNPJ:    47.766.207/0001-35
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Klivia Do Socorro Monteiro De Oliveira
+   Usuário: 74932438249
+   CPF:     749.324.382-49
+   Senha:   Valle@8249
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: K.L.C Corretora De Imoveis Ltda-Me
+│ CNPJ:    18.788.717/0001-05
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Claudiane Soares Diniz
+   Usuário: 72382872268
+   CPF:     723.828.722-68
+   Senha:   Valle@2268
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: L A Da Silva Corretor De Imoveis
+│ CNPJ:    18.793.602/0001-09
+│ Corretores: 3
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Angelica Araujo Da Silva
+   Usuário: 01807451313
+   CPF:     018.074.513-13
+   Senha:   Valle@1313
+   - - - - - - - - - - - - - - - - -
+   Nome:    Jonas Lucas Melo Castro
+   Usuário: 60943182344
+   CPF:     609.431.823-44
+   Senha:   Valle@2344
+   - - - - - - - - - - - - - - - - -
+   Nome:    Leide Abreu Da Silva
+   Usuário: 98870220397
+   CPF:     988.702.203-97
+   Senha:   Valle@0397
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Leandro A. Lima
+│ CNPJ:    59.347.771/0001-00
+│ Corretores: 2
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Leandro Alves Lima
+   Usuário: 59517921268
+   CPF:     595.179.212-68
+   Senha:   Valle@1268
+   - - - - - - - - - - - - - - - - -
+   Nome:    Leandro Blanco Lima
+   Usuário: 04794996241
+   CPF:     047.949.962-41
+   Senha:   Valle@6241
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Libertyepimoveis Ltda
+│ CNPJ:    57.571.625/0001-20
+│ Corretores: 2
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Eumar Carvalho Pinheiro
+   Usuário: 36291951215
+   CPF:     362.919.512-15
+   Senha:   Valle@1215
+   - - - - - - - - - - - - - - - - -
+   Nome:    Kathy Alves Carvalho
+   Usuário: 05172452303
+   CPF:     051.724.523-03
+   Senha:   Valle@2303
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Lima E Negrao Ltda
+│ CNPJ:    24.249.371/0001-70
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Jorge Nazare Santos Pereira
+   Usuário: 07100400244
+   CPF:     071.004.002-44
+   Senha:   Valle@0244
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Lucena Negocios Imobiliarios Ltda
+│ CNPJ:    50.453.714/0001-23
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Claudio Lucena Mota
+   Usuário: 36558877368
+   CPF:     365.588.773-68
+   Senha:   Valle@7368
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Lumine Imoveis Ltda
+│ CNPJ:    34.291.979/0001-16
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Sandra Bruna Souza De Oliveira
+   Usuário: 79689728253
+   CPF:     796.897.282-53
+   Senha:   Valle@8253
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: M J L Siqueira
+│ CNPJ:    34.876.801/0001-37
+│ Corretores: 3
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Ana Cristina Da Silva Rocha
+   Usuário: 44325967249
+   CPF:     443.259.672-49
+   Senha:   Valle@7249
+   - - - - - - - - - - - - - - - - -
+   Nome:    Igor Vinicius Da Silva Nunes
+   Usuário: 02667791231
+   CPF:     026.677.912-31
+   Senha:   Valle@1231
+   - - - - - - - - - - - - - - - - -
+   Nome:    Marcelo Jose Leitao Siqueira
+   Usuário: 37680862249
+   CPF:     376.808.622-49
+   Senha:   Valle@2249
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: M Nobre Severino Transportes E Imoveis Ltda
+│ CNPJ:    47.041.269/0001-80
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Rafaela Da Silva Borges
+   Usuário: 76912272215
+   CPF:     769.122.722-15
+   Senha:   Valle@2215
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Meireles Engenharia E Imobiliaria Ltda - Me
+│ CNPJ:    12.987.138/0001-05
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Nazaré Barros Da Costa Meireles
+   Usuário: 10767886291
+   CPF:     107.678.862-91
+   Senha:   Valle@6291
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Minas Veiculos E Negocios Imobiliarios Ltda
+│ CNPJ:    35.069.354/0001-77
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Ranio Henrique De Oliveira Batista
+   Usuário: 13189125635
+   CPF:     131.891.256-35
+   Senha:   Valle@5635
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Ml Construtora E Incorporadora Ltda
+│ CNPJ:    11.300.826/0001-92
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Luciene Pancieri Donadia Naruse
+   Usuário: 36767301272
+   CPF:     367.673.012-72
+   Senha:   Valle@1272
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Moises Cordeiro Da Silva Filho
+│ CNPJ:    09.443.577/0001-42
+│ Corretores: 3
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Antonio Jose Da Silva
+   Usuário: 86520946249
+   CPF:     865.209.462-49
+   Senha:   Valle@6249
+   - - - - - - - - - - - - - - - - -
+   Nome:    Douglas Woises Santos Silva
+   Usuário: 04287262247
+   CPF:     042.872.622-47
+   Senha:   Valle@2247
+   - - - - - - - - - - - - - - - - -
+   Nome:    Jose Douglas Monteiro Da Costa
+   Usuário: 91374499234
+   CPF:     913.744.992-34
+   Senha:   Valle@9234
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Moriah Corretagem E Administracao De Imoveis Ltda Epp
+│ CNPJ:    15.732.514/0001-09
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Maria Cirley Rodrigues Da Silva
+   Usuário: 83071601204
+   CPF:     830.716.012-04
+   Senha:   Valle@1204
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: N H P Da Costa
+│ CNPJ:    33.614.416/0001-59
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Nadia Helena Paiva Da Costa
+   Usuário: 22389032249
+   CPF:     223.890.322-49
+   Senha:   Valle@2249
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Neo Construtora, Incorporadora E Imobiliaria Unipessoal Ltda
+│ CNPJ:    42.412.960/0001-09
+│ Corretores: 2
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Jussara  Vieira Das Neves
+   Usuário: 93652330897
+   CPF:     936.523.308-97
+   Senha:   Valle@0897
+   - - - - - - - - - - - - - - - - -
+   Nome:    Vinicius Vieira Das Neves Nunes
+   Usuário: 95907602104
+   CPF:     959.076.021-04
+   Senha:   Valle@2104
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Novo Teto Construtora E Servicos Ltda
+│ CNPJ:    13.960.094/0001-92
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Luma Lee Sousa Pereira
+   Usuário: 00787050296
+   CPF:     007.870.502-96
+   Senha:   Valle@0296
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Nunes Negocios Imobiliarios Ltda
+│ CNPJ:    02.895.373/0001-01
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Jose Alex Da Silva Nunes
+   Usuário: 74415611249
+   CPF:     744.156.112-49
+   Senha:   Valle@1249
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: O P De Lima Corretora Eireli
+│ CNPJ:    03.797.549/0001-47
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Ocivaldo Pantoja De Lima
+   Usuário: 48642215291
+   CPF:     486.422.152-91
+   Senha:   Valle@5291
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Open House Negocios Imobiliarios Ltda
+│ CNPJ:    38.429.807/0001-17
+│ Corretores: 3
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Heliani Gabriele Batista Belo
+   Usuário: 95247017234
+   CPF:     952.470.172-34
+   Senha:   Valle@7234
+   - - - - - - - - - - - - - - - - -
+   Nome:    Monaliza Lopes De Araujo
+   Usuário: 95901434234
+   CPF:     959.014.342-34
+   Senha:   Valle@4234
+   - - - - - - - - - - - - - - - - -
+   Nome:    Vanuza Araujo Trindade
+   Usuário: 01317175298
+   CPF:     013.171.752-98
+   Senha:   Valle@5298
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: P H F De Oliveira Consultoria E Negocios Imobiliarios
+│ CNPJ:    33.567.382/0001-99
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Pedro Henrique Ferraz De Oliveira
+   Usuário: 01445927209
+   CPF:     014.459.272-09
+   Senha:   Valle@7209
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Paulo Barbosa Inteligencia Imobiliaria Ltda
+│ CNPJ:    23.170.304/0001-00
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Paula Tina Pureza Pereira Barbosa
+   Usuário: 91697417272
+   CPF:     916.974.172-72
+   Senha:   Valle@7272
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Propex Inteligencia Imobiliaria Ltda
+│ CNPJ:    47.519.769/0001-84
+│ Corretores: 2
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Amarildo Soares Dos Reis
+   Usuário: 34148450168
+   CPF:     341.484.501-68
+   Senha:   Valle@0168
+   - - - - - - - - - - - - - - - - -
+   Nome:    Rafael Lourenço Dos Santos
+   Usuário: 73037729104
+   CPF:     730.377.291-04
+   Senha:   Valle@9104
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: R C A Do Amaral
+│ CNPJ:    57.499.904/0001-20
+│ Corretores: 3
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Claudia Daniele De Lima Da Silva
+   Usuário: 93265573249
+   CPF:     932.655.732-49
+   Senha:   Valle@3249
+   - - - - - - - - - - - - - - - - -
+   Nome:    Claudia Daniele Oliveira Lima
+   Usuário: 94706930278
+   CPF:     947.069.302-78
+   Senha:   Valle@0278
+   - - - - - - - - - - - - - - - - -
+   Nome:    Laurena Da Cruz Varela
+   Usuário: 94451184215
+   CPF:     944.511.842-15
+   Senha:   Valle@4215
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: R D N Negocios Imobiliarios Ltda - Me
+│ CNPJ:    18.975.778/0001-81
+│ Corretores: 2
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Paulo Cesar Rodrigues Silva
+   Usuário: 03878992270
+   CPF:     038.789.922-70
+   Senha:   Valle@2270
+   - - - - - - - - - - - - - - - - -
+   Nome:    Vinicius Marta Da Rocha Naruse
+   Usuário: 90974557234
+   CPF:     909.745.572-34
+   Senha:   Valle@7234
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: R Soares Torres-Me
+│ CNPJ:    23.793.237/0001-72
+│ Corretores: 2
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Fabio Da Silva Lira
+   Usuário: 60549173234
+   CPF:     605.491.732-34
+   Senha:   Valle@3234
+   - - - - - - - - - - - - - - - - -
+   Nome:    Rosilene Soares Torres
+   Usuário: 74773275200
+   CPF:     747.732.752-00
+   Senha:   Valle@5200
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: R&M Construcoes E Promocoes De Vendas Ltda
+│ CNPJ:    33.435.879/0001-53
+│ Corretores: 3
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Diogo Luan Da Silva Moreira
+   Usuário: 92060552249
+   CPF:     920.605.522-49
+   Senha:   Valle@2249
+   - - - - - - - - - - - - - - - - -
+   Nome:    Ednei Furtado De Oliveira
+   Usuário: 00364151200
+   CPF:     003.641.512-00
+   Senha:   Valle@1200
+   - - - - - - - - - - - - - - - - -
+   Nome:    Enoque Gomes Dos Santos Filho
+   Usuário: 00796594465
+   CPF:     007.965.944-65
+   Senha:   Valle@4465
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Rh + Cowork Ltda
+│ CNPJ:    48.364.409/0001-13
+│ Corretores: 3
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Herminio Wanderley De Oliveira Pontes Filho
+   Usuário: 86150235220
+   CPF:     861.502.352-20
+   Senha:   Valle@5220
+   - - - - - - - - - - - - - - - - -
+   Nome:    Rodrigo De Carvalho Galvao
+   Usuário: 83311017234
+   CPF:     833.110.172-34
+   Senha:   Valle@7234
+   - - - - - - - - - - - - - - - - -
+   Nome:    Talise Silva Dos Santos
+   Usuário: 02159331252
+   CPF:     021.593.312-52
+   Senha:   Valle@1252
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Ribeiro Negocios Imobiliarios Ltda
+│ CNPJ:    58.419.252/0001-30
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Cristina De Almeida Diniz
+   Usuário: 47988843249
+   CPF:     479.888.432-49
+   Senha:   Valle@3249
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Rita Luiza Melenas Da Silva
+│ CNPJ:    29.493.001/0001-05
+│ Corretores: 2
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Rita Luiza Melenas Da Silva
+   Usuário: 66185505215
+   CPF:     661.855.052-15
+   Senha:   Valle@5215
+   - - - - - - - - - - - - - - - - -
+   Nome:    Rodrigo Melenas Da Silva
+   Usuário: 70072558253
+   CPF:     700.725.582-53
+   Senha:   Valle@8253
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Robledo Consultoria E Imobiliaria Ltda
+│ CNPJ:    42.292.711/0001-27
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Jefferson Marcos Cardoso
+   Usuário: 02031541269
+   CPF:     020.315.412-69
+   Senha:   Valle@1269
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Ruth L. M. Correa
+│ CNPJ:    20.334.099/0001-75
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Sandro Roberto Pinheiro Barros
+   Usuário: 83466037204
+   CPF:     834.660.372-04
+   Senha:   Valle@7204
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: S F. Pinto
+│ CNPJ:    58.143.160/0001-70
+│ Corretores: 5
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Andressa De Sousa Carvalho
+   Usuário: 04808771225
+   CPF:     048.087.712-25
+   Senha:   Valle@1225
+   - - - - - - - - - - - - - - - - -
+   Nome:    Anna Carolina Mello Mota
+   Usuário: 88780678220
+   CPF:     887.806.782-20
+   Senha:   Valle@8220
+   - - - - - - - - - - - - - - - - -
+   Nome:    Maria Do Rosario Silva Da Silva
+   Usuário: 48946427272
+   CPF:     489.464.272-72
+   Senha:   Valle@7272
+   - - - - - - - - - - - - - - - - -
+   Nome:    Savio Freitas Pinto
+   Usuário: 81996128272
+   CPF:     819.961.282-72
+   Senha:   Valle@8272
+   - - - - - - - - - - - - - - - - -
+   Nome:    Thiago Da Silva Cunha
+   Usuário: 79077374272
+   CPF:     790.773.742-72
+   Senha:   Valle@4272
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: S S Dias Imoveis
+│ CNPJ:    56.128.155/0001-62
+│ Corretores: 2
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Salomao Souza Dias
+   Usuário: 25155156220
+   CPF:     251.551.562-20
+   Senha:   Valle@6220
+   - - - - - - - - - - - - - - - - -
+   Nome:    Soraya Porto Dias
+   Usuário: 37831488200
+   CPF:     378.314.882-00
+   Senha:   Valle@8200
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Silva E Lima Ltda
+│ CNPJ:    53.525.780/0001-50
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Jefferson Rodrigues Pires
+   Usuário: 59831669215
+   CPF:     598.316.692-15
+   Senha:   Valle@9215
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Spairani Place  Imobiliaria Ltda
+│ CNPJ:    51.018.732/0001-40
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    William Dos Santos Lopes
+   Usuário: 66374669304
+   CPF:     663.746.693-04
+   Senha:   Valle@9304
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: V C Tanaka
+│ CNPJ:    58.881.626/0001-34
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Viviane Coelho Tanaka
+   Usuário: 74954326249
+   CPF:     749.543.262-49
+   Senha:   Valle@6249
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Valderice Do Socorro Carmo Costa
+│ CNPJ:    62.012.970/0001-64
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Valderice Do Socorro Carmo Costa
+   Usuário: 57786909249
+   CPF:     577.869.092-49
+   Senha:   Valle@9249
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Vanicia De O. P. Sobral
+│ CNPJ:    24.180.346/0001-87
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Vanicia De Oliveira Pereira Sobral
+   Usuário: 69532257268
+   CPF:     695.322.572-68
+   Senha:   Valle@7268
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: Venda Mais Imoveis E Construcoes Ltda
+│ CNPJ:    19.409.536/0001-93
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Nadilso Firmiano Da Silva
+   Usuário: 79336558234
+   CPF:     793.365.582-34
+   Senha:   Valle@8234
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ EMPRESA: William Dos Santos Lopes
+│ CNPJ:    15.030.098/0001-05
+│ Corretores: 1
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    Rodrigo Santos Pereira
+   Usuário: 70799954268
+   CPF:     707.999.542-68
+   Senha:   Valle@4268
+   - - - - - - - - - - - - - - - - -
+
+┌─────────────────────────────────────────────────────────────────┐
+│ SEM EMPRESA VINCULADA
+│ Corretores avulsos: 295
+└─────────────────────────────────────────────────────────────────┘
+   Nome:    1274 Marcielton Martins Reis
+   Usuário: 95138960130
+   CPF:     951.389.601-30
+   Senha:   Valle@0130
+   - - - - - - - - - - - - - - - - -
+   Nome:    1630 Wesley Moraes Da Silva
+   Usuário: 98216880120
+   CPF:     982.168.801-20
+   Senha:   Valle@0120
+   - - - - - - - - - - - - - - - - -
+   Nome:    2522 Adriana De Souza Pinheiro
+   Usuário: 36226530278
+   CPF:     362.265.302-78
+   Senha:   Valle@0278
+   - - - - - - - - - - - - - - - - -
+   Nome:    4018 Jaira Nilce Neves Mendonça
+   Usuário: 63258820244
+   CPF:     632.588.202-44
+   Senha:   Valle@0244
+   - - - - - - - - - - - - - - - - -
+   Nome:    5131 Angela Chiemi Hatani
+   Usuário: 51668840278
+   CPF:     516.688.402-78
+   Senha:   Valle@0278
+   - - - - - - - - - - - - - - - - -
+   Nome:    5202 Raimundo Flaviano De Lacerda
+   Usuário: 04386914234
+   CPF:     043.869.142-34
+   Senha:   Valle@4234
+   - - - - - - - - - - - - - - - - -
+   Nome:    5227 Marcondes Rodrigues Dos Santos
+   Usuário: 13056255104
+   CPF:     130.562.551-04
+   Senha:   Valle@5104
+   - - - - - - - - - - - - - - - - -
+   Nome:    5625 Edson  De Siqueira Pimentel
+   Usuário: 35621729234
+   CPF:     356.217.292-34
+   Senha:   Valle@9234
+   - - - - - - - - - - - - - - - - -
+   Nome:    6654 Dyogo Schussler De Azara
+   Usuário: 85558613220
+   CPF:     855.586.132-20
+   Senha:   Valle@3220
+   - - - - - - - - - - - - - - - - -
+   Nome:    6683 Sirleide Pereira De Almeida
+   Usuário: 95559728500
+   CPF:     955.597.285-00
+   Senha:   Valle@8500
+   - - - - - - - - - - - - - - - - -
+   Nome:    6949 Junior Ferreira Monsef
+   Usuário: 37436007220
+   CPF:     374.360.072-20
+   Senha:   Valle@7220
+   - - - - - - - - - - - - - - - - -
+   Nome:    7097 Jackson  Junior Damasceno Martins
+   Usuário: 96521422200
+   CPF:     965.214.222-00
+   Senha:   Valle@2200
+   - - - - - - - - - - - - - - - - -
+   Nome:    7275 Samuel Tavares Ribeiro
+   Usuário: 91479312215
+   CPF:     914.793.122-15
+   Senha:   Valle@2215
+   - - - - - - - - - - - - - - - - -
+   Nome:    7368 Renato Benedito Laurentino Pessoa
+   Usuário: 32532660287
+   CPF:     325.326.602-87
+   Senha:   Valle@0287
+   - - - - - - - - - - - - - - - - -
+   Nome:    Adaciel Santos De Oliveira
+   Usuário: 45391645115
+   CPF:     453.916.451-15
+   Senha:   Valle@5115
+   - - - - - - - - - - - - - - - - -
+   Nome:    Adelino Pampolha Monteiro
+   Usuário: 17969620230
+   CPF:     179.696.202-30
+   Senha:   Valle@0230
+   - - - - - - - - - - - - - - - - -
+   Nome:    Adilson Oliveira Coelho
+   Usuário: 32840101149
+   CPF:     328.401.011-49
+   Senha:   Valle@1149
+   - - - - - - - - - - - - - - - - -
+   Nome:    Adriana Cantalicio Rodrigues Overal
+   Usuário: 71269592220
+   CPF:     712.695.922-20
+   Senha:   Valle@2220
+   - - - - - - - - - - - - - - - - -
+   Nome:    Adriano  Souza Lopes
+   Usuário: 24897620287
+   CPF:     248.976.202-87
+   Senha:   Valle@0287
+   - - - - - - - - - - - - - - - - -
+   Nome:    Adriano Moraes De Melo
+   Usuário: 76025381291
+   CPF:     760.253.812-91
+   Senha:   Valle@1291
+   - - - - - - - - - - - - - - - - -
+   Nome:    Adryane Carvalho Haonat
+   Usuário: 77212339172
+   CPF:     772.123.391-72
+   Senha:   Valle@9172
+   - - - - - - - - - - - - - - - - -
+   Nome:    Airene Goncalves Serrão
+   Usuário: 45831530230
+   CPF:     458.315.302-30
+   Senha:   Valle@0230
+   - - - - - - - - - - - - - - - - -
+   Nome:    Airton Ferreira Dias
+   Usuário: 08398976268
+   CPF:     083.989.762-68
+   Senha:   Valle@6268
+   - - - - - - - - - - - - - - - - -
+   Nome:    Alan Monteiro De Souza
+   Usuário: 01560503238
+   CPF:     015.605.032-38
+   Senha:   Valle@3238
+   - - - - - - - - - - - - - - - - -
+   Nome:    Alberto Carneiro B.Filho
+   Usuário: 48957232249
+   CPF:     489.572.322-49
+   Senha:   Valle@2249
+   - - - - - - - - - - - - - - - - -
+   Nome:    Aldaleia Vidal Aguiar
+   Usuário: 74690680230
+   CPF:     746.906.802-30
+   Senha:   Valle@0230
+   - - - - - - - - - - - - - - - - -
+   Nome:    Aldeni Goncalves Dos Santos
+   Usuário: 26020068234
+   CPF:     260.200.682-34
+   Senha:   Valle@8234
+   - - - - - - - - - - - - - - - - -
+   Nome:    Alechiene Richene Silva
+   Usuário: 59405953249
+   CPF:     594.059.532-49
+   Senha:   Valle@3249
+   - - - - - - - - - - - - - - - - -
+   Nome:    Alessandro Costa Martins
+   Usuário: 66556368253
+   CPF:     665.563.682-53
+   Senha:   Valle@8253
+   - - - - - - - - - - - - - - - - -
+   Nome:    Alessandro Ramos Farias
+   Usuário: 85905356220
+   CPF:     859.053.562-20
+   Senha:   Valle@6220
+   - - - - - - - - - - - - - - - - -
+   Nome:    Alexandre Barbosa Cereja
+   Usuário: 64885836204
+   CPF:     648.858.362-04
+   Senha:   Valle@6204
+   - - - - - - - - - - - - - - - - -
+   Nome:    Alexandre Magno De Souza
+   Usuário: 58683291120
+   CPF:     586.832.911-20
+   Senha:   Valle@1120
+   - - - - - - - - - - - - - - - - -
+   Nome:    Alyne O. Crisostomo
+   Usuário: 81672314291
+   CPF:     816.723.142-91
+   Senha:   Valle@4291
+   - - - - - - - - - - - - - - - - -
+   Nome:    America Alho De Freitas
+   Usuário: 07162162215
+   CPF:     071.621.622-15
+   Senha:   Valle@2215
+   - - - - - - - - - - - - - - - - -
+   Nome:    Andre Vinicius De Oliveira Dos Passo
+   Usuário: 01678155209
+   CPF:     016.781.552-09
+   Senha:   Valle@5209
+   - - - - - - - - - - - - - - - - -
+   Nome:    Andrew Rodrigues De  Melo
+   Usuário: 71139907204
+   CPF:     711.399.072-04
+   Senha:   Valle@7204
+   - - - - - - - - - - - - - - - - -
+   Nome:    Antonia Celestino Ursulino Dos Reis
+   Usuário: 48757136300
+   CPF:     487.571.363-00
+   Senha:   Valle@6300
+   - - - - - - - - - - - - - - - - -
+   Nome:    Antonia Heloisa Ferreira Gonçalves
+   Usuário: 34571574304
+   CPF:     345.715.743-04
+   Senha:   Valle@4304
+   - - - - - - - - - - - - - - - - -
+   Nome:    Antonia Reis De Oliveira
+   Usuário: 02307353399
+   CPF:     023.073.533-99
+   Senha:   Valle@3399
+   - - - - - - - - - - - - - - - - -
+   Nome:    Antonio Augusto  L. Do Amaral
+   Usuário: 15942589291
+   CPF:     159.425.892-91
+   Senha:   Valle@9291
+   - - - - - - - - - - - - - - - - -
+   Nome:    Antonio Clauber Da Silva
+   Usuário: 65742524315
+   CPF:     657.425.243-15
+   Senha:   Valle@4315
+   - - - - - - - - - - - - - - - - -
+   Nome:    Antonio Euripedes Silva Serpa
+   Usuário: 17173566215
+   CPF:     171.735.662-15
+   Senha:   Valle@6215
+   - - - - - - - - - - - - - - - - -
+   Nome:    Antonio Fernandes De Faria
+   Usuário: 09343865104
+   CPF:     093.438.651-04
+   Senha:   Valle@5104
+   - - - - - - - - - - - - - - - - -
+   Nome:    Antonio Glauber Da Silva
+   Usuário: 00000000005
+   CPF:     000.000.000-05
+   Senha:   Valle@0005
+   - - - - - - - - - - - - - - - - -
+   Nome:    Antônio Carlos Da Costa Sitaro
+   Usuário: 16927877215
+   CPF:     169.278.772-15
+   Senha:   Valle@7215
+   - - - - - - - - - - - - - - - - -
+   Nome:    Ariosvaldo Alencar Ferreira
+   Usuário: 36478512304
+   CPF:     364.785.123-04
+   Senha:   Valle@2304
+   - - - - - - - - - - - - - - - - -
+   Nome:    Arlete De Souza De O. Lisboa
+   Usuário: 29949211204
+   CPF:     299.492.112-04
+   Senha:   Valle@1204
+   - - - - - - - - - - - - - - - - -
+   Nome:    Benedito Carvalho De Sousa
+   Usuário: 08428328234
+   CPF:     084.283.282-34
+   Senha:   Valle@8234
+   - - - - - - - - - - - - - - - - -
+   Nome:    Bergson Kardec C. Macedo
+   Usuário: 95305289220
+   CPF:     953.052.892-20
+   Senha:   Valle@9220
+   - - - - - - - - - - - - - - - - -
+   Nome:    Brunna Lays Ribeiro Pereira
+   Usuário: 02684599327
+   CPF:     026.845.993-27
+   Senha:   Valle@9327
+   - - - - - - - - - - - - - - - - -
+   Nome:    Bruno Henry De Carvalho Pedreira
+   Usuário: 00414455118
+   CPF:     004.144.551-18
+   Senha:   Valle@5118
+   - - - - - - - - - - - - - - - - -
+   Nome:    Bruno Moura Cardoso
+   Usuário: 66959659272
+   CPF:     669.596.592-72
+   Senha:   Valle@9272
+   - - - - - - - - - - - - - - - - -
+   Nome:    Bruno Rodrigo Dos S. Trintade
+   Usuário: 77583086272
+   CPF:     775.830.862-72
+   Senha:   Valle@6272
+   - - - - - - - - - - - - - - - - -
+   Nome:    Camila Vicente Do Amaral
+   Usuário: 62692100204
+   CPF:     626.921.002-04
+   Senha:   Valle@0204
+   - - - - - - - - - - - - - - - - -
+   Nome:    Carla Siberia Do Nascimento
+   Usuário: 70332312615
+   CPF:     703.323.126-15
+   Senha:   Valle@2615
+   - - - - - - - - - - - - - - - - -
+   Nome:    Carlos Roosevelt Dias Valadares Acioly
+   Usuário: 99695650104
+   CPF:     996.956.501-04
+   Senha:   Valle@0104
+   - - - - - - - - - - - - - - - - -
+   Nome:    Carmem L. Alves Saraiva
+   Usuário: 32893388272
+   CPF:     328.933.882-72
+   Senha:   Valle@8272
+   - - - - - - - - - - - - - - - - -
+   Nome:    Carmem Lucia Cunha Maues
+   Usuário: 08899975272
+   CPF:     088.999.752-72
+   Senha:   Valle@5272
+   - - - - - - - - - - - - - - - - -
+   Nome:    Carmen  Lucia Cruz Nobrega
+   Usuário: 42536430278
+   CPF:     425.364.302-78
+   Senha:   Valle@0278
+   - - - - - - - - - - - - - - - - -
+   Nome:    Cesar Araujo Faria
+   Usuário: 40960404104
+   CPF:     409.604.041-04
+   Senha:   Valle@4104
+   - - - - - - - - - - - - - - - - -
+   Nome:    Cesar Haonat Faria
+   Usuário: 04770998155
+   CPF:     047.709.981-55
+   Senha:   Valle@8155
+   - - - - - - - - - - - - - - - - -
+   Nome:    Charles Brasil
+   Usuário: 00000000000
+   CPF:     000.000.000-00
+   Senha:   Valle@0000
+   - - - - - - - - - - - - - - - - -
+   Nome:    Charles R. Brasil
+   Usuário: 33704430153
+   CPF:     337.044.301-53
+   Senha:   Valle@0153
+   - - - - - - - - - - - - - - - - -
+   Nome:    Claudia Lima Costa
+   Usuário: 52202780378
+   CPF:     522.027.803-78
+   Senha:   Valle@0378
+   - - - - - - - - - - - - - - - - -
+   Nome:    Claudielle Mayara De Souza Negrão
+   Usuário: 67077064204
+   CPF:     670.770.642-04
+   Senha:   Valle@4204
+   - - - - - - - - - - - - - - - - -
+   Nome:    Cleide Cristina Da Silva
+   Usuário: 67850464249
+   CPF:     678.504.642-49
+   Senha:   Valle@4249
+   - - - - - - - - - - - - - - - - -
+   Nome:    Clorisvaldo Marinho Alvez
+   Usuário: 30466369387
+   CPF:     304.663.693-87
+   Senha:   Valle@9387
+   - - - - - - - - - - - - - - - - -
+   Nome:    Cloves Dias Brasil
+   Usuário: 36336432300
+   CPF:     363.364.323-00
+   Senha:   Valle@2300
+   - - - - - - - - - - - - - - - - -
+   Nome:    Cláudia Cristina Raiol
+   Usuário: 72662611200
+   CPF:     726.626.112-00
+   Senha:   Valle@1200
+   - - - - - - - - - - - - - - - - -
+   Nome:    Conceição Cristina Soares Da Cunha Lopes
+   Usuário: 39970663291
+   CPF:     399.706.632-91
+   Senha:   Valle@3291
+   - - - - - - - - - - - - - - - - -
+   Nome:    Danilo Sousa Mendes
+   Usuário: 01855365146
+   CPF:     018.553.651-46
+   Senha:   Valle@5146
+   - - - - - - - - - - - - - - - - -
+   Nome:    David Epifânio Da Costa
+   Usuário: 07207559640
+   CPF:     072.075.596-40
+   Senha:   Valle@9640
+   - - - - - - - - - - - - - - - - -
+   Nome:    Desyree De Magalhães Araujo
+   Usuário: 51121310206
+   CPF:     511.213.102-06
+   Senha:   Valle@0206
+   - - - - - - - - - - - - - - - - -
+   Nome:    Deusliria Vieira Tostes
+   Usuário: 69619336615
+   CPF:     696.193.366-15
+   Senha:   Valle@6615
+   - - - - - - - - - - - - - - - - -
+   Nome:    Diego Antognoni Costa Nunes
+   Usuário: 97527211172
+   CPF:     975.272.111-72
+   Senha:   Valle@1172
+   - - - - - - - - - - - - - - - - -
+   Nome:    Diego Cavalcante Da Silva
+   Usuário: 01983842206
+   CPF:     019.838.422-06
+   Senha:   Valle@2206
+   - - - - - - - - - - - - - - - - -
+   Nome:    Diego Reis Goncalves
+   Usuário: 97829161291
+   CPF:     978.291.612-91
+   Senha:   Valle@1291
+   - - - - - - - - - - - - - - - - -
+   Nome:    Diogo Viana Lira
+   Usuário: 00740677292
+   CPF:     007.406.772-92
+   Senha:   Valle@7292
+   - - - - - - - - - - - - - - - - -
+   Nome:    Dionerio Silva Miranda
+   Usuário: 74453033249
+   CPF:     744.530.332-49
+   Senha:   Valle@3249
+   - - - - - - - - - - - - - - - - -
+   Nome:    Dulcilene Gonçalves Pegado
+   Usuário: 21847800220
+   CPF:     218.478.002-20
+   Senha:   Valle@0220
+   - - - - - - - - - - - - - - - - -
+   Nome:    Edgar Aparecido De Melo
+   Usuário: 17173868220
+   CPF:     171.738.682-20
+   Senha:   Valle@8220
+   - - - - - - - - - - - - - - - - -
+   Nome:    Edilene Almeida Gusmao
+   Usuário: 49307053391
+   CPF:     493.070.533-91
+   Senha:   Valle@3391
+   - - - - - - - - - - - - - - - - -
+   Nome:    Edimilson Ribeiro Quaresma
+   Usuário: 17270324204
+   CPF:     172.703.242-04
+   Senha:   Valle@4204
+   - - - - - - - - - - - - - - - - -
+   Nome:    Edina De Sousa Milhomem
+   Usuário: 41394798172
+   CPF:     413.947.981-72
+   Senha:   Valle@8172
+   - - - - - - - - - - - - - - - - -
+   Nome:    Edson Da Costa Sampaio Alvino
+   Usuário: 86895478272
+   CPF:     868.954.782-72
+   Senha:   Valle@8272
+   - - - - - - - - - - - - - - - - -
+   Nome:    Edson Lima Da Silva Junior
+   Usuário: 58393773253
+   CPF:     583.937.732-53
+   Senha:   Valle@3253
+   - - - - - - - - - - - - - - - - -
+   Nome:    Eduardo Da Costa Mendonca
+   Usuário: 65689704253
+   CPF:     656.897.042-53
+   Senha:   Valle@4253
+   - - - - - - - - - - - - - - - - -
+   Nome:    Elias De Sousa Costa
+   Usuário: 97700843368
+   CPF:     977.008.433-68
+   Senha:   Valle@3368
+   - - - - - - - - - - - - - - - - -
+   Nome:    Elisandra Nascimento Coelho
+   Usuário: 70254222234
+   CPF:     702.542.222-34
+   Senha:   Valle@2234
+   - - - - - - - - - - - - - - - - -
+   Nome:    Elizangela Artmann Bortolini
+   Usuário: 63581337053
+   CPF:     635.813.370-53
+   Senha:   Valle@7053
+   - - - - - - - - - - - - - - - - -
+   Nome:    Emerson Ferreira Monsef
+   Usuário: 34978771153
+   CPF:     349.787.711-53
+   Senha:   Valle@1153
+   - - - - - - - - - - - - - - - - -
+   Nome:    Emilene Sultana B. Viera De Melo
+   Usuário: 39245489272
+   CPF:     392.454.892-72
+   Senha:   Valle@9272
+   - - - - - - - - - - - - - - - - -
+   Nome:    Emmanuelle De Oliveira Souza
+   Usuário: 73560200253
+   CPF:     735.602.002-53
+   Senha:   Valle@0253
+   - - - - - - - - - - - - - - - - -
+   Nome:    Enilson De Souza Paula
+   Usuário: 43112803272
+   CPF:     431.128.032-72
+   Senha:   Valle@3272
+   - - - - - - - - - - - - - - - - -
+   Nome:    Evaldo Luis Gomes Teixeira
+   Usuário: 18987940225
+   CPF:     189.879.402-25
+   Senha:   Valle@0225
+   - - - - - - - - - - - - - - - - -
+   Nome:    Evandro Mota De Souza
+   Usuário: 46695168334
+   CPF:     466.951.683-34
+   Senha:   Valle@8334
+   - - - - - - - - - - - - - - - - -
+   Nome:    Evandro Simoes De Sousa
+   Usuário: 09463887253
+   CPF:     094.638.872-53
+   Senha:   Valle@7253
+   - - - - - - - - - - - - - - - - -
+   Nome:    Ezequiel Silva Junior
+   Usuário: 69819297320
+   CPF:     698.192.973-20
+   Senha:   Valle@7320
+   - - - - - - - - - - - - - - - - -
+   Nome:    Fabio Dos Santos Lima
+   Usuário: 00000000006
+   CPF:     000.000.000-06
+   Senha:   Valle@0006
+   - - - - - - - - - - - - - - - - -
+   Nome:    Fabio Dos Santos Lima
+   Usuário: 75599449220
+   CPF:     755.994.492-20
+   Senha:   Valle@9220
+   - - - - - - - - - - - - - - - - -
+   Nome:    Fabio Santos Dias Evangelista
+   Usuário: 66870488215
+   CPF:     668.704.882-15
+   Senha:   Valle@8215
+   - - - - - - - - - - - - - - - - -
+   Nome:    Fabricio Cavalcante De Oliveira
+   Usuário: 63832097287
+   CPF:     638.320.972-87
+   Senha:   Valle@7287
+   - - - - - - - - - - - - - - - - -
+   Nome:    Fabricio Fereira De Oliveira
+   Usuário: 92670989268
+   CPF:     926.709.892-68
+   Senha:   Valle@9268
+   - - - - - - - - - - - - - - - - -
+   Nome:    Fatiana Da Mota Pereira
+   Usuário: 90868587249
+   CPF:     908.685.872-49
+   Senha:   Valle@7249
+   - - - - - - - - - - - - - - - - -
+   Nome:    Fernanda Amazonas
+   Usuário: 69672580282
+   CPF:     696.725.802-82
+   Senha:   Valle@0282
+   - - - - - - - - - - - - - - - - -
+   Nome:    Flamber Da Silva Macedo
+   Usuário: 01804511544
+   CPF:     018.045.115-44
+   Senha:   Valle@1544
+   - - - - - - - - - - - - - - - - -
+   Nome:    Francisca Dantas Torres
+   Usuário: 35919515368
+   CPF:     359.195.153-68
+   Senha:   Valle@5368
+   - - - - - - - - - - - - - - - - -
+   Nome:    Francisca Maria Sousa Rodrigues
+   Usuário: 58278885249
+   CPF:     582.788.852-49
+   Senha:   Valle@5249
+   - - - - - - - - - - - - - - - - -
+   Nome:    Francisca Neuma Do Nascimento
+   Usuário: 62740407300
+   CPF:     627.404.073-00
+   Senha:   Valle@7300
+   - - - - - - - - - - - - - - - - -
+   Nome:    Francisco Da Cruz De Sousa
+   Usuário: 00892771208
+   CPF:     008.927.712-08
+   Senha:   Valle@1208
+   - - - - - - - - - - - - - - - - -
+   Nome:    Francisco De Assis M. Da Silva
+   Usuário: 75742608349
+   CPF:     757.426.083-49
+   Senha:   Valle@8349
+   - - - - - - - - - - - - - - - - -
+   Nome:    Francisco Gomes De Lima Junior
+   Usuário: 05959069660
+   CPF:     059.590.696-60
+   Senha:   Valle@9660
+   - - - - - - - - - - - - - - - - -
+   Nome:    Francisco Macio A. Oliveira
+   Usuário: 65470567249
+   CPF:     654.705.672-49
+   Senha:   Valle@7249
+   - - - - - - - - - - - - - - - - -
+   Nome:    Francyelle F. De Oliveira
+   Usuário: 00197856233
+   CPF:     001.978.562-33
+   Senha:   Valle@6233
+   - - - - - - - - - - - - - - - - -
+   Nome:    Frans Richards Silva De Moraes
+   Usuário: 84656565253
+   CPF:     846.565.652-53
+   Senha:   Valle@5253
+   - - - - - - - - - - - - - - - - -
+   Nome:    Gabriela Feitosa De Sousa
+   Usuário: 00540441201
+   CPF:     005.404.412-01
+   Senha:   Valle@1201
+   - - - - - - - - - - - - - - - - -
+   Nome:    Gilcinara Furtado Silva
+   Usuário: 62560840200
+   CPF:     625.608.402-00
+   Senha:   Valle@0200
+   - - - - - - - - - - - - - - - - -
+   Nome:    Gladson Araújo Miranda
+   Usuário: 39968456268
+   CPF:     399.684.562-68
+   Senha:   Valle@6268
+   - - - - - - - - - - - - - - - - -
+   Nome:    Glauce Guimarães Salles
+   Usuário: 43057853234
+   CPF:     430.578.532-34
+   Senha:   Valle@3234
+   - - - - - - - - - - - - - - - - -
+   Nome:    Glaucia Claudinalle De Souza
+   Usuário: 85862444149
+   CPF:     858.624.441-49
+   Senha:   Valle@4149
+   - - - - - - - - - - - - - - - - -
+   Nome:    Greice Suzuki Da Mota
+   Usuário: 00536619239
+   CPF:     005.366.192-39
+   Senha:   Valle@9239
+   - - - - - - - - - - - - - - - - -
+   Nome:    Guimarães Borges Da Silva
+   Usuário: 44929730104
+   CPF:     449.297.301-04
+   Senha:   Valle@0104
+   - - - - - - - - - - - - - - - - -
+   Nome:    Harryane Barbosa Silva
+   Usuário: 82748268253
+   CPF:     827.482.682-53
+   Senha:   Valle@8253
+   - - - - - - - - - - - - - - - - -
+   Nome:    Hedes Justino Da Rocha
+   Usuário: 56272197187
+   CPF:     562.721.971-87
+   Senha:   Valle@7187
+   - - - - - - - - - - - - - - - - -
+   Nome:    Heitor Pantoja Da S.Junior
+   Usuário: 29616352253
+   CPF:     296.163.522-53
+   Senha:   Valle@2253
+   - - - - - - - - - - - - - - - - -
+   Nome:    Helio Kobayashi
+   Usuário: 68811829291
+   CPF:     688.118.292-91
+   Senha:   Valle@9291
+   - - - - - - - - - - - - - - - - -
+   Nome:    Helio Silva Da Costa
+   Usuário: 42330050259
+   CPF:     423.300.502-59
+   Senha:   Valle@0259
+   - - - - - - - - - - - - - - - - -
+   Nome:    Hellen Guimaraes
+   Usuário: 40152979204
+   CPF:     401.529.792-04
+   Senha:   Valle@9204
+   - - - - - - - - - - - - - - - - -
+   Nome:    Hilton Silva Cardoso
+   Usuário: 70748241272
+   CPF:     707.482.412-72
+   Senha:   Valle@1272
+   - - - - - - - - - - - - - - - - -
+   Nome:    Ideval Pamplona Lima
+   Usuário: 63200066253
+   CPF:     632.000.662-53
+   Senha:   Valle@6253
+   - - - - - - - - - - - - - - - - -
+   Nome:    Iran Almeida Santos
+   Usuário: 19858680325
+   CPF:     198.586.803-25
+   Senha:   Valle@0325
+   - - - - - - - - - - - - - - - - -
+   Nome:    Itamar Gualberto Pereira
+   Usuário: 39479765187
+   CPF:     394.797.651-87
+   Senha:   Valle@5187
+   - - - - - - - - - - - - - - - - -
+   Nome:    Jairlton Araujo Andrade
+   Usuário: 31071775120
+   CPF:     310.717.751-20
+   Senha:   Valle@5120
+   - - - - - - - - - - - - - - - - -
+   Nome:    Jairo Cristiano Lessa Costa
+   Usuário: 89549015220
+   CPF:     895.490.152-20
+   Senha:   Valle@5220
+   - - - - - - - - - - - - - - - - -
+   Nome:    Jakeline Oliveira Crisostomo
+   Usuário: 88161234272
+   CPF:     881.612.342-72
+   Senha:   Valle@4272
+   - - - - - - - - - - - - - - - - -
+   Nome:    Jane Cleide De Magalhaes Araujo
+   Usuário: 03970728215
+   CPF:     039.707.282-15
+   Senha:   Valle@8215
+   - - - - - - - - - - - - - - - - -
+   Nome:    Jardenario Diniz Da Silva
+   Usuário: 45623562191
+   CPF:     456.235.621-91
+   Senha:   Valle@2191
+   - - - - - - - - - - - - - - - - -
+   Nome:    Jenifer Sousa Oliveira
+   Usuário: 01873120362
+   CPF:     018.731.203-62
+   Senha:   Valle@0362
+   - - - - - - - - - - - - - - - - -
+   Nome:    Jessica Generosa Guimaraes De Sousa
+   Usuário: 88524051272
+   CPF:     885.240.512-72
+   Senha:   Valle@1272
+   - - - - - - - - - - - - - - - - -
+   Nome:    Joao Carlos Vieira
+   Usuário: 96322683187
+   CPF:     963.226.831-87
+   Senha:   Valle@3187
+   - - - - - - - - - - - - - - - - -
+   Nome:    Joao Fernandes Das S.Neto
+   Usuário: 89695860249
+   CPF:     896.958.602-49
+   Senha:   Valle@0249
+   - - - - - - - - - - - - - - - - -
+   Nome:    Joao Maria Alves  Da Silva
+   Usuário: 17012678291
+   CPF:     170.126.782-91
+   Senha:   Valle@8291
+   - - - - - - - - - - - - - - - - -
+   Nome:    Joao Maria Pantoja Nunes
+   Usuário: 05653339253
+   CPF:     056.533.392-53
+   Senha:   Valle@9253
+   - - - - - - - - - - - - - - - - -
+   Nome:    Joao Maximo De Castro
+   Usuário: 14937787810
+   CPF:     149.377.878-10
+   Senha:   Valle@7810
+   - - - - - - - - - - - - - - - - -
+   Nome:    Joao Paulo Ramos De Souza
+   Usuário: 92648967591
+   CPF:     926.489.675-91
+   Senha:   Valle@7591
+   - - - - - - - - - - - - - - - - -
+   Nome:    Jordao Carneiro Da Silva
+   Usuário: 23522976215
+   CPF:     235.229.762-15
+   Senha:   Valle@6215
+   - - - - - - - - - - - - - - - - -
+   Nome:    Jorginalda Lopes Da Silva
+   Usuário: 00129061310
+   CPF:     001.290.613-10
+   Senha:   Valle@1310
+   - - - - - - - - - - - - - - - - -
+   Nome:    Josafa De Sousa Almeida
+   Usuário: 87340461272
+   CPF:     873.404.612-72
+   Senha:   Valle@1272
+   - - - - - - - - - - - - - - - - -
+   Nome:    Jose Domingos Dias De Sousa
+   Usuário: 27219780397
+   CPF:     272.197.803-97
+   Senha:   Valle@0397
+   - - - - - - - - - - - - - - - - -
+   Nome:    Jose Dos Santos Chagas
+   Usuário: 04529260259
+   CPF:     045.292.602-59
+   Senha:   Valle@0259
+   - - - - - - - - - - - - - - - - -
+   Nome:    Jose Dos Santos Viana
+   Usuário: 24583847220
+   CPF:     245.838.472-20
+   Senha:   Valle@7220
+   - - - - - - - - - - - - - - - - -
+   Nome:    Jose Francisco G. Goncalves
+   Usuário: 95180842387
+   CPF:     951.808.423-87
+   Senha:   Valle@2387
+   - - - - - - - - - - - - - - - - -
+   Nome:    Jose Ronaldo Sá Maues
+   Usuário: 10886389291
+   CPF:     108.863.892-91
+   Senha:   Valle@9291
+   - - - - - - - - - - - - - - - - -
+   Nome:    Jose Valdeniz Dos Santos Takano
+   Usuário: 42837510220
+   CPF:     428.375.102-20
+   Senha:   Valle@0220
+   - - - - - - - - - - - - - - - - -
+   Nome:    Joseane Da Silva Beckman Pamplona Lima
+   Usuário: 63597462200
+   CPF:     635.974.622-00
+   Senha:   Valle@2200
+   - - - - - - - - - - - - - - - - -
+   Nome:    José Augusto Ribamar De Lima
+   Usuário: 29038219172
+   CPF:     290.382.191-72
+   Senha:   Valle@9172
+   - - - - - - - - - - - - - - - - -
+   Nome:    João Guilherme Bernadino Oliveira Junior
+   Usuário: 62726501400
+   CPF:     627.265.014-00
+   Senha:   Valle@1400
+   - - - - - - - - - - - - - - - - -
+   Nome:    Judson R. Brasil
+   Usuário: 27141500120
+   CPF:     271.415.001-20
+   Senha:   Valle@0120
+   - - - - - - - - - - - - - - - - -
+   Nome:    Juliano Assun€Ao Milani
+   Usuário: 94120609120
+   CPF:     941.206.091-20
+   Senha:   Valle@9120
+   - - - - - - - - - - - - - - - - -
+   Nome:    Karla Bethania Da Silva
+   Usuário: 67412009249
+   CPF:     674.120.092-49
+   Senha:   Valle@9249
+   - - - - - - - - - - - - - - - - -
+   Nome:    Kathe
+   Usuário: 89322380225
+   CPF:     893.223.802-25
+   Senha:   Valle@0225
+   - - - - - - - - - - - - - - - - -
+   Nome:    Kaysen Shiguemy De A Umemura
+   Usuário: 51097842215
+   CPF:     510.978.422-15
+   Senha:   Valle@2215
+   - - - - - - - - - - - - - - - - -
+   Nome:    Kenia Moura
+   Usuário: 77216504291
+   CPF:     772.165.042-91
+   Senha:   Valle@4291
+   - - - - - - - - - - - - - - - - -
+   Nome:    Kiyoshi Nishida Junior
+   Usuário: 86358189204
+   CPF:     863.581.892-04
+   Senha:   Valle@9204
+   - - - - - - - - - - - - - - - - -
+   Nome:    Leandro De Jesus Viana
+   Usuário: 95142452291
+   CPF:     951.424.522-91
+   Senha:   Valle@2291
+   - - - - - - - - - - - - - - - - -
+   Nome:    Leandro Pereira Da Silva
+   Usuário: 03081891248
+   CPF:     030.818.912-48
+   Senha:   Valle@1248
+   - - - - - - - - - - - - - - - - -
+   Nome:    Leandro Salviano De Lima Costa
+   Usuário: 00998674192
+   CPF:     009.986.741-92
+   Senha:   Valle@4192
+   - - - - - - - - - - - - - - - - -
+   Nome:    Lidiane Lima Das Chagas Russo
+   Usuário: 70765022249
+   CPF:     707.650.222-49
+   Senha:   Valle@2249
+   - - - - - - - - - - - - - - - - -
+   Nome:    Lidiany Lopes De Souza Lima
+   Usuário: 49593935215
+   CPF:     495.939.352-15
+   Senha:   Valle@5215
+   - - - - - - - - - - - - - - - - -
+   Nome:    Loide Soares Borges Lopes Medeiros
+   Usuário: 48636568234
+   CPF:     486.365.682-34
+   Senha:   Valle@8234
+   - - - - - - - - - - - - - - - - -
+   Nome:    Lorena Lamounier De Souza
+   Usuário: 00139583300
+   CPF:     001.395.833-00
+   Senha:   Valle@3300
+   - - - - - - - - - - - - - - - - -
+   Nome:    Luana Nayara Oliveira Rodrigues
+   Usuário: 86755358215
+   CPF:     867.553.582-15
+   Senha:   Valle@8215
+   - - - - - - - - - - - - - - - - -
+   Nome:    Lucia Almeida De Sousa Pereira
+   Usuário: 25482572234
+   CPF:     254.825.722-34
+   Senha:   Valle@2234
+   - - - - - - - - - - - - - - - - -
+   Nome:    Luciana Carvalho Haonat
+   Usuário: 60495928100
+   CPF:     604.959.281-00
+   Senha:   Valle@8100
+   - - - - - - - - - - - - - - - - -
+   Nome:    Luciana Handen
+   Usuário: 87707691253
+   CPF:     877.076.912-53
+   Senha:   Valle@1253
+   - - - - - - - - - - - - - - - - -
+   Nome:    Lucilene Do Socorro Aguiar Matos
+   Usuário: 73505501204
+   CPF:     735.055.012-04
+   Senha:   Valle@1204
+   - - - - - - - - - - - - - - - - -
+   Nome:    Luis Afonso E.Da Costa
+   Usuário: 49079530620
+   CPF:     490.795.306-20
+   Senha:   Valle@0620
+   - - - - - - - - - - - - - - - - -
+   Nome:    Luiz Otavio Santos Franca
+   Usuário: 57705100215
+   CPF:     577.051.002-15
+   Senha:   Valle@0215
+   - - - - - - - - - - - - - - - - -
+   Nome:    Luiz Roberto Nascimento Bernardes
+   Usuário: 20853130272
+   CPF:     208.531.302-72
+   Senha:   Valle@0272
+   - - - - - - - - - - - - - - - - -
+   Nome:    Luiza Maria Sousa Thomaz
+   Usuário: 18433782215
+   CPF:     184.337.822-15
+   Senha:   Valle@2215
+   - - - - - - - - - - - - - - - - -
+   Nome:    Malax Alfredo Pimentel Pantoja
+   Usuário: 96261811253
+   CPF:     962.618.112-53
+   Senha:   Valle@1253
+   - - - - - - - - - - - - - - - - -
+   Nome:    Mara Dalila Dos Santos Farias
+   Usuário: 77844408200
+   CPF:     778.444.082-00
+   Senha:   Valle@8200
+   - - - - - - - - - - - - - - - - -
+   Nome:    Marcelia Oliveira De Morais
+   Usuário: 76668185215
+   CPF:     766.681.852-15
+   Senha:   Valle@5215
+   - - - - - - - - - - - - - - - - -
+   Nome:    Marcelo De Oliveira Ribeiro
+   Usuário: 65549406268
+   CPF:     655.494.062-68
+   Senha:   Valle@6268
+   - - - - - - - - - - - - - - - - -
+   Nome:    Marcelo Oliveira Brito
+   Usuário: 70068216220
+   CPF:     700.682.162-20
+   Senha:   Valle@6220
+   - - - - - - - - - - - - - - - - -
+   Nome:    Marcia Do Socorro Oliveira Barbosa
+   Usuário: 31828086215
+   CPF:     318.280.862-15
+   Senha:   Valle@6215
+   - - - - - - - - - - - - - - - - -
+   Nome:    Marcio De Jesus Queiroz
+   Usuário: 03981901696
+   CPF:     039.819.016-96
+   Senha:   Valle@1696
+   - - - - - - - - - - - - - - - - -
+   Nome:    Marcio De Jesus Queiroz
+   Usuário: 03981901606
+   CPF:     039.819.016-06
+   Senha:   Valle@1606
+   - - - - - - - - - - - - - - - - -
+   Nome:    Marcio Ledeo Goehl
+   Usuário: 44629672168
+   CPF:     446.296.721-68
+   Senha:   Valle@2168
+   - - - - - - - - - - - - - - - - -
+   Nome:    Marcleide Aguiar Da Cruz
+   Usuário: 70068500297
+   CPF:     700.685.002-97
+   Senha:   Valle@0297
+   - - - - - - - - - - - - - - - - -
+   Nome:    Marco Antonio C.Monteiro
+   Usuário: 66180996415
+   CPF:     661.809.964-15
+   Senha:   Valle@6415
+   - - - - - - - - - - - - - - - - -
+   Nome:    Marcondes Ferreira Alves
+   Usuário: 71696563291
+   CPF:     716.965.632-91
+   Senha:   Valle@3291
+   - - - - - - - - - - - - - - - - -
+   Nome:    Maria Arineuma Barros Gomes Mota
+   Usuário: 00539307114
+   CPF:     005.393.071-14
+   Senha:   Valle@7114
+   - - - - - - - - - - - - - - - - -
+   Nome:    Maria Da Graca Seawright
+   Usuário: 08297428249
+   CPF:     082.974.282-49
+   Senha:   Valle@8249
+   - - - - - - - - - - - - - - - - -
+   Nome:    Maria Das Graças Dos Santos
+   Usuário: 29246806204
+   CPF:     292.468.062-04
+   Senha:   Valle@6204
+   - - - - - - - - - - - - - - - - -
+   Nome:    Maria Das Gra€As Silva Santos
+   Usuário: 35281944215
+   CPF:     352.819.442-15
+   Senha:   Valle@4215
+   - - - - - - - - - - - - - - - - -
+   Nome:    Maria De Fatima Magalhães Brito
+   Usuário: 25948490149
+   CPF:     259.484.901-49
+   Senha:   Valle@0149
+   - - - - - - - - - - - - - - - - -
+   Nome:    Maria Irma Ramos Rodrigues
+   Usuário: 00000000004
+   CPF:     000.000.000-04
+   Senha:   Valle@0004
+   - - - - - - - - - - - - - - - - -
+   Nome:    Maria Ivonete Soares Ferreira
+   Usuário: 74289543391
+   CPF:     742.895.433-91
+   Senha:   Valle@3391
+   - - - - - - - - - - - - - - - - -
+   Nome:    Maria Jose Araujo Santos
+   Usuário: 77713540253
+   CPF:     777.135.402-53
+   Senha:   Valle@0253
+   - - - - - - - - - - - - - - - - -
+   Nome:    Maria Zelia Souza Silva
+   Usuário: 44025602253
+   CPF:     440.256.022-53
+   Senha:   Valle@2253
+   - - - - - - - - - - - - - - - - -
+   Nome:    Marijane Ferreira De Souza Sales
+   Usuário: 02524021114
+   CPF:     025.240.211-14
+   Senha:   Valle@1114
+   - - - - - - - - - - - - - - - - -
+   Nome:    Marileth Siqueira Dos Santos
+   Usuário: 58076220220
+   CPF:     580.762.202-20
+   Senha:   Valle@0220
+   - - - - - - - - - - - - - - - - -
+   Nome:    Marineuza Vidal Aguiar
+   Usuário: 59845945287
+   CPF:     598.459.452-87
+   Senha:   Valle@5287
+   - - - - - - - - - - - - - - - - -
+   Nome:    Mariza Vidal Aguiar
+   Usuário: 72373237253
+   CPF:     723.732.372-53
+   Senha:   Valle@7253
+   - - - - - - - - - - - - - - - - -
+   Nome:    Markus Silva Noleto
+   Usuário: 66441676168
+   CPF:     664.416.761-68
+   Senha:   Valle@6168
+   - - - - - - - - - - - - - - - - -
+   Nome:    Martinha Resplandes De C.Neta
+   Usuário: 60023469374
+   CPF:     600.234.693-74
+   Senha:   Valle@9374
+   - - - - - - - - - - - - - - - - -
+   Nome:    Max Lima Chiapeta
+   Usuário: 06036613784
+   CPF:     060.366.137-84
+   Senha:   Valle@3784
+   - - - - - - - - - - - - - - - - -
+   Nome:    Maykon Pablo C. Larroque
+   Usuário: 00465256295
+   CPF:     004.652.562-95
+   Senha:   Valle@6295
+   - - - - - - - - - - - - - - - - -
+   Nome:    Maylon Weslley F. Da Silva
+   Usuário: 94309299253
+   CPF:     943.092.992-53
+   Senha:   Valle@9253
+   - - - - - - - - - - - - - - - - -
+   Nome:    Mikhail Tonha Dos Santos
+   Usuário: 94793263291
+   CPF:     947.932.632-91
+   Senha:   Valle@3291
+   - - - - - - - - - - - - - - - - -
+   Nome:    Milton Sobral Da Silva
+   Usuário: 09856463220
+   CPF:     098.564.632-20
+   Senha:   Valle@3220
+   - - - - - - - - - - - - - - - - -
+   Nome:    Moises Cordeiro Da Silva Filho
+   Usuário: 25831640230
+   CPF:     258.316.402-30
+   Senha:   Valle@0230
+   - - - - - - - - - - - - - - - - -
+   Nome:    Monica Sibelly Menezes Prestes
+   Usuário: 68715951200
+   CPF:     687.159.512-00
+   Senha:   Valle@1200
+   - - - - - - - - - - - - - - - - -
+   Nome:    Monzaniel Soares De Miranda
+   Usuário: 75557002200
+   CPF:     755.570.022-00
+   Senha:   Valle@2200
+   - - - - - - - - - - - - - - - - -
+   Nome:    Murilo Sousa Mendes
+   Usuário: 98799304287
+   CPF:     987.993.042-87
+   Senha:   Valle@4287
+   - - - - - - - - - - - - - - - - -
+   Nome:    Nagila Rubia Furtado Sauaia
+   Usuário: 48656402234
+   CPF:     486.564.022-34
+   Senha:   Valle@2234
+   - - - - - - - - - - - - - - - - -
+   Nome:    Naoki De Queiroz Sakaguchi
+   Usuário: 68609639215
+   CPF:     686.096.392-15
+   Senha:   Valle@9215
+   - - - - - - - - - - - - - - - - -
+   Nome:    Nathalye De Magalhaes Araujo
+   Usuário: 80187030278
+   CPF:     801.870.302-78
+   Senha:   Valle@0278
+   - - - - - - - - - - - - - - - - -
+   Nome:    Neuton Castro Goncalves Junior
+   Usuário: 61398039268
+   CPF:     613.980.392-68
+   Senha:   Valle@9268
+   - - - - - - - - - - - - - - - - -
+   Nome:    Newton Bruno Hiroshi G Kobayashi
+   Usuário: 00045135258
+   CPF:     000.451.352-58
+   Senha:   Valle@5258
+   - - - - - - - - - - - - - - - - -
+   Nome:    Ney Rafael
+   Usuário: 26146026808
+   CPF:     261.460.268-08
+   Senha:   Valle@6808
+   - - - - - - - - - - - - - - - - -
+   Nome:    Nilza Alves Rodrigues
+   Usuário: 66643988691
+   CPF:     666.439.886-91
+   Senha:   Valle@8691
+   - - - - - - - - - - - - - - - - -
+   Nome:    Odineia Da Silveira F. Morais
+   Usuário: 26231077268
+   CPF:     262.310.772-68
+   Senha:   Valle@7268
+   - - - - - - - - - - - - - - - - -
+   Nome:    Orlando Gomes Da Silva
+   Usuário: 48004901115
+   CPF:     480.049.011-15
+   Senha:   Valle@1115
+   - - - - - - - - - - - - - - - - -
+   Nome:    Osvaldina Lima Lobo Vale
+   Usuário: 30708028268
+   CPF:     307.080.282-68
+   Senha:   Valle@8268
+   - - - - - - - - - - - - - - - - -
+   Nome:    Pablo De Oliveira Costa
+   Usuário: 02585742245
+   CPF:     025.857.422-45
+   Senha:   Valle@2245
+   - - - - - - - - - - - - - - - - -
+   Nome:    Patric Rayan Almeida Nogueira
+   Usuário: 00948086270
+   CPF:     009.480.862-70
+   Senha:   Valle@6270
+   - - - - - - - - - - - - - - - - -
+   Nome:    Patrícia De Nazaré Da Silva Saraiva
+   Usuário: 56459505268
+   CPF:     564.595.052-68
+   Senha:   Valle@5268
+   - - - - - - - - - - - - - - - - -
+   Nome:    Paulo Afonso Oliveira Damasceno
+   Usuário: 30190657200
+   CPF:     301.906.572-00
+   Senha:   Valle@7200
+   - - - - - - - - - - - - - - - - -
+   Nome:    Paulo Cesar Nunes Dos Santos
+   Usuário: 54956544120
+   CPF:     549.565.441-20
+   Senha:   Valle@4120
+   - - - - - - - - - - - - - - - - -
+   Nome:    Paulo Henrique Ximenes Guimaraes
+   Usuário: 74972340304
+   CPF:     749.723.403-04
+   Senha:   Valle@0304
+   - - - - - - - - - - - - - - - - -
+   Nome:    Paulo Roberto G.Oliveira
+   Usuário: 29284279100
+   CPF:     292.842.791-00
+   Senha:   Valle@9100
+   - - - - - - - - - - - - - - - - -
+   Nome:    Pedro Henrique
+   Usuário: 71466371153
+   CPF:     714.663.711-53
+   Senha:   Valle@1153
+   - - - - - - - - - - - - - - - - -
+   Nome:    Petronio Pereira Da Silva
+   Usuário: 74487540259
+   CPF:     744.875.402-59
+   Senha:   Valle@0259
+   - - - - - - - - - - - - - - - - -
+   Nome:    Priscila Machado
+   Usuário: 00969714955
+   CPF:     009.697.149-55
+   Senha:   Valle@4955
+   - - - - - - - - - - - - - - - - -
+   Nome:    Prissila Mamede Amorim Furtado
+   Usuário: 72975091249
+   CPF:     729.750.912-49
+   Senha:   Valle@1249
+   - - - - - - - - - - - - - - - - -
+   Nome:    Rafael De Queiroz Pessoa
+   Usuário: 51265150206
+   CPF:     512.651.502-06
+   Senha:   Valle@0206
+   - - - - - - - - - - - - - - - - -
+   Nome:    Raimunda Juci Chaves Do Nascimento
+   Usuário: 93707568253
+   CPF:     937.075.682-53
+   Senha:   Valle@8253
+   - - - - - - - - - - - - - - - - -
+   Nome:    Raimunda Ozaneide Vidal Aguiar De Morais
+   Usuário: 81545720282
+   CPF:     815.457.202-82
+   Senha:   Valle@0282
+   - - - - - - - - - - - - - - - - -
+   Nome:    Raimundo Barros Da Silva
+   Usuário: 04218361215
+   CPF:     042.183.612-15
+   Senha:   Valle@1215
+   - - - - - - - - - - - - - - - - -
+   Nome:    Reginaldo Goncalves Nobrega
+   Usuário: 25501925249
+   CPF:     255.019.252-49
+   Senha:   Valle@5249
+   - - - - - - - - - - - - - - - - -
+   Nome:    Ricardo Alexandre P. Almeida
+   Usuário: 59802570206
+   CPF:     598.025.702-06
+   Senha:   Valle@0206
+   - - - - - - - - - - - - - - - - -
+   Nome:    Ricardo Ribamar De Lima
+   Usuário: 35553545153
+   CPF:     355.535.451-53
+   Senha:   Valle@5153
+   - - - - - - - - - - - - - - - - -
+   Nome:    Rinaldo Rhand Costa Santos
+   Usuário: 00351259260
+   CPF:     003.512.592-60
+   Senha:   Valle@9260
+   - - - - - - - - - - - - - - - - -
+   Nome:    Ritiane Soares Ferreira
+   Usuário: 00074032240
+   CPF:     000.740.322-40
+   Senha:   Valle@2240
+   - - - - - - - - - - - - - - - - -
+   Nome:    Roberto Coelho Silva
+   Usuário: 56996764300
+   CPF:     569.967.643-00
+   Senha:   Valle@4300
+   - - - - - - - - - - - - - - - - -
+   Nome:    Roberto Dantas Valeriano
+   Usuário: 57840148115
+   CPF:     578.401.481-15
+   Senha:   Valle@8115
+   - - - - - - - - - - - - - - - - -
+   Nome:    Roberto De Morais Pinheiro Aguiar
+   Usuário: 02352216354
+   CPF:     023.522.163-54
+   Senha:   Valle@6354
+   - - - - - - - - - - - - - - - - -
+   Nome:    Roberto Oliveira Moutinho Junior
+   Usuário: 35405015253
+   CPF:     354.050.152-53
+   Senha:   Valle@5253
+   - - - - - - - - - - - - - - - - -
+   Nome:    Roberto Ronnie Barros De Jesus
+   Usuário: 26578239200
+   CPF:     265.782.392-00
+   Senha:   Valle@9200
+   - - - - - - - - - - - - - - - - -
+   Nome:    Rodrigo Da Silva Pompeu
+   Usuário: 74260723200
+   CPF:     742.607.232-00
+   Senha:   Valle@3200
+   - - - - - - - - - - - - - - - - -
+   Nome:    Rodrigo Stoppeli Viana
+   Usuário: 12484247788
+   CPF:     124.842.477-88
+   Senha:   Valle@7788
+   - - - - - - - - - - - - - - - - -
+   Nome:    Romulo Washington Da Silva Sousa
+   Usuário: 76769038315
+   CPF:     767.690.383-15
+   Senha:   Valle@8315
+   - - - - - - - - - - - - - - - - -
+   Nome:    Rosa Rossi Lunardi De Sousa
+   Usuário: 53228855872
+   CPF:     532.288.558-72
+   Senha:   Valle@5872
+   - - - - - - - - - - - - - - - - -
+   Nome:    Rosimar Antonio Barreto Dos Santos
+   Usuário: 43789480100
+   CPF:     437.894.801-00
+   Senha:   Valle@0100
+   - - - - - - - - - - - - - - - - -
+   Nome:    Rosimeire B Torres Dos Santos
+   Usuário: 68695233200
+   CPF:     686.952.332-00
+   Senha:   Valle@3200
+   - - - - - - - - - - - - - - - - -
+   Nome:    Ruth Lea Melenas Correa
+   Usuário: 27763552204
+   CPF:     277.635.522-04
+   Senha:   Valle@2204
+   - - - - - - - - - - - - - - - - -
+   Nome:    Samara Araujo De Melo
+   Usuário: 01754083277
+   CPF:     017.540.832-77
+   Senha:   Valle@3277
+   - - - - - - - - - - - - - - - - -
+   Nome:    Samira Issa Haonat Faria
+   Usuário: 41393686168
+   CPF:     413.936.861-68
+   Senha:   Valle@6168
+   - - - - - - - - - - - - - - - - -
+   Nome:    Sara Feitosa Silva
+   Usuário: 89567684200
+   CPF:     895.676.842-00
+   Senha:   Valle@4200
+   - - - - - - - - - - - - - - - - -
+   Nome:    Seledonio Fernandes Lima
+   Usuário: 09931104104
+   CPF:     099.311.041-04
+   Senha:   Valle@4104
+   - - - - - - - - - - - - - - - - -
+   Nome:    Selma Lucia Porpino Bastos Druschkowitsch
+   Usuário: 11803142200
+   CPF:     118.031.422-00
+   Senha:   Valle@2200
+   - - - - - - - - - - - - - - - - -
+   Nome:    Sergio Sandro Barbosa De Sousa
+   Usuário: 42375703120
+   CPF:     423.757.031-20
+   Senha:   Valle@3120
+   - - - - - - - - - - - - - - - - -
+   Nome:    Shirlane Dos Santos Yano
+   Usuário: 33272492291
+   CPF:     332.724.922-91
+   Senha:   Valle@2291
+   - - - - - - - - - - - - - - - - -
+   Nome:    Sidney Andrey Nascimento Est
+   Usuário: 64681092215
+   CPF:     646.810.922-15
+   Senha:   Valle@2215
+   - - - - - - - - - - - - - - - - -
+   Nome:    Silvano Alves Nogueira
+   Usuário: 18363326291
+   CPF:     183.633.262-91
+   Senha:   Valle@6291
+   - - - - - - - - - - - - - - - - -
+   Nome:    Simone Mariano Boechat
+   Usuário: 26249294287
+   CPF:     262.492.942-87
+   Senha:   Valle@4287
+   - - - - - - - - - - - - - - - - -
+   Nome:    Sirlene Calassa Brasil
+   Usuário: 31040250106
+   CPF:     310.402.501-06
+   Senha:   Valle@0106
+   - - - - - - - - - - - - - - - - -
+   Nome:    Sonia Maria Teixeira Duarte
+   Usuário: 30500036268
+   CPF:     305.000.362-68
+   Senha:   Valle@6268
+   - - - - - - - - - - - - - - - - -
+   Nome:    Sueli Alvarenga Bandeira
+   Usuário: 27489272300
+   CPF:     274.892.723-00
+   Senha:   Valle@2300
+   - - - - - - - - - - - - - - - - -
+   Nome:    Suzi Keiko Suzuki Da Mota
+   Usuário: 25438468249
+   CPF:     254.384.682-49
+   Senha:   Valle@8249
+   - - - - - - - - - - - - - - - - -
+   Nome:    Synthia Maria Guimaraes Angelim
+   Usuário: 93741162272
+   CPF:     937.411.622-72
+   Senha:   Valle@2272
+   - - - - - - - - - - - - - - - - -
+   Nome:    Tarcio Guimaraes Franco Lima
+   Usuário: 01374585173
+   CPF:     013.745.851-73
+   Senha:   Valle@5173
+   - - - - - - - - - - - - - - - - -
+   Nome:    Tayson Rosa De Lima
+   Usuário: 00268533296
+   CPF:     002.685.332-96
+   Senha:   Valle@3296
+   - - - - - - - - - - - - - - - - -
+   Nome:    Tetsushi Nagai
+   Usuário: 03416631234
+   CPF:     034.166.312-34
+   Senha:   Valle@1234
+   - - - - - - - - - - - - - - - - -
+   Nome:    Thalyta Pedreira
+   Usuário: 01708391177
+   CPF:     017.083.911-77
+   Senha:   Valle@1177
+   - - - - - - - - - - - - - - - - -
+   Nome:    Thiago Nobre De Castro
+   Usuário: 76772020200
+   CPF:     767.720.202-00
+   Senha:   Valle@0200
+   - - - - - - - - - - - - - - - - -
+   Nome:    Thiago Rodrigues Souza
+   Usuário: 87685043220
+   CPF:     876.850.432-20
+   Senha:   Valle@3220
+   - - - - - - - - - - - - - - - - -
+   Nome:    Thiago Rosa De Lima
+   Usuário: 80134025253
+   CPF:     801.340.252-53
+   Senha:   Valle@5253
+   - - - - - - - - - - - - - - - - -
+   Nome:    Thiago Wanderson Silva Costa
+   Usuário: 02400976104
+   CPF:     024.009.761-04
+   Senha:   Valle@6104
+   - - - - - - - - - - - - - - - - -
+   Nome:    Thony Jefferson Cardoso Andrade
+   Usuário: 93141904200
+   CPF:     931.419.042-00
+   Senha:   Valle@4200
+   - - - - - - - - - - - - - - - - -
+   Nome:    Tony Charles C. Abdoral
+   Usuário: 61912727234
+   CPF:     619.127.272-34
+   Senha:   Valle@7234
+   - - - - - - - - - - - - - - - - -
+   Nome:    Ubaldino Novais Silva Junior
+   Usuário: 05539094360
+   CPF:     055.390.943-60
+   Senha:   Valle@4360
+   - - - - - - - - - - - - - - - - -
+   Nome:    Valeria Aguiar Araujo
+   Usuário: 06053812676
+   CPF:     060.538.126-76
+   Senha:   Valle@2676
+   - - - - - - - - - - - - - - - - -
+   Nome:    Vanessa Dos Anjos Da Silva Dos Santos
+   Usuário: 08689286748
+   CPF:     086.892.867-48
+   Senha:   Valle@6748
+   - - - - - - - - - - - - - - - - -
+   Nome:    Viques Barroso Araujo
+   Usuário: 76847497149
+   CPF:     768.474.971-49
+   Senha:   Valle@7149
+   - - - - - - - - - - - - - - - - -
+   Nome:    Wagner Furtunato Dos Santos
+   Usuário: 79950574234
+   CPF:     799.505.742-34
+   Senha:   Valle@4234
+   - - - - - - - - - - - - - - - - -
+   Nome:    Wagner Salomão Oliveira Salles
+   Usuário: 83880631204
+   CPF:     838.806.312-04
+   Senha:   Valle@1204
+   - - - - - - - - - - - - - - - - -
+   Nome:    Walfredo Cesar
+   Usuário: 09236880215
+   CPF:     092.368.802-15
+   Senha:   Valle@0215
+   - - - - - - - - - - - - - - - - -
+   Nome:    Wallace Damasceno Tavernard
+   Usuário: 86221949220
+   CPF:     862.219.492-20
+   Senha:   Valle@9220
+   - - - - - - - - - - - - - - - - -
+   Nome:    Walter Gonçalves
+   Usuário: 63765365220
+   CPF:     637.653.652-20
+   Senha:   Valle@5220
+   - - - - - - - - - - - - - - - - -
+   Nome:    Welito Jose Matos Da Silva
+   Usuário: 30145430200
+   CPF:     301.454.302-00
+   Senha:   Valle@0200
+   - - - - - - - - - - - - - - - - -
+   Nome:    Wenderson Paiva Silva Dias
+   Usuário: 02033602324
+   CPF:     020.336.023-24
+   Senha:   Valle@2324
+   - - - - - - - - - - - - - - - - -
+   Nome:    Wiliana Marinho Dos Santos
+   Usuário: 85204781234
+   CPF:     852.047.812-34
+   Senha:   Valle@1234
+   - - - - - - - - - - - - - - - - -

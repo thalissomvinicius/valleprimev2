@@ -6,6 +6,11 @@ import sys, os, re
 import pandas as pd
 from collections import defaultdict
 
+# Fix encoding no Windows para suportar emojis nos logs
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding='utf-8')
+    sys.stderr.reconfigure(encoding='utf-8')
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from database_uau import get_db_connection
 
@@ -39,9 +44,8 @@ def exportar():
     FROM Pessoas p_int WITH(NOLOCK)
     LEFT JOIN HierarquiaIntegrante hi WITH(NOLOCK) ON p_int.cod_pes = hi.CodPes_hqi
     LEFT JOIN Pessoas p_sup WITH(NOLOCK) ON hi.CodPesSuper_hqi = p_sup.cod_pes
-        AND LEN(REPLACE(REPLACE(REPLACE(p_sup.cpf_pes, '.', ''), '-', ''), '/', '')) >= 14
     WHERE p_int.cpf_pes IS NOT NULL
-    AND LEN(REPLACE(REPLACE(REPLACE(p_int.cpf_pes, '.', ''), '-', ''), '/', '')) = 11
+    AND LEN(p_int.cpf_pes) >= 11
     AND (
         EXISTS (SELECT 1 FROM Vendas v WITH(NOLOCK) WHERE v.Vendedor_Ven = p_int.cod_pes AND v.Status_Ven IN (0, 3))
         OR EXISTS (SELECT 1 FROM HierarquiaIntegrante hi2 WITH(NOLOCK) WHERE hi2.CodPes_hqi = p_int.cod_pes)
@@ -55,7 +59,7 @@ def exportar():
         with get_db_connection() as conn:
             df = pd.read_sql(query, conn)
     except Exception as e:
-        print(f"❌ Erro: {e}")
+        print(f"❌ Erro na consulta SQL: {e}")
         return
 
     # Limpar dados

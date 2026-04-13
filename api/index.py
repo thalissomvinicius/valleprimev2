@@ -769,49 +769,7 @@ def generate_proposal():
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
-# --- BROKER PERFORMANCE INTEGRATION (Ported from FastAPI) ---
-
-@app.route('/api/integracao/corretores', methods=['GET'])
-def get_integracao_corretores():
-    """
-    Exportação completa dos Corretores via Flask.
-    Tenta buscar do cache do Supabase primeiro se estiver em produção (Render).
-    """
-    empresa = request.args.get('empresa', 28, type=int)
-    obra = request.args.get('obra', "70100")
-    mes = request.args.get('mes') or datetime.datetime.now().strftime('%Y-%m')
-    
-    # Em produção (Render), sempre tentamos o cache primeiro pois não há acesso direto ao UAU SQL
-    try:
-        from modulo_api_corretores.cache_supabase import buscar_cache
-        cached = buscar_cache(empresa, obra, mes)
-        if cached:
-            return jsonify({
-                "total_corretores": len(cached['dados']),
-                "dados": cached['dados'],
-                "atualizado_em": cached['atualizado_em'],
-                "is_cache": True
-            })
-    except Exception as e:
-        print(f"[API] Erro ao buscar cache: {e}")
-
-    return jsonify({"error": "Dados não disponíveis no cache e conexão direta com UAU indisponível nesta instância."}), 503
-
-@app.route('/api/integracao/cache/corretores', methods=['GET'])
-def get_integracao_cache():
-    """Endpoint explícito para busca de cache."""
-    empresa = request.args.get('empresa', 28, type=int)
-    obra = request.args.get('obra', "70100")
-    mes = request.args.get('mes') or datetime.datetime.now().strftime('%Y-%m')
-    
-    try:
-        from modulo_api_corretores.cache_supabase import buscar_cache
-        cached = buscar_cache(empresa, obra, mes)
-        if cached:
-            return jsonify(cached)
-        return jsonify({"error": "Cache não encontrado"}), 404
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+# --- BROKER PERFORMANCE INTEGRATION ---
 
 
 # --- BACKGROUND MONITORING (1s Frequency) ---
@@ -926,12 +884,26 @@ def get_cache_corretores():
 @app.route('/api/integracao/config/obras', methods=['GET'])
 def get_config_obras():
     """Retorna APENAS as obras que têm cache salvo no Supabase."""
-    # Lista curada — apenas obras que o pre_carregar_cache.py sincroniza de fato
+    # Lista completa de 18 obras sincronizadas
     obras = [
-        {"empresa": 28, "obra": "70100", "nome": "Valle do Ipitinga II - Tomé-Açu"},
-        {"empresa": 6,  "obra": "70100", "nome": "Jardim Castanhal - Castanhal"},
-        {"empresa": 9,  "obra": "70100", "nome": "Salles Jardim - Castanhal"},
-        {"empresa": 12, "obra": "70100", "nome": "Jardim América - Capanema"},
+        {"empresa": 13, "obra": "70100", "nome": "Dom Eliseu"},
+        {"empresa": 12, "obra": "70100", "nome": "Capanema (Jardim America)"},
+        {"empresa": 12, "obra": "70101", "nome": "Capanema II"},
+        {"empresa": 9,  "obra": "70100", "nome": "Salles Jardim I"},
+        {"empresa": 9,  "obra": "70101", "nome": "Salles Jardim II"},
+        {"empresa": 9,  "obra": "70102", "nome": "Salles Jardim III"},
+        {"empresa": 9,  "obra": "70103", "nome": "Salles Jardim IV"},
+        {"empresa": 6,  "obra": "70100", "nome": "Jardim Castanhal I"},
+        {"empresa": 6,  "obra": "70101", "nome": "Jardim Castanhal II"},
+        {"empresa": 24, "obra": "70100", "nome": "Jardim Castanhal III"},
+        {"empresa": 6,  "obra": "70400", "nome": "Valle do Ipitinga"},
+        {"empresa": 28, "obra": "70100", "nome": "Valle do Ipitinga II"},
+        {"empresa": 6,  "obra": "70300", "nome": "Tailandia I"},
+        {"empresa": 22, "obra": "70100", "nome": "Tailandia II"},
+        {"empresa": 15, "obra": "70100", "nome": "Barcarena"},
+        {"empresa": 983, "obra": "70100", "nome": "Paragominas Uraim"},
+        {"empresa": 6,  "obra": "70500", "nome": "Rondon Parque do Valle"},
+        {"empresa": 29, "obra": "70100", "nome": "Valle dos Ipes Tomé-Açu"}
     ]
     return jsonify({"total": len(obras), "obras": obras, "is_cache": False})
 

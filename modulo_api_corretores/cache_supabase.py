@@ -42,7 +42,7 @@ def salvar_cache(empresa: int, obra: str, mes: str, dados: list):
             "dados_json": json.dumps(dados, ensure_ascii=False, default=str),
             "atualizado_em": datetime.now().isoformat()
         }
-        url = f"{SUPABASE_URL}/rest/v1/{CACHE_TABLE}"
+        url = f"{SUPABASE_URL}/rest/v1/{CACHE_TABLE}?on_conflict=cache_key"
         r = requests.post(url, headers=_headers(), json=payload, timeout=10)
         if r.status_code in (200, 201):
             print(f"[CACHE] Dados salvos no Supabase para {cache_key}")

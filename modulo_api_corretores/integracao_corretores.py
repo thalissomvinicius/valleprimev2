@@ -109,7 +109,7 @@ def fetch_dados_corretores(conn, empresa, obra, corretor_id=None, data_inicio=No
         SELECT TOP 1 CONCAT(ddd_tel, fone_tel) AS fone_1, CONCAT(ddd_tel, fone_tel) AS fone_2  
         FROM PesTel WITH(NOLOCK) 
         WHERE pes_tel = v.Cliente_Ven 
-        ORDER BY Principal_tel DESC, seq_tel ASC
+        ORDER BY Principal_tel DESC
     ) tel
     OUTER APPLY (
         SELECT TOP 1 itv.Empresa_itv, itv.Obra_Itv, itv.NumVend_Itv, un.C1_unid, un.C2_unid 
@@ -204,8 +204,8 @@ def fetch_dados_corretores(conn, empresa, obra, corretor_id=None, data_inicio=No
         if cod_corretor not in corretores_dict:
             corretores_dict[cod_corretor] = {
                 "codigo_corretor": int(cod_corretor),
-                "corretor": str(nome_corretor).strip(),
-                "diretoria_equipe": str(gerente_nome).strip(),
+                "corretor": str(row.get('corretor_nome', 'SEM NOME')).strip(),
+                "diretoria_equipe": str(row.get('gerente_nome', 'SEM DIRETORIA')).strip(),
                 "empreendimento": nome_empreendimento,
                 "resumo": {
                     "vendas_mes_atual": 0,

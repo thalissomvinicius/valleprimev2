@@ -264,11 +264,7 @@ export const printProposal = async (id) => {
 
 
 
-// URL base das APIs locais do corretor (Cloudflare tunnel — URL muda a cada reinício do PC)
-// Deixe vazio '' para desabilitar. Preencha apenas quando o PC estiver rodando o script local.
-const CORRETORES_TUNNEL_URL = ''; // Ex: 'https://limits-racing-expect-assist.trycloudflare.com'
-
-// URL da API no Render (sempre online) — fonte primária de dados de cache do Supabase
+// URL da API no Render (sempre online) — fonte primária de dados do Supabase
 const RENDER_CLOUD_API = 'https://valleprimev2.onrender.com';
 
 // Lista estática de obras como fallback quando o Render também falhar
@@ -314,7 +310,8 @@ export const fetchCorretoresData = async (filters = {}) => {
   if (cachedData) {
     try {
       const parsed = JSON.parse(cachedData);
-      setTimeout(() => fetchFreshData(params, cacheKey), 100);
+      // Fetch fresh data in background
+      setTimeout(() => fetchFreshData(params, cacheKey).catch(() => {}), 100);
       return { ...parsed, is_cache: true, cache_local: true };
     } catch (e) {
       localStorage.removeItem(cacheKey);
@@ -324,39 +321,19 @@ export const fetchCorretoresData = async (filters = {}) => {
   return await fetchFreshData(params, cacheKey);
 };
 
-// Função auxiliar para buscar dados frescos
+// Função auxiliar para buscar dados frescos primários do Supabase via Render
 const fetchFreshData = async (params, cacheKey) => {
-  // 1ª tentativa: túnel Cloudflare local (dados ao vivo) — só tenta se URL estiver definida
-  if (CORRETORES_TUNNEL_URL) {
-    try {
-      const response = await axios.get(
-        `${CORRETORES_TUNNEL_URL}/api/integracao/corretores?${params.toString()}`,
-        { 
-          timeout: 8000,
-          headers: { 'Bypass-Tunnel-Reminder': 'true' }
-        }
-      );
-      if (response.data && cacheKey) {
-        localStorage.setItem(cacheKey, JSON.stringify(response.data));
-      }
-      return response.data;
-    } catch {
-      console.warn('[fetchCorretoresData] Túnel local offline. Buscando cache do Render...');
-    }
-  }
-
-  // 2ª tentativa (primária quando túnel está off): cache no Supabase via Render
   try {
-    const cacheResponse = await axios.get(
+    const response = await axios.get(
       `${RENDER_CLOUD_API}/api/integracao/cache/corretores?${params.toString()}`,
       { timeout: 15000 }
     );
-    if (cacheResponse.data && cacheKey) {
-      localStorage.setItem(cacheKey, JSON.stringify(cacheResponse.data));
+    if (response.data && cacheKey) {
+      localStorage.setItem(cacheKey, JSON.stringify(response.data));
     }
-    return cacheResponse.data;
-  } catch (cacheError) {
-    console.error('[fetchCorretoresData] Cache indisponível:', cacheError);
-    throw new Error('Dados indisponíveis. Execute o script local no PC do escritório e aguarde 1 minuto.');
+    return response.data;
+  } catch (error) {
+    console.error('[fetchCorretoresData] API indisponível:', error);
+    throw new Error('Dados indisponíveis. O sincronizador local do UAU precisa estar rodando.');
   }
 };
