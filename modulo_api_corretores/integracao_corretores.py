@@ -26,7 +26,6 @@ def fetch_dados_corretores(conn, empresa, obra, corretor_id=None, data_inicio=No
     if mes and mes != 'all':
         try:
             # Ex: "2026-03" -> inicio: 20260301 / fim: 20260331
-            import pandas as pd
             dt = datetime.strptime(mes, '%Y-%m')
             ultimo_dia = pd.Period(mes).days_in_month
             data_inicio = dt.strftime('%Y%m') + '01'
