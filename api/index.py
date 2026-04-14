@@ -12,6 +12,17 @@ import jwt
 from functools import wraps
 import threading
 import time
+import zlib
+import base64
+
+def _try_decompress_cache(raw_str):
+    """Tenta descomprimir base64+zlib. Se falhar, assume JSON puro (formato antigo)."""
+    try:
+        compressed = base64.b64decode(raw_str)
+        json_str = zlib.decompress(compressed).decode('utf-8')
+        return json.loads(json_str)
+    except Exception:
+        return json.loads(raw_str)
 
 # Importar gerador de PDF
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -858,7 +869,7 @@ def get_cache_corretores():
             rows = r.json()
             if rows:
                 for row in rows:
-                    chunk = json.loads(row['dados_json'])
+                    chunk = _try_decompress_cache(row['dados_json'])
                     dados.extend(chunk)
                 atualizado_em = rows[0]['atualizado_em']
 
@@ -870,7 +881,7 @@ def get_cache_corretores():
             if r2.status_code == 200:
                 rows2 = r2.json()
                 if rows2:
-                    dados = json.loads(rows2[0]['dados_json'])
+                    dados = _try_decompress_cache(rows2[0]['dados_json'])
                     atualizado_em = rows2[0]['atualizado_em']
 
         if not dados:
