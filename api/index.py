@@ -873,51 +873,54 @@ def get_alerts():
         "monitor_status": "alive" if 'monitor_thread' in globals() and monitor_thread.is_alive() else "down"
     })
 
-# ===========================
-# INTEGRAÇÃO CORRETORES CACHE (IN-MEMORY)
-# ===========================
-# Armazena os dados na memória do Render. O sync local faz POST diretamente aqui.
-# Sem Supabase, sem limites, sem timeout. Auto-recupera a cada 5min via sync.
-# Usa o sistema de arquivos /tmp para compartilhar dados entre multi-workers Gunicorn.
+# ═══════════════════════════════════════════════════════════
+# INTEGRAÇÃO CORRETORES CACHE v3.0 (Definitivo)
+# ═══════════════════════════════════════════════════════════
+# Contrato:
+#   PUSH: sync envia array de corretores comprimido (gzip+base64)
+#   Servidor descomprime e salva o JSON puro do array em /tmp
+#   GET: lê array do /tmp, monta envelope, serve ao frontend
+# ═══════════════════════════════════════════════════════════
 
 SYNC_SECRET = os.environ.get('SYNC_SECRET', 'valleprime-sync-2026')
+
 
 @app.route('/api/integracao/sync/push', methods=['POST'])
 def push_cache_corretores():
     """
-    Recebe dados comprimidos (zlib+base64) do sync local e armazena em memória.
-    Protegido por um secret simples no header.
+    Recebe array de corretores comprimido (gzip+base64) do sync local.
+    Descomprime e salva como JSON puro em /tmp para leitura rápida.
     """
     try:
-        auth = request.headers.get('X-Sync-Secret', '')
-        if auth != SYNC_SECRET:
+        # Autenticação
+        if request.headers.get('X-Sync-Secret', '') != SYNC_SECRET:
             return jsonify({"error": "Não autorizado"}), 401
 
         body = request.get_json(force=True)
         cache_key = body.get('cache_key', '')
         dados_compressed = body.get('dados_compressed', '')
         atualizado_em = body.get('atualizado_em', '')
+        total_corretores = body.get('total_corretores', 0)
 
         if not cache_key or not dados_compressed:
             return jsonify({"error": "cache_key e dados_compressed são obrigatórios"}), 400
 
-        total_corretores = body.get('total_corretores', 0)
-        
-        # Descomprime: o sync envia GZIP+base64 (não zlib!)
+        # Descomprime gzip+base64 → string JSON do array de corretores
         try:
             raw_bytes = base64.b64decode(dados_compressed)
-            json_str = gzip.decompress(raw_bytes).decode('utf-8')
+            array_json_str = gzip.decompress(raw_bytes).decode('utf-8')
         except Exception as e:
             return jsonify({"error": f"Falha ao descomprimir: {e}"}), 400
-        
-        # O sync envia o envelope completo {"total_corretores":..., "dados":[...], ...}
-        # Salvamos direto como está
-        data_path = f"/tmp/cache_data_{cache_key}.json"
-        meta_path = f"/tmp/cache_meta_{cache_key}.json"
-        
+
+        # Salva 2 arquivos no /tmp (compartilhado entre workers do Gunicorn):
+        #   - data: o array JSON puro dos corretores
+        #   - meta: timestamp e contagem
+        data_path = f"/tmp/vp_data_{cache_key}.json"
+        meta_path = f"/tmp/vp_meta_{cache_key}.json"
+
         with open(data_path, 'w', encoding='utf-8') as f:
-            f.write(json_str)
-        
+            f.write(array_json_str)
+
         with open(meta_path, 'w', encoding='utf-8') as f:
             json.dump({"atualizado_em": atualizado_em, "total": total_corretores}, f)
 
@@ -934,7 +937,9 @@ def push_cache_corretores():
 @app.route('/api/integracao/cache/corretores', methods=['GET'])
 def get_cache_corretores():
     """
-    Lê do /tmp no Render. Os arquivos já contém JSON puro (descomprimido no push).
+    Serve dados dos corretores ao frontend.
+    Fast-path (admin): lê arquivo texto e monta envelope via string — zero json.loads.
+    Slow-path (corretor): parseia array e filtra por codigo_corretor.
     """
     try:
         empresa = request.args.get('empresa', '28')
@@ -943,52 +948,49 @@ def get_cache_corretores():
         corretor_id = request.args.get('corretor_id', None)
         cache_key = f"{empresa}-{obra}-{mes}"
 
-        data_path = f"/tmp/cache_data_{cache_key}.json"
-        meta_path = f"/tmp/cache_meta_{cache_key}.json"
+        data_path = f"/tmp/vp_data_{cache_key}.json"
+        meta_path = f"/tmp/vp_meta_{cache_key}.json"
 
-        # ── Fast path: Admin sem filtro ──
-        # O arquivo contém o envelope completo do frontend: {"total_corretores":N, "dados":[...], ...}
-        if not corretor_id and os.path.exists(data_path):
-            try:
-                with open(data_path, 'r', encoding='utf-8') as f:
-                    full_json = f.read()
-                
-                # Serve direto — o conteúdo já é o JSON final que o frontend espera
-                return Response(full_json, mimetype='application/json')
-            except Exception as e:
-                print(f"[CACHE ERR] Fast-path: {e}")
-
-        # ── Slow path: Corretor específico (precisa filtrar pelos dados) ──
-        dados = []
-        atualizado_em = None
-
-        if os.path.exists(data_path):
-            try:
-                with open(data_path, 'r', encoding='utf-8') as f:
-                    envelope = json.load(f)
-                # O envelope tem a estrutura {dados: [...], atualizado_em: "...", ...}
-                dados = envelope.get('dados', [])
-                atualizado_em = envelope.get('atualizado_em')
-            except Exception as e:
-                print(f"[CACHE ERR] Slow-path: {e}")
-
-        if not dados:
+        # Verifica se existe cache
+        if not os.path.exists(data_path):
             return jsonify({
                 "success": False,
-                "error": f"Nenhum cache para {cache_key}. Ligue o script local para sincronizar."
+                "error": f"Nenhum cache para {cache_key}. Ligue o script local."
             }), 404
 
-        # Filtra por corretor_id
-        if corretor_id:
+        # Lê metadados
+        atualizado_em = ''
+        if os.path.exists(meta_path):
             try:
-                corretor_id_int = int(corretor_id)
-                dados = [d for d in dados if d.get('codigo_corretor') == corretor_id_int]
-            except (ValueError, TypeError):
+                with open(meta_path, 'r', encoding='utf-8') as f:
+                    meta = json.load(f)
+                atualizado_em = meta.get('atualizado_em', '')
+            except Exception:
                 pass
 
+        # ── FAST PATH: Admin (sem filtro de corretor) ──
+        # Lê o arquivo como texto puro e monta o envelope por concatenação.
+        # Isso evita json.loads de 20MB + jsonify de 20MB = economia brutal de CPU.
+        if not corretor_id:
+            with open(data_path, 'r', encoding='utf-8') as f:
+                array_str = f.read()
+
+            envelope = '{"dados": ' + array_str + ', "atualizado_em": "' + atualizado_em + '", "is_cache": false}'
+            return Response(envelope, mimetype='application/json')
+
+        # ── SLOW PATH: Corretor individual (precisa filtrar) ──
+        with open(data_path, 'r', encoding='utf-8') as f:
+            todos = json.load(f)
+
+        try:
+            cid = int(corretor_id)
+            filtrado = [d for d in todos if d.get('codigo_corretor') == cid]
+        except (ValueError, TypeError):
+            filtrado = todos
+
         return jsonify({
-            "total_corretores": len(dados),
-            "dados": dados,
+            "total_corretores": len(filtrado),
+            "dados": filtrado,
             "atualizado_em": atualizado_em,
             "is_cache": False
         })
