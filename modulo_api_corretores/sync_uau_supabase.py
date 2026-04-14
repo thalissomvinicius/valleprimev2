@@ -27,7 +27,7 @@ if sys.platform == "win32":
 # Importar lógica já testada
 try:
     from integracao_corretores import fetch_dados_corretores
-    from cache_supabase import salvar_cache
+    from cache_supabase import salvar_cache, testar_conexao
     from database_uau import get_db_connection
 except ImportError as e:
     print(f"Erro ao importar módulos locais: {e}")
@@ -90,7 +90,14 @@ def executar_sincronizacao():
             logger.error("Falha ao conectar no UAU SQL Server. Tentaremos no próximo ciclo.")
             return
     except Exception as e:
-        logger.error(f"Erro de conexão: {e}")
+        logger.error(f"Erro de conexão UAU: {e}")
+        return
+
+    # Testar conexão com Supabase antes de processar todas as obras
+    if not testar_conexao():
+        logger.error("Supabase inacessível. Pulando este ciclo. Tentaremos em 5 minutos.")
+        try: conn.close()
+        except: pass
         return
 
     meses = ['all']  # Trazendo o pacote completo de vendas por empreendimento, sem cortar o histórico

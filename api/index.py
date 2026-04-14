@@ -836,15 +836,15 @@ def get_alerts():
 @app.route('/api/integracao/cache/corretores', methods=['GET'])
 def get_cache_corretores():
     """
-    Endpoint permanente no Render que lê o cache de dados de corretores do Supabase.
-    Suporta o novo formato chunked (1 linha por corretor) e o antigo (1 linha por obra).
-    Aplica filtro de corretor_id server-side para usuários não-admin.
+    Endpoint permanente no Render que lê o cache do Supabase.
+    Suporta formato comprimido (zlib+base64) e JSON puro.
     """
     try:
         empresa = request.args.get('empresa', '28')
         obra = request.args.get('obra', '70100')
         mes = request.args.get('mes', 'all')
         corretor_id = request.args.get('corretor_id', None)
+        cache_key = f"{empresa}-{obra}-{mes}"
 
         supabase_url = os.environ.get('SUPABASE_URL', '').rstrip('/')
         supabase_key = os.environ.get('SUPABASE_SERVICE_ROLE_KEY') or os.environ.get('SUPABASE_ANON_KEY', '')
@@ -857,38 +857,18 @@ def get_cache_corretores():
             'Authorization': f'Bearer {supabase_key}',
         }
 
-        dados = []
-        atualizado_em = None
+        url = f"{supabase_url}/rest/v1/cache_corretores?cache_key=eq.{cache_key}&select=dados_json,atualizado_em&limit=1"
+        r = requests.get(url, headers=headers_sb, timeout=15)
 
-        # 1. Tenta o novo formato chunked (1 linha por corretor)
-        prefix = f"{empresa}-{obra}-{mes}-c"
-        url_new = f"{supabase_url}/rest/v1/cache_corretores?cache_key=like.{prefix}*&select=dados_json,atualizado_em&order=atualizado_em.desc&limit=200"
-        r = requests.get(url_new, headers=headers_sb, timeout=15)
-        
-        if r.status_code == 200:
-            rows = r.json()
-            if rows:
-                for row in rows:
-                    chunk = _try_decompress_cache(row['dados_json'])
-                    dados.extend(chunk)
-                atualizado_em = rows[0]['atualizado_em']
-
-        # 2. Fallback: formato antigo (1 linha por obra)
-        if not dados:
-            cache_key = f"{empresa}-{obra}-{mes}"
-            url_old = f"{supabase_url}/rest/v1/cache_corretores?cache_key=eq.{cache_key}&select=dados_json,atualizado_em&limit=1"
-            r2 = requests.get(url_old, headers=headers_sb, timeout=10)
-            if r2.status_code == 200:
-                rows2 = r2.json()
-                if rows2:
-                    dados = _try_decompress_cache(rows2[0]['dados_json'])
-                    atualizado_em = rows2[0]['atualizado_em']
-
-        if not dados:
+        rows = r.json() if r.status_code == 200 else []
+        if not rows:
             return jsonify({
                 "success": False,
-                "error": f"Nenhum cache para {empresa}-{obra}. Ligue o script local para sincronizar."
+                "error": f"Nenhum cache para {cache_key}. Ligue o script local para sincronizar."
             }), 404
+
+        row = rows[0]
+        dados = _try_decompress_cache(row['dados_json'])
 
         # Filtra por corretor_id se especificado (para usuários não-admin)
         if corretor_id:
@@ -901,7 +881,7 @@ def get_cache_corretores():
         return jsonify({
             "total_corretores": len(dados),
             "dados": dados,
-            "atualizado_em": atualizado_em,
+            "atualizado_em": row['atualizado_em'],
             "is_cache": False
         })
 
