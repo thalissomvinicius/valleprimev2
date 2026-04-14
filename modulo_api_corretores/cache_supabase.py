@@ -71,7 +71,8 @@ def salvar_cache(empresa: int, obra: str, mes: str, dados: list):
     payload = {
         "cache_key": cache_key,
         "dados_compressed": compressed_data,
-        "atualizado_em": datetime.now().isoformat()
+        "atualizado_em": datetime.now().isoformat(),
+        "total_corretores": len(dados)
     }
 
     headers = {
@@ -86,7 +87,7 @@ def salvar_cache(empresa: int, obra: str, mes: str, dados: list):
             r = requests.post(url, headers=headers, json=payload, timeout=45)
             if r.status_code == 200:
                 resp = r.json()
-                print(f"[SYNC] ✅ Push OK para {cache_key} ({resp.get('corretores', 0)} corretores)")
+                print(f"[SYNC] ✅ Push OK para {cache_key} ({resp.get('corretores_count', 0)} corretores)")
                 return True
             elif r.status_code == 401:
                 print(f"[SYNC] ❌ Secret inválido. Verifique SYNC_SECRET.")

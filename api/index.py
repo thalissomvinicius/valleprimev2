@@ -861,18 +861,19 @@ def push_cache_corretores():
         if not cache_key or not dados_compressed:
             return jsonify({"error": "cache_key e dados_compressed são obrigatórios"}), 400
 
-        # Descomprimir e armazenar em memória
-        dados = _try_decompress_cache(dados_compressed)
+        # NÃO descomprime agora para não estourar a RAM! (18 obras descompimidas = ~1.5GB RAM)
+        # Salva apenas a string base64+zlib que tem só ~1-2MB por obra.
+        total_corretores = body.get('total_corretores', 0)
 
         CORRETORES_CACHE[cache_key] = {
-            "dados": dados,
+            "dados_compressed": dados_compressed,
             "atualizado_em": atualizado_em
         }
 
         return jsonify({
             "success": True,
             "cache_key": cache_key,
-            "corretores": len(dados)
+            "corretores_count": total_corretores
         })
 
     except Exception as e:
@@ -897,7 +898,11 @@ def get_cache_corretores():
         # 1. Lê da memória (principal)
         cached = CORRETORES_CACHE.get(cache_key)
         if cached:
-            dados = cached['dados']
+            # Descomprime sob demanda durante o GET (o GC do Python vai limpar da RAM logo depois)
+            if 'dados_compressed' in cached:
+                dados = _try_decompress_cache(cached['dados_compressed'])
+            elif 'dados' in cached:
+                dados = cached['dados']
             atualizado_em = cached['atualizado_em']
 
         # 2. Fallback: Supabase (para dados antigos enquanto sync não roda)
