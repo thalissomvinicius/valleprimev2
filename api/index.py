@@ -43,6 +43,38 @@ except ImportError as e:
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=False)
 
+import gzip
+
+@app.after_request
+def compress_response(response):
+    # Não comprimir se o cliente não aceitar
+    accept_encoding = request.headers.get('Accept-Encoding', '')
+    if 'gzip' not in accept_encoding.lower():
+        return response
+    
+    # Comprimir apenas sucessos e respostas razoáveis
+    if response.status_code < 200 or response.status_code >= 300:
+        return response
+        
+    # Comprimir apenas JSON para poupar CPU com imagens
+    if response.content_type != 'application/json':
+        return response
+        
+    data = response.get_data()
+    # Não comprimir payloads pequenos
+    if len(data) < 5000:
+        return response
+        
+    try:
+        # Usa compresslevel=3 para ser ultra-rápido na CPU do Render Free Tier
+        compressed_data = gzip.compress(data, compresslevel=3)
+        response.set_data(compressed_data)
+        response.headers['Content-Encoding'] = 'gzip'
+        response.headers['Content-Length'] = len(compressed_data)
+    except Exception as e:
+        print(f"[GZIP ERR] {e}")
+        
+    return response
 # Explicit OPTIONS handler for every route (CORS preflight)
 @app.route('/', defaults={'path': ''}, methods=['OPTIONS'])
 @app.route('/<path:path>', methods=['OPTIONS'])
