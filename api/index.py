@@ -938,11 +938,31 @@ def get_cache_corretores():
         corretor_id = request.args.get('corretor_id', None)
         cache_key = f"{empresa}-{obra}-{mes}"
 
-        dados = []
-        atualizado_em = None
-
         # 1. Lê do arquivo temporário (principal e compartilhado entre os workers)
         file_path = f"/tmp/cache_corretores_{cache_key}.json"
+        
+        # Admin / Visão Geral - Servir o arquivo compactado instantaneamente!
+        if not corretor_id and os.path.exists(file_path):
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    cached = json.load(f)
+                
+                if 'dados_compressed' in cached:
+                    # 'dados_compressed' é o arquivo GZIP completo em base64 salvo pelo sync
+                    raw_gzip = base64.b64decode(cached['dados_compressed'])
+                    # Podemos retornar isso direto como bytes pro Response com Content-Encoding gzip
+                    resp = Response(raw_gzip, mimetype='application/json')
+                    resp.headers['Content-Encoding'] = 'gzip'
+                    resp.headers['Content-Length'] = len(raw_gzip)
+                    return resp
+            except Exception as e:
+                print(f"[CACHE ERR] Falha fast-path: {e}")
+                pass
+
+        # Para corretores ou se falhar o fast path
+        dados = []
+        atualizado_em = None
+        
         if os.path.exists(file_path):
             try:
                 with open(file_path, 'r', encoding='utf-8') as f:
@@ -951,18 +971,16 @@ def get_cache_corretores():
                 atualizado_em = cached.get('atualizado_em')
                 
                 if 'dados_compressed' in cached:
-                    # Se NÃO for um corretor específico filtrando, não gastamos CPU do Render fazendo json.loads
-                    if not corretor_id:
-                        json_str = _try_decompress_cache_string(cached['dados_compressed'])
-                        final_json = f'{{"total_corretores": 0, "dados": {json_str}, "atualizado_em": "{atualizado_em}", "is_cache": false}}'
-                        return Response(final_json, mimetype='application/json')
-                    else:
-                        dados = _try_decompress_cache(cached['dados_compressed'])
+                    # Descomprime o GZIP original que tem a estrutura completa do JSON
+                    raw_gzip = base64.b64decode(cached['dados_compressed'])
+                    full_json_str = gzip.decompress(raw_gzip).decode('utf-8')
+                    full_payload = json.loads(full_json_str)
+                    dados = full_payload.get('dados', [])
                 elif 'dados' in cached:
                     dados = cached['dados']
                     
             except Exception as e:
-                print(f"[CACHE ERR] Falha ao ler {file_path}: {e}")
+                print(f"[CACHE ERR] Falha lenta {file_path}: {e}")
                 pass
 
         # 2. Fallback: Supabase (para dados antigos enquanto sync não roda)
@@ -980,7 +998,11 @@ def get_cache_corretores():
                     if r.status_code == 200:
                         rows = r.json()
                         if rows:
-                            dados = _try_decompress_cache(rows[0]['dados_json'])
+                            from base64 import b64decode
+                            import zlib
+                            compressed = b64decode(rows[0]['dados_json'])
+                            json_str = zlib.decompress(compressed).decode('utf-8')
+                            dados = json.loads(json_str)
                             atualizado_em = rows[0]['atualizado_em']
                 except Exception:
                     pass  # Supabase indisponível, ignora

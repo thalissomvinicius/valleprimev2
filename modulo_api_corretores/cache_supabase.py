@@ -12,7 +12,7 @@ Fluxo:
 import os
 import json
 import time
-import zlib
+import gzip
 import base64
 import requests
 from datetime import datetime
@@ -21,10 +21,9 @@ from datetime import datetime
 RENDER_API_URL = os.environ.get('RENDER_API_URL', 'https://valleprimev2.onrender.com')
 SYNC_SECRET = os.environ.get('SYNC_SECRET', 'valleprime-sync-2026')
 
-def _compress(data):
-    """Comprime JSON para base64+zlib."""
-    json_str = json.dumps(data, ensure_ascii=False, default=str)
-    compressed = zlib.compress(json_str.encode('utf-8'), level=9)
+def _compress(json_str):
+    """Comprime string JSON para base64+gzip."""
+    compressed = gzip.compress(json_str.encode('utf-8'), compresslevel=9)
     return base64.b64encode(compressed).decode('ascii')
 
 def testar_conexao():
@@ -60,18 +59,26 @@ def salvar_cache(empresa: int, obra: str, mes: str, dados: list):
     O Render armazena na memória - zero dependência de Supabase.
     """
     cache_key = f"{empresa}-{obra}-{mes}"
+    atualizado_em = datetime.now().isoformat()
     
-    # Comprimir os dados
-    json_raw = json.dumps(dados, ensure_ascii=False, default=str)
-    compressed_data = _compress(dados)
+    # 1. Constrói a respota exata que o frontend espera
+    final_payload_json = {
+        "total_corretores": len(dados),
+        "dados": dados,
+        "atualizado_em": atualizado_em,
+        "is_cache": False
+    }
+    
+    json_raw = json.dumps(final_payload_json, ensure_ascii=False, default=str)
+    compressed_data = _compress(json_raw)
     
     ratio = len(compressed_data) / max(len(json_raw), 1) * 100
-    print(f"[SYNC] {cache_key}: JSON={len(json_raw)//1024}KB -> Comprimido={len(compressed_data)//1024}KB ({ratio:.0f}%)")
+    print(f"[SYNC] {cache_key}: JSON={len(json_raw)//1024}KB -> GZIP={len(compressed_data)//1024}KB ({ratio:.0f}%)")
     
     payload = {
         "cache_key": cache_key,
         "dados_compressed": compressed_data,
-        "atualizado_em": datetime.now().isoformat(),
+        "atualizado_em": atualizado_em,
         "total_corretores": len(dados)
     }
 
