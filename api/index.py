@@ -929,7 +929,8 @@ def push_cache_corretores():
 @app.route('/api/integracao/cache/corretores', methods=['GET'])
 def get_cache_corretores():
     """
-    Lê da memória do Render. Fallback para Supabase se memória estiver vazia.
+    Lê do /tmp no Render. O sync local envia dados comprimidos (zlib+base64).
+    Aqui descomprimimos e servimos JSON puro. O after_request GZIP cuida do transporte.
     """
     try:
         empresa = request.args.get('empresa', '28')
@@ -938,52 +939,44 @@ def get_cache_corretores():
         corretor_id = request.args.get('corretor_id', None)
         cache_key = f"{empresa}-{obra}-{mes}"
 
-        # 1. Lê do arquivo temporário (principal e compartilhado entre os workers)
         file_path = f"/tmp/cache_corretores_{cache_key}.json"
-        
-        # Admin / Visão Geral - Servir o arquivo compactado instantaneamente!
+
+        # ── Fast path: Admin sem filtro de corretor ──
+        # Descomprime zlib→string JSON e monta o envelope sem json.loads/jsonify
         if not corretor_id and os.path.exists(file_path):
             try:
                 with open(file_path, 'r', encoding='utf-8') as f:
                     cached = json.load(f)
-                
-                if 'dados_compressed' in cached:
-                    # 'dados_compressed' é o arquivo GZIP completo em base64 salvo pelo sync
-                    raw_gzip = base64.b64decode(cached['dados_compressed'])
-                    # Podemos retornar isso direto como bytes pro Response com Content-Encoding gzip
-                    resp = Response(raw_gzip, mimetype='application/json')
-                    resp.headers['Content-Encoding'] = 'gzip'
-                    resp.headers['Content-Length'] = len(raw_gzip)
-                    return resp
-            except Exception as e:
-                print(f"[CACHE ERR] Falha fast-path: {e}")
-                pass
 
-        # Para corretores ou se falhar o fast path
+                if 'dados_compressed' in cached:
+                    atualizado_em = cached.get('atualizado_em', '')
+                    # zlib+base64 → string JSON pura (array de corretores)
+                    dados_json_str = _try_decompress_cache_string(cached['dados_compressed'])
+                    # Monta o envelope direto como string — zero json.loads, zero jsonify
+                    envelope = f'{{"total_corretores": 0, "dados": {dados_json_str}, "atualizado_em": "{atualizado_em}", "is_cache": false}}'
+                    return Response(envelope, mimetype='application/json')
+            except Exception as e:
+                print(f"[CACHE ERR] Fast-path falhou: {e}")
+
+        # ── Slow path: Corretor específico (precisa filtrar) ──
         dados = []
         atualizado_em = None
-        
+
         if os.path.exists(file_path):
             try:
                 with open(file_path, 'r', encoding='utf-8') as f:
                     cached = json.load(f)
-                
+
                 atualizado_em = cached.get('atualizado_em')
-                
+
                 if 'dados_compressed' in cached:
-                    # Descomprime o GZIP original que tem a estrutura completa do JSON
-                    raw_gzip = base64.b64decode(cached['dados_compressed'])
-                    full_json_str = gzip.decompress(raw_gzip).decode('utf-8')
-                    full_payload = json.loads(full_json_str)
-                    dados = full_payload.get('dados', [])
+                    dados = _try_decompress_cache(cached['dados_compressed'])
                 elif 'dados' in cached:
                     dados = cached['dados']
-                    
             except Exception as e:
-                print(f"[CACHE ERR] Falha lenta {file_path}: {e}")
-                pass
+                print(f"[CACHE ERR] Slow-path falhou: {e}")
 
-        # 2. Fallback: Supabase (para dados antigos enquanto sync não roda)
+        # Fallback: Supabase (dados antigos)
         if not dados:
             supabase_url = os.environ.get('SUPABASE_URL', '').rstrip('/')
             supabase_key = os.environ.get('SUPABASE_SERVICE_ROLE_KEY') or os.environ.get('SUPABASE_ANON_KEY', '')
@@ -998,14 +991,10 @@ def get_cache_corretores():
                     if r.status_code == 200:
                         rows = r.json()
                         if rows:
-                            from base64 import b64decode
-                            import zlib
-                            compressed = b64decode(rows[0]['dados_json'])
-                            json_str = zlib.decompress(compressed).decode('utf-8')
-                            dados = json.loads(json_str)
+                            dados = _try_decompress_cache(rows[0]['dados_json'])
                             atualizado_em = rows[0]['atualizado_em']
                 except Exception:
-                    pass  # Supabase indisponível, ignora
+                    pass
 
         if not dados:
             return jsonify({
@@ -1013,7 +1002,7 @@ def get_cache_corretores():
                 "error": f"Nenhum cache para {cache_key}. Ligue o script local para sincronizar."
             }), 404
 
-        # Filtra por corretor_id se especificado (para usuários não-admin)
+        # Filtra por corretor_id
         if corretor_id:
             try:
                 corretor_id_int = int(corretor_id)
