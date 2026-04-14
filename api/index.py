@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file, Response
 from flask_cors import CORS
 import os
 import datetime
@@ -23,6 +23,14 @@ def _try_decompress_cache(raw_str):
         return json.loads(json_str)
     except Exception:
         return json.loads(raw_str)
+
+def _try_decompress_cache_string(raw_str):
+    """Retorna apenas a string JSON crua sem fazer json.loads (ultra-rápido)."""
+    try:
+        compressed = base64.b64decode(raw_str)
+        return zlib.decompress(compressed).decode('utf-8')
+    except Exception:
+        return raw_str
 
 # Importar gerador de PDF
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -908,12 +916,19 @@ def get_cache_corretores():
                 with open(file_path, 'r', encoding='utf-8') as f:
                     cached = json.load(f)
                 
-                # Descomprime sob demanda
+                atualizado_em = cached.get('atualizado_em')
+                
                 if 'dados_compressed' in cached:
-                    dados = _try_decompress_cache(cached['dados_compressed'])
+                    # Se NÃO for um corretor específico filtrando, não gastamos CPU do Render fazendo json.loads
+                    if not corretor_id:
+                        json_str = _try_decompress_cache_string(cached['dados_compressed'])
+                        final_json = f'{{"total_corretores": 0, "dados": {json_str}, "atualizado_em": "{atualizado_em}", "is_cache": false}}'
+                        return Response(final_json, mimetype='application/json')
+                    else:
+                        dados = _try_decompress_cache(cached['dados_compressed'])
                 elif 'dados' in cached:
                     dados = cached['dados']
-                atualizado_em = cached.get('atualizado_em')
+                    
             except Exception as e:
                 print(f"[CACHE ERR] Falha ao ler {file_path}: {e}")
                 pass
