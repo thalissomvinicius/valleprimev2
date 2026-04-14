@@ -69,6 +69,10 @@ def handle_exception(e):
         "type": type(e).__name__
     }), 500
 
+@app.route('/api/health', methods=['GET'])
+def api_health():
+    return jsonify({"status": "ok", "timestamp": datetime.datetime.now().isoformat()})
+
 SECRET_KEY = os.environ.get('SECRET_KEY', 'dev_secret_key_valle_prime_v2')
 
 # Supabase is the sole data source (late import helper)
@@ -830,14 +834,55 @@ def get_alerts():
     })
 
 # ===========================
-# INTEGRAÇÃO CORRETORES CACHE
+# INTEGRAÇÃO CORRETORES CACHE (IN-MEMORY)
 # ===========================
+# Armazena os dados na memória do Render. O sync local faz POST diretamente aqui.
+# Sem Supabase, sem limites, sem timeout. Auto-recupera a cada 5min via sync.
+
+CORRETORES_CACHE = {}  # { "empresa-obra-mes": { "dados": [...], "atualizado_em": "..." } }
+SYNC_SECRET = os.environ.get('SYNC_SECRET', 'valleprime-sync-2026')
+
+@app.route('/api/integracao/sync/push', methods=['POST'])
+def push_cache_corretores():
+    """
+    Recebe dados comprimidos (zlib+base64) do sync local e armazena em memória.
+    Protegido por um secret simples no header.
+    """
+    try:
+        auth = request.headers.get('X-Sync-Secret', '')
+        if auth != SYNC_SECRET:
+            return jsonify({"error": "Não autorizado"}), 401
+
+        body = request.get_json(force=True)
+        cache_key = body.get('cache_key', '')
+        dados_compressed = body.get('dados_compressed', '')
+        atualizado_em = body.get('atualizado_em', '')
+
+        if not cache_key or not dados_compressed:
+            return jsonify({"error": "cache_key e dados_compressed são obrigatórios"}), 400
+
+        # Descomprimir e armazenar em memória
+        dados = _try_decompress_cache(dados_compressed)
+
+        CORRETORES_CACHE[cache_key] = {
+            "dados": dados,
+            "atualizado_em": atualizado_em
+        }
+
+        return jsonify({
+            "success": True,
+            "cache_key": cache_key,
+            "corretores": len(dados)
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 @app.route('/api/integracao/cache/corretores', methods=['GET'])
 def get_cache_corretores():
     """
-    Endpoint permanente no Render que lê o cache do Supabase.
-    Suporta formato comprimido (zlib+base64) e JSON puro.
+    Lê da memória do Render. Fallback para Supabase se memória estiver vazia.
     """
     try:
         empresa = request.args.get('empresa', '28')
@@ -846,29 +891,40 @@ def get_cache_corretores():
         corretor_id = request.args.get('corretor_id', None)
         cache_key = f"{empresa}-{obra}-{mes}"
 
-        supabase_url = os.environ.get('SUPABASE_URL', '').rstrip('/')
-        supabase_key = os.environ.get('SUPABASE_SERVICE_ROLE_KEY') or os.environ.get('SUPABASE_ANON_KEY', '')
+        dados = []
+        atualizado_em = None
 
-        if not supabase_url or not supabase_key:
-            return jsonify({"success": False, "error": "Supabase nao configurado no servidor."}), 503
+        # 1. Lê da memória (principal)
+        cached = CORRETORES_CACHE.get(cache_key)
+        if cached:
+            dados = cached['dados']
+            atualizado_em = cached['atualizado_em']
 
-        headers_sb = {
-            'apikey': supabase_key,
-            'Authorization': f'Bearer {supabase_key}',
-        }
+        # 2. Fallback: Supabase (para dados antigos enquanto sync não roda)
+        if not dados:
+            supabase_url = os.environ.get('SUPABASE_URL', '').rstrip('/')
+            supabase_key = os.environ.get('SUPABASE_SERVICE_ROLE_KEY') or os.environ.get('SUPABASE_ANON_KEY', '')
+            if supabase_url and supabase_key:
+                try:
+                    headers_sb = {
+                        'apikey': supabase_key,
+                        'Authorization': f'Bearer {supabase_key}',
+                    }
+                    url = f"{supabase_url}/rest/v1/cache_corretores?cache_key=eq.{cache_key}&select=dados_json,atualizado_em&limit=1"
+                    r = requests.get(url, headers=headers_sb, timeout=8)
+                    if r.status_code == 200:
+                        rows = r.json()
+                        if rows:
+                            dados = _try_decompress_cache(rows[0]['dados_json'])
+                            atualizado_em = rows[0]['atualizado_em']
+                except Exception:
+                    pass  # Supabase indisponível, ignora
 
-        url = f"{supabase_url}/rest/v1/cache_corretores?cache_key=eq.{cache_key}&select=dados_json,atualizado_em&limit=1"
-        r = requests.get(url, headers=headers_sb, timeout=15)
-
-        rows = r.json() if r.status_code == 200 else []
-        if not rows:
+        if not dados:
             return jsonify({
                 "success": False,
                 "error": f"Nenhum cache para {cache_key}. Ligue o script local para sincronizar."
             }), 404
-
-        row = rows[0]
-        dados = _try_decompress_cache(row['dados_json'])
 
         # Filtra por corretor_id se especificado (para usuários não-admin)
         if corretor_id:
@@ -881,7 +937,7 @@ def get_cache_corretores():
         return jsonify({
             "total_corretores": len(dados),
             "dados": dados,
-            "atualizado_em": row['atualizado_em'],
+            "atualizado_em": atualizado_em,
             "is_cache": False
         })
 
