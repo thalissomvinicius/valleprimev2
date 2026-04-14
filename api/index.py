@@ -903,21 +903,20 @@ def push_cache_corretores():
 
         total_corretores = body.get('total_corretores', 0)
         
-        # Descomprime AGORA (zlib+base64 → JSON string pura)
-        # e salva a string JSON crua no disco. Isso evita qualquer problema
-        # de re-serialização, escaping ou encoding na hora do GET.
+        # Descomprime: o sync envia GZIP+base64 (não zlib!)
         try:
             raw_bytes = base64.b64decode(dados_compressed)
-            json_array_str = zlib.decompress(raw_bytes).decode('utf-8')
+            json_str = gzip.decompress(raw_bytes).decode('utf-8')
         except Exception as e:
             return jsonify({"error": f"Falha ao descomprimir: {e}"}), 400
         
-        # Salva 2 arquivos: o array JSON puro e os metadados
+        # O sync envia o envelope completo {"total_corretores":..., "dados":[...], ...}
+        # Salvamos direto como está
         data_path = f"/tmp/cache_data_{cache_key}.json"
         meta_path = f"/tmp/cache_meta_{cache_key}.json"
         
         with open(data_path, 'w', encoding='utf-8') as f:
-            f.write(json_array_str)
+            f.write(json_str)
         
         with open(meta_path, 'w', encoding='utf-8') as f:
             json.dump({"atualizado_em": atualizado_em, "total": total_corretores}, f)
@@ -948,37 +947,28 @@ def get_cache_corretores():
         meta_path = f"/tmp/cache_meta_{cache_key}.json"
 
         # ── Fast path: Admin sem filtro ──
+        # O arquivo contém o envelope completo do frontend: {"total_corretores":N, "dados":[...], ...}
         if not corretor_id and os.path.exists(data_path):
             try:
-                # Lê metadados
-                atualizado_em = ''
-                if os.path.exists(meta_path):
-                    with open(meta_path, 'r', encoding='utf-8') as f:
-                        meta = json.load(f)
-                    atualizado_em = meta.get('atualizado_em', '')
-                
-                # Lê o array JSON cru direto do arquivo
                 with open(data_path, 'r', encoding='utf-8') as f:
-                    dados_json_str = f.read()
+                    full_json = f.read()
                 
-                # Monta envelope sem json.loads — ultra-rápido
-                envelope = '{"total_corretores": 0, "dados": ' + dados_json_str + ', "atualizado_em": "' + atualizado_em + '", "is_cache": false}'
-                return Response(envelope, mimetype='application/json')
+                # Serve direto — o conteúdo já é o JSON final que o frontend espera
+                return Response(full_json, mimetype='application/json')
             except Exception as e:
                 print(f"[CACHE ERR] Fast-path: {e}")
 
-        # ── Slow path: Corretor específico (precisa filtrar) ──
+        # ── Slow path: Corretor específico (precisa filtrar pelos dados) ──
         dados = []
         atualizado_em = None
 
         if os.path.exists(data_path):
             try:
                 with open(data_path, 'r', encoding='utf-8') as f:
-                    dados = json.load(f)
-                if os.path.exists(meta_path):
-                    with open(meta_path, 'r', encoding='utf-8') as f:
-                        meta = json.load(f)
-                    atualizado_em = meta.get('atualizado_em')
+                    envelope = json.load(f)
+                # O envelope tem a estrutura {dados: [...], atualizado_em: "...", ...}
+                dados = envelope.get('dados', [])
+                atualizado_em = envelope.get('atualizado_em')
             except Exception as e:
                 print(f"[CACHE ERR] Slow-path: {e}")
 
