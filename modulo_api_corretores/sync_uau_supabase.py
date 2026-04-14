@@ -81,26 +81,27 @@ def gerar_meses_recentes(quantidade=3):
 
 def executar_sincronizacao():
     logger.info("=" * 60)
-    logger.info("INICIANDO CICLO DE SINCRONIZAÇÃO (PULL UAU -> PUSH SUPABASE)")
+    logger.info("INICIANDO CICLO DE SINCRONIZAÇÃO (PULL UAU -> PUSH RENDER)")
     logger.info("=" * 60)
 
+    # Testar conexão SQL rápida (só verifica se o servidor está acessível)
     try:
-        conn = get_db_connection()
-        if not conn:
+        test_conn = get_db_connection()
+        if not test_conn:
             logger.error("Falha ao conectar no UAU SQL Server. Tentaremos no próximo ciclo.")
             return
+        test_conn.close()
+        logger.info("✅ SQL Server UAU acessível")
     except Exception as e:
         logger.error(f"Erro de conexão UAU: {e}")
         return
 
-    # Testar conexão com Supabase antes de processar todas as obras
+    # Testar conexão com API Render
     if not testar_conexao():
-        logger.error("Supabase inacessível. Pulando este ciclo. Tentaremos em 5 minutos.")
-        try: conn.close()
-        except: pass
+        logger.error("API Render inacessível. Pulando este ciclo. Tentaremos em 5 minutos.")
         return
 
-    meses = ['all']  # Trazendo o pacote completo de vendas por empreendimento, sem cortar o histórico
+    meses = ['all']
     sucessos = 0
     falhas = 0
     start_time = time.time()
@@ -118,7 +119,14 @@ def executar_sincronizacao():
         for mes in meses:
             atual += 1
             try:
-                # 1. PULL - SQL Server (Trará tudo ignorando as datas, pois mes='all')
+                # Abre conexão FRESCA para cada obra (evita "Falha de vínculo" depois de muitas queries)
+                conn = get_db_connection()
+                if not conn:
+                    logger.error(f"Sem conexão SQL para {nome}. Pulando.")
+                    falhas += 1
+                    continue
+
+                # 1. PULL - SQL Server
                 dados = fetch_dados_corretores(
                     conn=conn,
                     empresa=empresa,
@@ -126,7 +134,11 @@ def executar_sincronizacao():
                     mes=mes
                 )
 
-                # 2. PUSH - Supabase
+                # Fecha conexão imediatamente após o uso
+                try: conn.close()
+                except: pass
+
+                # 2. PUSH - Render API
                 if dados is None: dados = []
 
                 if salvar_cache(empresa, obra, mes, dados):
@@ -139,13 +151,11 @@ def executar_sincronizacao():
             except Exception as e:
                 logger.error(f"Erro ao processar {nome}: {e}")
                 falhas += 1
+                # Tenta fechar conexão quebrada
+                try: conn.close()
+                except: pass
             
             time.sleep(0.5)
-
-    try:
-        conn.close()
-    except:
-        pass
 
     end_time = time.time()
     logger.info("=" * 60)
