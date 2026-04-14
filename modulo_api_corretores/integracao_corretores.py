@@ -221,13 +221,16 @@ def fetch_dados_corretores(conn, empresa, obra, corretor_id=None, data_inicio=No
     sinais_pagos_map = {}
     if not sinais_pagos_df.empty:
         for venda, group in sinais_pagos_df.groupby('venda'):
-            parcelas_lista = group.to_dict('records')
-            qtd_pago = len(parcelas_lista)
+            parcelas_lista_full = group.to_dict('records')
+            qtd_pago = len(parcelas_lista_full)
             valor_pago = group['valor_pago'].sum()
             
             ultima_data_pag = None
             if not group['data_pagamento'].dropna().empty:
                 ultima_data_pag = group['data_pagamento'].max()
+
+            # Limitar a lista detalhada a 15 parcelas mais recentes para reduzir payload
+            parcelas_lista = parcelas_lista_full[:15]
 
             sinais_pagos_map[int(venda)] = {
                 'qtdPago': qtd_pago,
