@@ -901,20 +901,26 @@ def push_cache_corretores():
         if not cache_key or not dados_compressed:
             return jsonify({"error": "cache_key e dados_compressed são obrigatórios"}), 400
 
-        # O Render roda com múltiplos "workers" (processos independentes). Se usarmos
-        # memória RAM simples, o Worker A não enxerga os dados do Worker B.
-        # A solução perfeita e grau: salvar no diretório temporário compartilhado pelo Render (/tmp)
         total_corretores = body.get('total_corretores', 0)
         
-        file_path = f"/tmp/cache_corretores_{cache_key}.json"
+        # Descomprime AGORA (zlib+base64 → JSON string pura)
+        # e salva a string JSON crua no disco. Isso evita qualquer problema
+        # de re-serialização, escaping ou encoding na hora do GET.
+        try:
+            raw_bytes = base64.b64decode(dados_compressed)
+            json_array_str = zlib.decompress(raw_bytes).decode('utf-8')
+        except Exception as e:
+            return jsonify({"error": f"Falha ao descomprimir: {e}"}), 400
         
-        cache_data = {
-            "dados_compressed": dados_compressed,
-            "atualizado_em": atualizado_em
-        }
+        # Salva 2 arquivos: o array JSON puro e os metadados
+        data_path = f"/tmp/cache_data_{cache_key}.json"
+        meta_path = f"/tmp/cache_meta_{cache_key}.json"
         
-        with open(file_path, 'w', encoding='utf-8') as f:
-            json.dump(cache_data, f)
+        with open(data_path, 'w', encoding='utf-8') as f:
+            f.write(json_array_str)
+        
+        with open(meta_path, 'w', encoding='utf-8') as f:
+            json.dump({"atualizado_em": atualizado_em, "total": total_corretores}, f)
 
         return jsonify({
             "success": True,
@@ -929,8 +935,7 @@ def push_cache_corretores():
 @app.route('/api/integracao/cache/corretores', methods=['GET'])
 def get_cache_corretores():
     """
-    Lê do /tmp no Render. O sync local envia dados comprimidos (zlib+base64).
-    Aqui descomprimimos e servimos JSON puro. O after_request GZIP cuida do transporte.
+    Lê do /tmp no Render. Os arquivos já contém JSON puro (descomprimido no push).
     """
     try:
         empresa = request.args.get('empresa', '28')
@@ -939,62 +944,43 @@ def get_cache_corretores():
         corretor_id = request.args.get('corretor_id', None)
         cache_key = f"{empresa}-{obra}-{mes}"
 
-        file_path = f"/tmp/cache_corretores_{cache_key}.json"
+        data_path = f"/tmp/cache_data_{cache_key}.json"
+        meta_path = f"/tmp/cache_meta_{cache_key}.json"
 
-        # ── Fast path: Admin sem filtro de corretor ──
-        # Descomprime zlib→string JSON e monta o envelope sem json.loads/jsonify
-        if not corretor_id and os.path.exists(file_path):
+        # ── Fast path: Admin sem filtro ──
+        if not corretor_id and os.path.exists(data_path):
             try:
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    cached = json.load(f)
-
-                if 'dados_compressed' in cached:
-                    atualizado_em = cached.get('atualizado_em', '')
-                    # zlib+base64 → string JSON pura (array de corretores)
-                    dados_json_str = _try_decompress_cache_string(cached['dados_compressed'])
-                    # Monta o envelope direto como string — zero json.loads, zero jsonify
-                    envelope = f'{{"total_corretores": 0, "dados": {dados_json_str}, "atualizado_em": "{atualizado_em}", "is_cache": false}}'
-                    return Response(envelope, mimetype='application/json')
+                # Lê metadados
+                atualizado_em = ''
+                if os.path.exists(meta_path):
+                    with open(meta_path, 'r', encoding='utf-8') as f:
+                        meta = json.load(f)
+                    atualizado_em = meta.get('atualizado_em', '')
+                
+                # Lê o array JSON cru direto do arquivo
+                with open(data_path, 'r', encoding='utf-8') as f:
+                    dados_json_str = f.read()
+                
+                # Monta envelope sem json.loads — ultra-rápido
+                envelope = '{"total_corretores": 0, "dados": ' + dados_json_str + ', "atualizado_em": "' + atualizado_em + '", "is_cache": false}'
+                return Response(envelope, mimetype='application/json')
             except Exception as e:
-                print(f"[CACHE ERR] Fast-path falhou: {e}")
+                print(f"[CACHE ERR] Fast-path: {e}")
 
         # ── Slow path: Corretor específico (precisa filtrar) ──
         dados = []
         atualizado_em = None
 
-        if os.path.exists(file_path):
+        if os.path.exists(data_path):
             try:
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    cached = json.load(f)
-
-                atualizado_em = cached.get('atualizado_em')
-
-                if 'dados_compressed' in cached:
-                    dados = _try_decompress_cache(cached['dados_compressed'])
-                elif 'dados' in cached:
-                    dados = cached['dados']
+                with open(data_path, 'r', encoding='utf-8') as f:
+                    dados = json.load(f)
+                if os.path.exists(meta_path):
+                    with open(meta_path, 'r', encoding='utf-8') as f:
+                        meta = json.load(f)
+                    atualizado_em = meta.get('atualizado_em')
             except Exception as e:
-                print(f"[CACHE ERR] Slow-path falhou: {e}")
-
-        # Fallback: Supabase (dados antigos)
-        if not dados:
-            supabase_url = os.environ.get('SUPABASE_URL', '').rstrip('/')
-            supabase_key = os.environ.get('SUPABASE_SERVICE_ROLE_KEY') or os.environ.get('SUPABASE_ANON_KEY', '')
-            if supabase_url and supabase_key:
-                try:
-                    headers_sb = {
-                        'apikey': supabase_key,
-                        'Authorization': f'Bearer {supabase_key}',
-                    }
-                    url = f"{supabase_url}/rest/v1/cache_corretores?cache_key=eq.{cache_key}&select=dados_json,atualizado_em&limit=1"
-                    r = requests.get(url, headers=headers_sb, timeout=8)
-                    if r.status_code == 200:
-                        rows = r.json()
-                        if rows:
-                            dados = _try_decompress_cache(rows[0]['dados_json'])
-                            atualizado_em = rows[0]['atualizado_em']
-                except Exception:
-                    pass
+                print(f"[CACHE ERR] Slow-path: {e}")
 
         if not dados:
             return jsonify({
