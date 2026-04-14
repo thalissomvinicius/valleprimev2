@@ -838,8 +838,8 @@ def get_alerts():
 # ===========================
 # Armazena os dados na memória do Render. O sync local faz POST diretamente aqui.
 # Sem Supabase, sem limites, sem timeout. Auto-recupera a cada 5min via sync.
+# Usa o sistema de arquivos /tmp para compartilhar dados entre multi-workers Gunicorn.
 
-CORRETORES_CACHE = {}  # { "empresa-obra-mes": { "dados": [...], "atualizado_em": "..." } }
 SYNC_SECRET = os.environ.get('SYNC_SECRET', 'valleprime-sync-2026')
 
 @app.route('/api/integracao/sync/push', methods=['POST'])
@@ -861,14 +861,20 @@ def push_cache_corretores():
         if not cache_key or not dados_compressed:
             return jsonify({"error": "cache_key e dados_compressed são obrigatórios"}), 400
 
-        # NÃO descomprime agora para não estourar a RAM! (18 obras descompimidas = ~1.5GB RAM)
-        # Salva apenas a string base64+zlib que tem só ~1-2MB por obra.
+        # O Render roda com múltiplos "workers" (processos independentes). Se usarmos
+        # memória RAM simples, o Worker A não enxerga os dados do Worker B.
+        # A solução perfeita e grau: salvar no diretório temporário compartilhado pelo Render (/tmp)
         total_corretores = body.get('total_corretores', 0)
-
-        CORRETORES_CACHE[cache_key] = {
+        
+        file_path = f"/tmp/cache_corretores_{cache_key}.json"
+        
+        cache_data = {
             "dados_compressed": dados_compressed,
             "atualizado_em": atualizado_em
         }
+        
+        with open(file_path, 'w', encoding='utf-8') as f:
+            json.dump(cache_data, f)
 
         return jsonify({
             "success": True,
@@ -895,15 +901,22 @@ def get_cache_corretores():
         dados = []
         atualizado_em = None
 
-        # 1. Lê da memória (principal)
-        cached = CORRETORES_CACHE.get(cache_key)
-        if cached:
-            # Descomprime sob demanda durante o GET (o GC do Python vai limpar da RAM logo depois)
-            if 'dados_compressed' in cached:
-                dados = _try_decompress_cache(cached['dados_compressed'])
-            elif 'dados' in cached:
-                dados = cached['dados']
-            atualizado_em = cached['atualizado_em']
+        # 1. Lê do arquivo temporário (principal e compartilhado entre os workers)
+        file_path = f"/tmp/cache_corretores_{cache_key}.json"
+        if os.path.exists(file_path):
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    cached = json.load(f)
+                
+                # Descomprime sob demanda
+                if 'dados_compressed' in cached:
+                    dados = _try_decompress_cache(cached['dados_compressed'])
+                elif 'dados' in cached:
+                    dados = cached['dados']
+                atualizado_em = cached.get('atualizado_em')
+            except Exception as e:
+                print(f"[CACHE ERR] Falha ao ler {file_path}: {e}")
+                pass
 
         # 2. Fallback: Supabase (para dados antigos enquanto sync não roda)
         if not dados:
