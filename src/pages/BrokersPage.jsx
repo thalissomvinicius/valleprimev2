@@ -86,10 +86,17 @@ const BrokersPage = () => {
             };
 
             const result = await fetchCorretoresData(filters);
-            const brokersList = result.dados || [];
+            let brokersList = result.data || result.dados || [];
+
+            // A nova API Ngrok retorna a árvore completa em tempo real.
+            // Para garantir segurança, filtramos os dados pelo `corretor_id` se o usuário NÃO for admin.
+            if (!isAdmin && filters.corretor_id) {
+                brokersList = brokersList.filter(b => String(b.codigo_corretor) === String(filters.corretor_id));
+            }
+
             setData(brokersList);
-            setLastUpdate(result.atualizado_em || null);
-            setIsCacheData(result.is_cache || false);
+            setLastUpdate(result.atualizado_em || new Date().toISOString());
+            setIsCacheData(false); // Sempre falso, pois os dados da Nova API são em Tempo Real
             setShowSyncBanner(true); // Show banner on new data load
 
             // Populate available months dynamically based on the data

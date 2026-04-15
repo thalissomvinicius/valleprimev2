@@ -293,47 +293,23 @@ export const fetchConfigObras = async () => {
   }
 };
 
+// URL da API local Ponte UAU via Ngrok
+const NGROK_UAU_API = 'https://incomprehendingly-unelectronic-zaid.ngrok-free.dev';
+
 export const fetchCorretoresData = async (filters = {}) => {
-  const { empresa = 28, obra = '70100', corretor_id, mes, data_inicio, data_fim } = filters;
-  const params = new URLSearchParams();
-  params.append('empresa', empresa);
-  params.append('obra', obra);
-  if (corretor_id) params.append('corretor_id', corretor_id);
-  if (mes) params.append('mes', mes);
-  if (data_inicio) params.append('data_inicio', data_inicio);
-  if (data_fim) params.append('data_fim', data_fim);
+  const { empresa = 28, obra = '70100' } = filters;
+  const endpoint = `${NGROK_UAU_API}/api/vendas/${empresa}/${obra}`;
 
-  // Cache local do navegador (UX instantânea)
-  const cacheKey = `corretores_${empresa}_${obra}_${mes || 'all'}`;
-  
-  // Vamos buscar do Render (que agora é Proxy direto pro Storage)
-  return await fetchFreshData(params, cacheKey);
-};
-
-// Função auxiliar proxy Render
-const fetchFreshData = async (params, cacheKey) => {
   try {
-    const response = await axios.get(
-      `${RENDER_CLOUD_API}/api/integracao/cache/corretores?${params.toString()}&t=${new Date().getTime()}`,
-      { timeout: 15000 }
-    );
-    
-    if (response.data && cacheKey) {
-      localStorage.setItem(cacheKey, JSON.stringify(response.data));
-    }
+    const response = await axios.get(endpoint, {
+      headers: {
+        'ngrok-skip-browser-warning': 'true' // Impede que o aviso HTML do ngrok bloqueie o JSON
+      },
+      timeout: 25000 
+    });
     return response.data;
-    
   } catch (error) {
-    console.warn('[fetchCorretoresData] Render API indisponível, buscando cache local...');
-    const cachedData = localStorage.getItem(cacheKey);
-    if (cachedData) {
-        try {
-            const parsed = JSON.parse(cachedData);
-            return { ...parsed, is_cache: true, cache_local: true };
-        } catch(e) {}
-    }
-
-    console.error('[fetchCorretoresData] Sem dados.', error);
-    throw new Error('Nenhum dado encontrado. A sincronização automática vai carregar os dados em breve.');
+    console.error('[fetchCorretoresData] Erro na requisição para Ngrok UAU API:', error);
+    throw new Error('Falha ao obter os dados em tempo real da Ponte UAU API. Verifique se o servidor está online.');
   }
 };
