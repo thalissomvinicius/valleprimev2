@@ -34,15 +34,19 @@ const BrokersPage = () => {
     const [isCacheData, setIsCacheData] = useState(false);
     const [showSyncBanner, setShowSyncBanner] = useState(true);
     
+    const currentYear = new Date().getFullYear().toString();
+    const currentMonthNum = String(new Date().getMonth() + 1).padStart(2, '0');
+    
     // Filters
-    const [selectedMonth, setSelectedMonth] = useState('all');
+    const [selectedYear, setSelectedYear] = useState(currentYear);
+    const [selectedMonth, setSelectedMonth] = useState(currentMonthNum);
     const [searchTerm, setSearchTerm] = useState('');
     const [showCancelados, setShowCancelados] = useState(false);
     const [parcelFilter, setParcelFilter] = useState('todos'); // 'todos' | 'atraso'
     const [selectedAdminBroker, setSelectedAdminBroker] = useState('all');
     
     // Obra/Period select options
-    const [availableMonths, setAvailableMonths] = useState([]);
+    const [availableYears, setAvailableYears] = useState([currentYear]);
     const [obrasList, setObrasList] = useState([]);
     const [selectedObraId, setSelectedObraId] = useState(''); // "empresa-obra"
 
@@ -99,17 +103,18 @@ const BrokersPage = () => {
             setIsCacheData(false); // Sempre falso, pois os dados da Nova API são em Tempo Real
             setShowSyncBanner(true); // Show banner on new data load
 
-            // Populate available months dynamically based on the data
-            const monthsSet = new Set();
+            // Populate available years dynamically based on the data
+            const yearsSet = new Set();
             brokersList.forEach(b => {
                 b.vendas_detalhadas?.forEach(v => {
-                    if (v.data_venda && v.data_venda.length >= 7) {
-                        monthsSet.add(v.data_venda.substring(0, 7)); // 'YYYY-MM'
+                    if (v.data_venda && v.data_venda.length >= 4) {
+                        yearsSet.add(v.data_venda.substring(0, 4));
                     }
                 });
             });
-            const sortedMonths = Array.from(monthsSet).sort().reverse();
-            setAvailableMonths(sortedMonths);
+            const sortedYears = Array.from(yearsSet).sort().reverse();
+            if(!sortedYears.includes(currentYear)) sortedYears.unshift(currentYear);
+            setAvailableYears(sortedYears);
 
         } catch (error) {
             console.error("Error loading brokers page:", error);
@@ -160,9 +165,13 @@ const BrokersPage = () => {
             });
 
             vendas.forEach(v => {
-                // Apply month filter
-                if (selectedMonth !== 'all' && v.data_venda && !v.data_venda.startsWith(selectedMonth)) {
-                    return;
+                // Apply year/month filter
+                if (selectedYear !== 'all') {
+                    if (!v.data_venda || !v.data_venda.startsWith(selectedYear)) return;
+                }
+                
+                if (selectedMonth !== 'all') {
+                    if (!v.data_venda || v.data_venda.substring(5, 7) !== selectedMonth) return;
                 }
                 
                 // Apply 'ativos' vs 'cancelados' filter
@@ -205,7 +214,7 @@ const BrokersPage = () => {
         setStats({ totalVgv: globalVgv, totalSales: globalSales, totalPending: globalPending });
         return flatVendas;
 
-    }, [data, searchTerm, selectedMonth, showCancelados, isAdmin, selectedAdminBroker]);
+    }, [data, searchTerm, selectedMonth, selectedYear, showCancelados, isAdmin, selectedAdminBroker]);
 
     // Extrai a lista única de corretores para o filtro do Admin
     const uniqueBrokers = useMemo(() => {
@@ -344,14 +353,24 @@ const BrokersPage = () => {
                                 <Calendar size={16} />
                                 <select 
                                     className="minimal-select"
+                                    value={selectedYear}
+                                    onChange={(e) => setSelectedYear(e.target.value)}
+                                >
+                                    <option value="all">Todos os Anos</option>
+                                    {availableYears.map(y => (
+                                        <option key={y} value={y}>{y}</option>
+                                    ))}
+                                </select>
+                                
+                                <select 
+                                    className="minimal-select"
                                     value={selectedMonth}
                                     onChange={(e) => setSelectedMonth(e.target.value)}
                                 >
-                                    <option value="all">Todo o Período</option>
-                                    {availableMonths.map(m => {
-                                        const [yyyy, mm] = m.split('-');
+                                    <option value="all">Todos os Meses</option>
+                                    {['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'].map((m, i) => {
                                         const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-                                        return <option key={m} value={m}>{monthNames[parseInt(mm)-1]} de {yyyy}</option>
+                                        return <option key={m} value={m}>{monthNames[i]}</option>
                                     })}
                                 </select>
                             </div>
