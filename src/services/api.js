@@ -302,7 +302,7 @@ export const fetchCorretoresData = async (filters = {}) => {
 
   try {
     const response = await axios.get(endpoint, {
-      timeout: 25000 
+      timeout: 90000 // Aumentado para 90 segundos para dar tempo do banco UAU processar
     });
     return response.data;
   } catch (error) {
@@ -310,3 +310,4 @@ export const fetchCorretoresData = async (filters = {}) => {
     throw new Error('Falha ao obter os dados em tempo real da Ponte UAU API. Verifique se o Cloudflare Tunnel está online.');
   }
 };
+
