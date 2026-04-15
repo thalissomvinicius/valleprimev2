@@ -294,7 +294,7 @@ export const fetchConfigObras = async () => {
 };
 
 // URL da API local Ponte UAU via Cloudflare Tunnel
-const LOCAL_UAU_API = 'https://shops-header-home-odds.trycloudflare.com';
+const LOCAL_UAU_API = 'https://instructional-conferencing-housewives-returns.trycloudflare.com';
 
 export const fetchCorretoresData = async (filters = {}) => {
   const { empresa = 28, obra = '70100' } = filters;
