@@ -1,126 +1,114 @@
 """
-cache_supabase.py - Módulo de sincronização VallePrime v3.0 (Definitivo)
+cache_supabase.py - Módulo de sincronização VallePrime v4.0 (Storage Bucket)
 
 Arquitetura:
-  PC Local (SQL UAU) → comprime array de corretores (gzip+base64) → POST para Render API
-  Render API → descomprime → salva JSON puro em /tmp → serve ao frontend
+  PC Local (SQL UAU) -> array de corretores -> Supabase Storage (Bucket 'cache')
+  Frontend -> Download direto da URL pública do Supabase
 
-Contrato:
-  - O sync envia APENAS o array de corretores comprimido
-  - O servidor monta o envelope {"dados": [...], "atualizado_em": "...", "is_cache": false}
-  - O frontend lê esse envelope via GET
+Por que essa arquitetura?
+  O Bucket não dorme como o Render, suporta até 50MB por arquivo (limite de graça do Supabase) 
+  e tira a sobrecarga da sua API / backend. Os dados ficam lá permanentemente.
 """
 import os
 import json
 import time
-import gzip
-import base64
 import requests
 from datetime import datetime
 
 # ═══════════════════════════════════════════
-# CONFIGURAÇÃO
+# CONFIGURAÇÃO SUPABASE
 # ═══════════════════════════════════════════
-RENDER_API_URL = os.environ.get('RENDER_API_URL', 'https://valleprimev2.onrender.com')
-SYNC_SECRET = os.environ.get('SYNC_SECRET', 'valleprime-sync-2026')
-
-
-def _compress_array(dados_list):
-    """
-    Recebe a lista Python de corretores, serializa para JSON,
-    comprime com gzip e codifica em base64.
-    Retorna: string base64 ASCII.
-    """
-    json_bytes = json.dumps(dados_list, ensure_ascii=False, default=str).encode('utf-8')
-    compressed = gzip.compress(json_bytes, compresslevel=6)
-    return base64.b64encode(compressed).decode('ascii')
-
+SUPABASE_URL = os.environ.get('SUPABASE_URL', '').rstrip('/')
+SUPABASE_KEY = os.environ.get('SUPABASE_SERVICE_ROLE_KEY') or os.environ.get('SUPABASE_ANON_KEY', '')
+BUCKET_NAME = 'cache'
 
 def testar_conexao():
-    """Testa se a API Render está acessível."""
-    for tentativa in range(1, 3):
-        try:
-            r = requests.get(f"{RENDER_API_URL}/api/health", timeout=20)
-            if r.status_code == 200:
-                print("[SYNC] ✅ Conexão com API Render OK")
-                return True
-            print(f"[SYNC] ⚠️ API Render status {r.status_code}")
-            return True  # Servidor respondeu, está vivo
-        except requests.exceptions.Timeout:
-            if tentativa == 1:
-                print("[SYNC] ⏳ Render pode estar hibernando, tentando acordar...")
-                time.sleep(5)
-                continue
-            print("[SYNC] ❌ API Render inacessível (timeout).")
+    """Testa se a API da Supabase está acessível e se não está vazia."""
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        print("[SYNC] ❌ Supabase credentials missing in .env")
+        return False
+        
+    try:
+        url = f"{SUPABASE_URL}/storage/v1/bucket"
+        headers = {'apikey': SUPABASE_KEY, 'Authorization': f'Bearer {SUPABASE_KEY}'}
+        r = requests.get(url, headers=headers, timeout=15)
+        
+        if r.status_code == 200:
+            print("[SYNC] ✅ Conexão com Supabase Storage OK!")
+            return True
+        else:
+            print(f"[SYNC] ❌ Erro de conexão com Supabase: HTTP {r.status_code}")
             return False
-        except Exception as e:
-            print(f"[SYNC] ❌ Erro de conexão: {e}")
-            return False
-    return False
-
+            
+    except Exception as e:
+        print(f"[SYNC] ❌ Erro de conexão com Supabase: {e}")
+        return False
 
 def salvar_cache(empresa, obra, mes, dados):
     """
-    Comprime o array de corretores e envia para o Render.
-    O Render descomprime e salva o JSON puro no disco.
+    Constrói o envelope JSON e sobrescreve o arquivo no Bucket 'cache' do Supabase.
     """
     cache_key = f"{empresa}-{obra}-{mes}"
+    file_name = f"{cache_key}.json"
     atualizado_em = datetime.now().isoformat()
 
-    # Comprime apenas o array de dados (não o envelope)
-    json_raw = json.dumps(dados, ensure_ascii=False, default=str)
-    dados_b64 = _compress_array(dados)
-
-    ratio = len(dados_b64) / max(len(json_raw), 1) * 100
-    print(f"[SYNC] {cache_key}: JSON={len(json_raw)//1024}KB → Comprimido={len(dados_b64)//1024}KB ({ratio:.0f}%)")
-
-    payload = {
-        "cache_key": cache_key,
-        "dados_compressed": dados_b64,
+    # O envelope completo agora é montado aqui, pois não tem mais backend Render para isso
+    envelope = {
+        "total_corretores": len(dados),
+        "dados": dados,
         "atualizado_em": atualizado_em,
-        "total_corretores": len(dados)
+        "is_cache": False
     }
 
+    # Transforma o JSON em bytes diretamente (sem gzip/zlib, pois o Bucket suporta o tamanho cru)
+    json_bytes = json.dumps(envelope, ensure_ascii=False, default=str).encode('utf-8')
+    tamanho_mb = len(json_bytes) / (1024 * 1024)
+    print(f"[SYNC] {cache_key}: Array contendo {len(dados)} corretores ({tamanho_mb:.2f} MB)")
+
+    url = f"{SUPABASE_URL}/storage/v1/object/{BUCKET_NAME}/{file_name}"
     headers = {
-        'Content-Type': 'application/json',
-        'X-Sync-Secret': SYNC_SECRET
+        'apikey': SUPABASE_KEY,
+        'Authorization': f'Bearer {SUPABASE_KEY}',
+        'Content-Type': 'application/json'
     }
 
-    url = f"{RENDER_API_URL}/api/integracao/sync/push"
+    # Tentativas de upload (Usa PUT/POST conforme disponibilidade, usaremos POST via REST API supabase storage: /storage/v1/object/{bucketName}/{wildcard})
+    # O Supabase Storage REST API: 
+    # Para upload inicial genérico é POST para o caminho.
+    # Mas se o arquivo já existir precisa usar PUT pra sobrescrever ou passar parametro de upsert
+    headers['x-upsert'] = 'true' # Forçar overwrite
 
     for attempt in range(1, 4):
         try:
-            r = requests.post(url, headers=headers, json=payload, timeout=60)
-            if r.status_code == 200:
-                resp = r.json()
-                print(f"[SYNC] ✅ Push OK para {cache_key} ({resp.get('corretores_count', 0)} corretores)")
+            r = requests.post(url, headers=headers, data=json_bytes, timeout=120)
+            
+            # Se for 200 (Criou) ou 400 avisando que já existe com upsert true pode retornar outro status as vezes
+            if r.status_code in [200, 201]:
+                print(f"[SYNC] ✅ Upload OK para {file_name}")
                 return True
-            elif r.status_code == 401:
-                print("[SYNC] ❌ Secret inválido. Verifique SYNC_SECRET no .env")
-                return False
-            else:
-                print(f"[SYNC] Erro {r.status_code}: {r.text[:200]}")
-                if attempt < 3:
-                    time.sleep(attempt * 3)
+                
+            print(f"[SYNC] Upload falhou ({r.status_code}): {r.text[:200]}")
+            if attempt < 3:
+                time.sleep(attempt * 5)
         except requests.exceptions.Timeout:
-            print(f"[SYNC] ⏱️ Timeout tentativa {attempt}/3. Aguardando...")
+            print(f"[SYNC] ⏱️ Timeout na tentativa {attempt}/3. (Uploads grandes podem demorar). Aguardando...")
             time.sleep(attempt * 5)
         except Exception as e:
             print(f"[SYNC] Exceção: {e}")
             return False
 
-    print(f"[SYNC] ❌ Falha definitiva para {cache_key}")
+    print(f"[SYNC] ❌ Falha definitiva no upload para {cache_key}")
     return False
 
-
 def buscar_cache(empresa, obra, mes):
-    """Busca dados via Render API (fallback para uso local)."""
+    """
+    Apenas para manter compatibilidade no backend local FastAPI, se for precisar usar.
+    """
     try:
-        url = f"{RENDER_API_URL}/api/integracao/cache/corretores?empresa={empresa}&obra={obra}&mes={mes}"
+        url = f"{SUPABASE_URL}/storage/v1/object/public/{BUCKET_NAME}/{empresa}-{obra}-{mes}.json"
         r = requests.get(url, timeout=15)
         if r.status_code == 200:
             return r.json()
         return None
-    except Exception as e:
-        print(f"[CACHE] Exceção ao buscar: {e}")
+    except Exception:
         return None

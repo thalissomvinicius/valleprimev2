@@ -264,10 +264,13 @@ export const printProposal = async (id) => {
 
 
 
-// URL da API no Render (sempre online) — fonte primária de dados do Supabase
+// API Render (apenas para gerenciar config de obras fallback)
 const RENDER_CLOUD_API = 'https://valleprimev2.onrender.com';
 
-// Lista estática de obras como fallback quando o Render também falhar
+// Supabase Public Storage (Fonte Primária ultra-rápida)
+const SUPABASE_STORAGE_URL = 'https://wcifxyvesmhqurqhnway.supabase.co/storage/v1/object/public/cache';
+
+// Lista estática de obras como fallback
 const OBRAS_FALLBACK = [
   { empresa: 13, obra: '70100', nome: 'RESIDENCIAL JARDIM DO VALLE - DOM ELISEU' },
   { empresa: 12, obra: '70100', nome: 'RESIDENCIAL JARDIM AMERICA - CAPANEMA' },
@@ -294,45 +297,55 @@ export const fetchConfigObras = async () => {
 };
 
 export const fetchCorretoresData = async (filters = {}) => {
-  const { empresa = 28, obra = '70100', corretor_id, mes, data_inicio, data_fim } = filters;
-  const params = new URLSearchParams();
-  params.append('empresa', empresa);
-  params.append('obra', obra);
-  if (corretor_id) params.append('corretor_id', corretor_id);
-  if (mes) params.append('mes', mes);
-  if (data_inicio) params.append('data_inicio', data_inicio);
-  if (data_fim) params.append('data_fim', data_fim);
-
-  // Cache local do navegador (UX instantânea)
-  const cacheKey = `corretores_${empresa}_${obra}_${mes || 'all'}`;
+  const { empresa = 28, obra = '70100', corretor_id, mes } = filters;
   
-  // Vamos buscar diretamente da API do Render (fonte do Supabase) 
-  // O fallback para localStorage agora será tratado apenas se a API falhar.
-  return await fetchFreshData(params, cacheKey);
+  // Cache local do navegador (UX instantânea)
+  const mesFilter = mes || 'all';
+  const cacheKey = `corretores_${empresa}_${obra}_${mesFilter}`;
+  
+  return await fetchFreshData(empresa, obra, mesFilter, corretor_id, cacheKey);
 };
 
-// Função auxiliar para buscar dados frescos primários do Supabase via Render
-const fetchFreshData = async (params, cacheKey) => {
+// Função auxiliar para baixar o JSON PÚBLICO direto do Storage Bucket do Supabase
+const fetchFreshData = async (empresa, obra, mes, corretor_id, cacheKey) => {
   try {
-    const response = await axios.get(
-      `${RENDER_CLOUD_API}/api/integracao/cache/corretores?${params.toString()}`,
-      { timeout: 15000 }
-    );
-    if (response.data && cacheKey) {
-      localStorage.setItem(cacheKey, JSON.stringify(response.data));
+    const fileName = `${empresa}-${obra}-${mes}.json`;
+    const url = `${SUPABASE_STORAGE_URL}/${fileName}`;
+    
+    // Anexar cache burst para garantir dados frescos do CDN (opcional, mas util)
+    const response = await axios.get(`${url}?t=${new Date().getTime()}`, { timeout: 15000 });
+    
+    let resultData = response.data;
+    
+    // Se um corretor_id foi passado, o frontend aplica o filtro no envelope!
+    if (corretor_id && resultData.dados) {
+      resultData.dados = resultData.dados.filter(d => d.codigo_corretor === parseInt(corretor_id));
+      resultData.total_corretores = resultData.dados.length;
     }
-    return response.data;
+
+    if (resultData && cacheKey) {
+      localStorage.setItem(cacheKey, JSON.stringify({ ...resultData, is_cache: true }));
+    }
+    return resultData;
+    
   } catch (error) {
-    console.warn('[fetchCorretoresData] API Render indisponível, buscando cache local...');
+    console.warn('[fetchCorretoresData] Supabase Bucket indisponível, buscando cache local...');
     const cachedData = localStorage.getItem(cacheKey);
     if (cachedData) {
         try {
             const parsed = JSON.parse(cachedData);
+            
+            // Se um corretor_id foi passado, o cache local também será filtrado
+            if (corretor_id && parsed.dados) {
+              parsed.dados = parsed.dados.filter(d => d.codigo_corretor === parseInt(corretor_id));
+              parsed.total_corretores = parsed.dados.length;
+            }
+            
             return { ...parsed, is_cache: true, cache_local: true };
         } catch(e) {}
     }
 
-    console.error('[fetchCorretoresData] Sem dados na API e sem cache local:', error);
-    throw new Error('Dados indisponíveis. O sincronizador local do UAU precisa estar rodando.');
+    console.error('[fetchCorretoresData] Sem dados (Supabase Offline e sem cache local).', error);
+    throw new Error('Nenhum dado encontrado. A sincronização automática vai carregar os dados em breve.');
   }
 };
