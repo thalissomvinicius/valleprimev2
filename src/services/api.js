@@ -264,11 +264,8 @@ export const printProposal = async (id) => {
 
 
 
-// API Render (apenas para gerenciar config de obras fallback)
+// API Render (proxy rápido, resolve CORS e acessa o Supabase)
 const RENDER_CLOUD_API = 'https://valleprimev2.onrender.com';
-
-// Supabase Public Storage (Fonte Primária ultra-rápida)
-const SUPABASE_STORAGE_URL = 'https://wcifxyvesmhqurqhnway.supabase.co/storage/v1/object/public/cache';
 
 // Lista estática de obras como fallback
 const OBRAS_FALLBACK = [
@@ -297,55 +294,46 @@ export const fetchConfigObras = async () => {
 };
 
 export const fetchCorretoresData = async (filters = {}) => {
-  const { empresa = 28, obra = '70100', corretor_id, mes } = filters;
-  
+  const { empresa = 28, obra = '70100', corretor_id, mes, data_inicio, data_fim } = filters;
+  const params = new URLSearchParams();
+  params.append('empresa', empresa);
+  params.append('obra', obra);
+  if (corretor_id) params.append('corretor_id', corretor_id);
+  if (mes) params.append('mes', mes);
+  if (data_inicio) params.append('data_inicio', data_inicio);
+  if (data_fim) params.append('data_fim', data_fim);
+
   // Cache local do navegador (UX instantânea)
-  const mesFilter = mes || 'all';
-  const cacheKey = `corretores_${empresa}_${obra}_${mesFilter}`;
+  const cacheKey = `corretores_${empresa}_${obra}_${mes || 'all'}`;
   
-  return await fetchFreshData(empresa, obra, mesFilter, corretor_id, cacheKey);
+  // Vamos buscar do Render (que agora é Proxy direto pro Storage)
+  return await fetchFreshData(params, cacheKey);
 };
 
-// Função auxiliar para baixar o JSON PÚBLICO direto do Storage Bucket do Supabase
-const fetchFreshData = async (empresa, obra, mes, corretor_id, cacheKey) => {
+// Função auxiliar proxy Render
+const fetchFreshData = async (params, cacheKey) => {
   try {
-    const fileName = `${empresa}-${obra}-${mes}.json`;
-    const url = `${SUPABASE_STORAGE_URL}/${fileName}`;
+    const response = await axios.get(
+      `${RENDER_CLOUD_API}/api/integracao/cache/corretores?${params.toString()}&t=${new Date().getTime()}`,
+      { timeout: 15000 }
+    );
     
-    // Anexar cache burst para garantir dados frescos do CDN (opcional, mas util)
-    const response = await axios.get(`${url}?t=${new Date().getTime()}`, { timeout: 15000 });
-    
-    let resultData = response.data;
-    
-    // Se um corretor_id foi passado, o frontend aplica o filtro no envelope!
-    if (corretor_id && resultData.dados) {
-      resultData.dados = resultData.dados.filter(d => d.codigo_corretor === parseInt(corretor_id));
-      resultData.total_corretores = resultData.dados.length;
+    if (response.data && cacheKey) {
+      localStorage.setItem(cacheKey, JSON.stringify(response.data));
     }
-
-    if (resultData && cacheKey) {
-      localStorage.setItem(cacheKey, JSON.stringify({ ...resultData, is_cache: true }));
-    }
-    return resultData;
+    return response.data;
     
   } catch (error) {
-    console.warn('[fetchCorretoresData] Supabase Bucket indisponível, buscando cache local...');
+    console.warn('[fetchCorretoresData] Render API indisponível, buscando cache local...');
     const cachedData = localStorage.getItem(cacheKey);
     if (cachedData) {
         try {
             const parsed = JSON.parse(cachedData);
-            
-            // Se um corretor_id foi passado, o cache local também será filtrado
-            if (corretor_id && parsed.dados) {
-              parsed.dados = parsed.dados.filter(d => d.codigo_corretor === parseInt(corretor_id));
-              parsed.total_corretores = parsed.dados.length;
-            }
-            
             return { ...parsed, is_cache: true, cache_local: true };
         } catch(e) {}
     }
 
-    console.error('[fetchCorretoresData] Sem dados (Supabase Offline e sem cache local).', error);
+    console.error('[fetchCorretoresData] Sem dados.', error);
     throw new Error('Nenhum dado encontrado. A sincronização automática vai carregar os dados em breve.');
   }
 };

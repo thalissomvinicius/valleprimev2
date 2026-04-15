@@ -25,7 +25,7 @@ BUCKET_NAME = 'cache'
 def testar_conexao():
     """Testa se a API da Supabase está acessível e se não está vazia."""
     if not SUPABASE_URL or not SUPABASE_KEY:
-        print("[SYNC] ❌ Supabase credentials missing in .env")
+        print("[SYNC] Error: Supabase credentials missing in .env")
         return False
         
     try:
@@ -34,14 +34,14 @@ def testar_conexao():
         r = requests.get(url, headers=headers, timeout=15)
         
         if r.status_code == 200:
-            print("[SYNC] ✅ Conexão com Supabase Storage OK!")
+            print("[SYNC] Conexao com Supabase Storage OK!")
             return True
         else:
-            print(f"[SYNC] ❌ Erro de conexão com Supabase: HTTP {r.status_code}")
+            print(f"[SYNC] Erro de conexao com Supabase: HTTP {r.status_code}")
             return False
             
     except Exception as e:
-        print(f"[SYNC] ❌ Erro de conexão com Supabase: {e}")
+        print(f"[SYNC] Erro de conexao com Supabase: {e}")
         return False
 
 def salvar_cache(empresa, obra, mes, dados):
@@ -84,20 +84,20 @@ def salvar_cache(empresa, obra, mes, dados):
             
             # Se for 200 (Criou) ou 400 avisando que já existe com upsert true pode retornar outro status as vezes
             if r.status_code in [200, 201]:
-                print(f"[SYNC] ✅ Upload OK para {file_name}")
+                print(f"[SYNC] Upload OK para {file_name}")
                 return True
                 
             print(f"[SYNC] Upload falhou ({r.status_code}): {r.text[:200]}")
             if attempt < 3:
                 time.sleep(attempt * 5)
         except requests.exceptions.Timeout:
-            print(f"[SYNC] ⏱️ Timeout na tentativa {attempt}/3. (Uploads grandes podem demorar). Aguardando...")
+            print(f"[SYNC] Timeout na tentativa {attempt}/3. (Uploads grandes podem demorar). Aguardando...")
             time.sleep(attempt * 5)
         except Exception as e:
-            print(f"[SYNC] Exceção: {e}")
+            print(f"[SYNC] Excecao: {e}")
             return False
 
-    print(f"[SYNC] ❌ Falha definitiva no upload para {cache_key}")
+    print(f"[SYNC] Falha definitiva no upload para {cache_key}")
     return False
 
 def buscar_cache(empresa, obra, mes):

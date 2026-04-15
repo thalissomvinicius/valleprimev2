@@ -937,9 +937,8 @@ def push_cache_corretores():
 @app.route('/api/integracao/cache/corretores', methods=['GET'])
 def get_cache_corretores():
     """
-    Serve dados dos corretores ao frontend.
-    Fast-path (admin): lê arquivo texto e monta envelope via string — zero json.loads.
-    Slow-path (corretor): parseia array e filtra por codigo_corretor.
+    Proxy: Consulta o Supabase Storage Bucket diretamente e serve ao frontend.
+    Resolve problemas de CORS nativo do navegador e contorna limpeza do /tmp.
     """
     try:
         empresa = request.args.get('empresa', '28')
@@ -948,52 +947,37 @@ def get_cache_corretores():
         corretor_id = request.args.get('corretor_id', None)
         cache_key = f"{empresa}-{obra}-{mes}"
 
-        data_path = f"/tmp/vp_data_{cache_key}.json"
-        meta_path = f"/tmp/vp_meta_{cache_key}.json"
+        # ── Baixa o JSON permanente do Supabase Storage ──
+        supabase_url = f"https://wcifxyvesmhqurqhnway.supabase.co/storage/v1/object/public/cache/{cache_key}.json"
+        
+        try:
+            r = requests.get(supabase_url, timeout=10)
+        except Exception as e:
+            return jsonify({"success": False, "error": f"Timeout no Supabase Storage: {e}"}), 504
 
-        # Verifica se existe cache
-        if not os.path.exists(data_path):
+        if r.status_code != 200:
             return jsonify({
                 "success": False,
-                "error": f"Nenhum cache para {cache_key}. Ligue o script local."
+                "error": f"Nenhum cache para {cache_key} na nuvem. Ligue o sincronizador local."
             }), 404
 
-        # Lê metadados
-        atualizado_em = ''
-        if os.path.exists(meta_path):
-            try:
-                with open(meta_path, 'r', encoding='utf-8') as f:
-                    meta = json.load(f)
-                atualizado_em = meta.get('atualizado_em', '')
-            except Exception:
-                pass
-
-        # ── FAST PATH: Admin (sem filtro de corretor) ──
-        # Lê o arquivo como texto puro e monta o envelope por concatenação.
-        # Isso evita json.loads de 20MB + jsonify de 20MB = economia brutal de CPU.
+        # ── Fast path: Admin sem filtro ──
         if not corretor_id:
-            with open(data_path, 'r', encoding='utf-8') as f:
-                array_str = f.read()
+            return Response(r.text, mimetype='application/json')
 
-            envelope = '{"dados": ' + array_str + ', "atualizado_em": "' + atualizado_em + '", "is_cache": false}'
-            return Response(envelope, mimetype='application/json')
-
-        # ── SLOW PATH: Corretor individual (precisa filtrar) ──
-        with open(data_path, 'r', encoding='utf-8') as f:
-            todos = json.load(f)
-
+        # ── Slow path: Filtra dados de um único corretor ──
         try:
+            envelope = r.json()
             cid = int(corretor_id)
-            filtrado = [d for d in todos if d.get('codigo_corretor') == cid]
-        except (ValueError, TypeError):
-            filtrado = todos
-
-        return jsonify({
-            "total_corretores": len(filtrado),
-            "dados": filtrado,
-            "atualizado_em": atualizado_em,
-            "is_cache": False
-        })
+            filtrado = [d for d in envelope.get('dados', []) if d.get('codigo_corretor') == cid]
+            
+            envelope['dados'] = filtrado
+            envelope['total_corretores'] = len(filtrado)
+            return jsonify(envelope)
+            
+        except ValueError:
+            # Se r.json() falhar ou corretor_id for inválido, apenas retorna tudo
+            return Response(r.text, mimetype='application/json')
 
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
