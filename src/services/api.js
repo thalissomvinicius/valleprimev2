@@ -293,23 +293,20 @@ export const fetchConfigObras = async () => {
   }
 };
 
-// URL da API local Ponte UAU via Ngrok
-const NGROK_UAU_API = 'https://incomprehendingly-unelectronic-zaid.ngrok-free.dev';
+// URL da API local Ponte UAU via Cloudflare Tunnel
+const LOCAL_UAU_API = 'https://shops-header-home-odds.trycloudflare.com';
 
 export const fetchCorretoresData = async (filters = {}) => {
   const { empresa = 28, obra = '70100' } = filters;
-  const endpoint = `${NGROK_UAU_API}/api/vendas/${empresa}/${obra}`;
+  const endpoint = `${LOCAL_UAU_API}/api/vendas/${empresa}/${obra}`;
 
   try {
     const response = await axios.get(endpoint, {
-      headers: {
-        'ngrok-skip-browser-warning': 'true' // Impede que o aviso HTML do ngrok bloqueie o JSON
-      },
       timeout: 25000 
     });
     return response.data;
   } catch (error) {
-    console.error('[fetchCorretoresData] Erro na requisição para Ngrok UAU API:', error);
-    throw new Error('Falha ao obter os dados em tempo real da Ponte UAU API. Verifique se o servidor está online.');
+    console.error('[fetchCorretoresData] Erro na requisição para Cloudflare UAU API:', error);
+    throw new Error('Falha ao obter os dados em tempo real da Ponte UAU API. Verifique se o Cloudflare Tunnel está online.');
   }
 };
