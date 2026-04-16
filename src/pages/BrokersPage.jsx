@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { 
     Users, 
     TrendingUp, 
@@ -53,6 +53,32 @@ const BrokersPage = () => {
     // Expanded client card
     const [expandedVendaId, setExpandedVendaId] = useState(null);
 
+    // Progress bar state
+    const [loadProgress, setLoadProgress] = useState(0);
+    const progressIntervalRef = useRef(null);
+
+    // Simulated progress bar logic
+    const startProgress = useCallback(() => {
+        setLoadProgress(0);
+        let progress = 0;
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = setInterval(() => {
+            progress += Math.random() * (progress < 50 ? 8 : progress < 80 ? 3 : 0.5);
+            if (progress >= 92) progress = 92; // Never complete alone - waits for real data
+            setLoadProgress(Math.min(Math.round(progress), 92));
+        }, 300);
+    }, []);
+
+    const completeProgress = useCallback(() => {
+        clearInterval(progressIntervalRef.current);
+        setLoadProgress(100);
+        setTimeout(() => setLoadProgress(0), 600); // Reset after fade-out
+    }, []);
+
+    useEffect(() => {
+        return () => clearInterval(progressIntervalRef.current); // Cleanup on unmount
+    }, []);
+
     // Auto-dismiss sync banner after 8 seconds
     useEffect(() => {
         if (showSyncBanner && lastUpdate && !isCacheData) {
@@ -65,6 +91,7 @@ const BrokersPage = () => {
         if (obrasList.length > 0 && !selectedObraId) return; // Wait for initial selection
 
         setLoading(true);
+        startProgress();
         try {
             let empresa = 28;
             let obra = '70100';
@@ -122,6 +149,7 @@ const BrokersPage = () => {
         } catch (error) {
             console.error("Error loading brokers page:", error);
         } finally {
+            completeProgress();
             setLoading(false);
         }
     }, [currentUser?.id, isAdmin, currentUser?.permissions, selectedObraId, obrasList.length, selectedYear, selectedMonth, currentYear]);
@@ -513,8 +541,25 @@ const BrokersPage = () => {
                 <section className="client-cards-section animate-fade-in-up">
                     {loading ? (
                         <div className="loading-container">
-                            <Loader2 className="loading-spinner-large" size={48} />
-                            <p>Carregando dados do servidor Valle...</p>
+                            <div className="progress-bar-wrapper">
+                                <div className="progress-bar-track">
+                                    <div 
+                                        className="progress-bar-fill" 
+                                        style={{ width: `${loadProgress}%` }}
+                                    />
+                                </div>
+                                <div className="progress-info">
+                                    <Loader2 className="loading-spinner-small" size={18} />
+                                    <span className="progress-text">
+                                        {loadProgress < 30 ? 'Conectando ao servidor UAU...' 
+                                         : loadProgress < 60 ? 'Consultando banco de dados...' 
+                                         : loadProgress < 90 ? 'Processando vendas e parcelas...'
+                                         : loadProgress < 100 ? 'Finalizando cálculos...'
+                                         : 'Concluído!'}
+                                    </span>
+                                    <span className="progress-percent">{loadProgress}%</span>
+                                </div>
+                            </div>
                         </div>
                     ) : processedData.length === 0 ? (
                         <div className="empty-state">
