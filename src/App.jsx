@@ -511,7 +511,11 @@ function MainApp() {
               >
                 <Building2 size={18} />
                 <span className="obra-codigo">{selectedObra}</span>
-                <span className="obra-nome">{currentObraInfo?.descricao?.split(' - ')[1] || ''}</span>
+                <span className="obra-nome">
+                  {currentObraInfo?.descricao 
+                    ? currentObraInfo.descricao.replace('RESIDENCIAL ', '').replace(' - ', ' (') + ')'
+                    : ''}
+                </span>
                 <ChevronDown size={16} className={obraDropdownOpen ? 'rotated' : ''} />
               </button>
               {obraDropdownOpen && (
@@ -526,7 +530,11 @@ function MainApp() {
                       }}
                     >
                       <span className="codigo">{obra.codigo}</span>
-                      <span className="descricao">{obra.descricao}</span>
+                      <span className="descricao">
+                        {obra.descricao.replace('RESIDENCIAL ', '').replace(' - ', ' (').includes('(') 
+                          ? obra.descricao.replace('RESIDENCIAL ', '').replace(' - ', ' (') + ')'
+                          : obra.descricao.replace('RESIDENCIAL ', '')}
+                      </span>
                     </button>
                   ))}
                 </div>
