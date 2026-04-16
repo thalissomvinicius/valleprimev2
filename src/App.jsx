@@ -512,9 +512,15 @@ function MainApp() {
                 <Building2 size={18} />
                 <span className="obra-codigo">{selectedObra}</span>
                 <span className="obra-nome">
-                  {currentObraInfo?.descricao 
-                    ? currentObraInfo.descricao.replace('RESIDENCIAL ', '').replace(' - ', ' (') + ')'
-                    : ''}
+                  {(() => {
+                    if (!currentObraInfo?.descricao) return '';
+                    const clean = currentObraInfo.descricao.replace('RESIDENCIAL ', '');
+                    if (clean.includes(' - ')) {
+                      const [name, city] = clean.split(' - ');
+                      return `${name.trim()} (${city.trim()})`;
+                    }
+                    return clean;
+                  })()}
                 </span>
                 <ChevronDown size={16} className={obraDropdownOpen ? 'rotated' : ''} />
               </button>
@@ -531,9 +537,14 @@ function MainApp() {
                     >
                       <span className="codigo">{obra.codigo}</span>
                       <span className="descricao">
-                        {obra.descricao.replace('RESIDENCIAL ', '').replace(' - ', ' (').includes('(') 
-                          ? obra.descricao.replace('RESIDENCIAL ', '').replace(' - ', ' (') + ')'
-                          : obra.descricao.replace('RESIDENCIAL ', '')}
+                        {(() => {
+                          const clean = obra.descricao.replace('RESIDENCIAL ', '');
+                          if (clean.includes(' - ')) {
+                            const [name, city] = clean.split(' - ');
+                            return `${name.trim()} (${city.trim()})`;
+                          }
+                          return clean;
+                        })()}
                       </span>
                     </button>
                   ))}
