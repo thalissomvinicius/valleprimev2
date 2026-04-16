@@ -1167,8 +1167,9 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 300px;
-    padding: 3rem 1rem;
+    min-height: 50vh;
+    padding: 2rem 1rem;
+    margin-top: 1rem;
 }
 
 .progress-bar-wrapper {
@@ -1234,4 +1235,142 @@
 @keyframes spin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
+}
+
+/* =====================================================
+   MOBILE RESPONSIVENESS (SMARTPHONES UP TO 768px)
+   ===================================================== */
+@media screen and (max-width: 768px) {
+    .brokers-container {
+        padding: 0 1rem;
+    }
+
+    .hero-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1.5rem;
+        border-bottom: 2px solid rgba(226, 232, 240, 0.4);
+        padding-bottom: 1rem;
+    }
+
+    .hero-title h1 {
+        font-size: 1.6rem;
+    }
+    
+    .broker-filters {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+
+    .header-divider {
+        display: none;
+    }
+
+    .filter-group, .date-range-group {
+        flex-direction: column;
+        align-items: flex-start;
+        width: 100%;
+        gap: 0.5rem;
+    }
+
+    .date-range-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .minimal-select, .minimal-date, .minimal-search {
+        max-width: 100%;
+        width: 100%;
+        padding: 0.75rem 0;
+        font-size: 1rem;
+    }
+
+    .brokers-stats-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .broker-stat-card {
+        padding: 1.25rem;
+        gap: 1rem;
+    }
+
+    .stat-main-value {
+        font-size: 1.5rem;
+    }
+
+    .admin-rankings-section {
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .ranking-panel {
+        width: 100%;
+    }
+
+    .action-toolbar {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        gap: 1.5rem;
+        margin-top: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .cancelados-toggle-bar {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 1rem;
+        gap: 1rem;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    
+    .toolbar-actions {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        gap: 1rem;
+    }
+
+    .btn-cobranca {
+        width: 100%;
+        justify-content: center;
+        padding: 1rem;
+        font-size: 1rem;
+    }
+
+    /* Ajuste para Cards de Cliente Mobile se existirem no grid */
+    .client-cards-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .client-card-main {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1.25rem;
+    }
+
+    .client-main-info, .client-sale-numbers {
+        width: 100%;
+        text-align: left;
+    }
+    
+    .client-sale-numbers {
+        align-items: flex-start;
+    }
+
+    .financial-grid, .dates-grid {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+
+    .sync-banner {
+        right: 10px; left: 10px; bottom: 10px;
+        max-width: none;
+    }
 }
