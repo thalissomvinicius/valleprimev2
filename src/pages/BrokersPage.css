@@ -127,7 +127,25 @@
 }
 
 .date-range-group {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    align-items: center;
+}
+
+.btn-search-date {
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-left: 0.5rem;
+}
+
+.btn-search-date:hover {
+    background: #1d4ed8;
 }
 
 .minimal-select:hover,

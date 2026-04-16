@@ -44,6 +44,8 @@ const BrokersPage = () => {
     // Filters
     const [dataInicio, setDataInicio] = useState(firstDayOfMonth);
     const [dataFim, setDataFim] = useState(lastDayStr);
+    const [inputInicio, setInputInicio] = useState(firstDayOfMonth);
+    const [inputFim, setInputFim] = useState(lastDayStr);
     const [searchTerm, setSearchTerm] = useState('');
     const [showCancelados, setShowCancelados] = useState(false);
     const [parcelFilter, setParcelFilter] = useState('todos'); // 'todos' | 'atraso'
@@ -446,16 +448,19 @@ const BrokersPage = () => {
                                 <input 
                                     type="date" 
                                     className="minimal-date"
-                                    value={dataInicio}
-                                    onChange={(e) => setDataInicio(e.target.value)}
+                                    value={inputInicio}
+                                    onChange={(e) => setInputInicio(e.target.value)}
                                 />
                                 <span className="date-label">Até:</span>
                                 <input 
                                     type="date" 
                                     className="minimal-date"
-                                    value={dataFim}
-                                    onChange={(e) => setDataFim(e.target.value)}
+                                    value={inputFim}
+                                    onChange={(e) => setInputFim(e.target.value)}
                                 />
+                                <button className="btn-search-date" onClick={() => { setDataInicio(inputInicio); setDataFim(inputFim); }}>
+                                    Buscar
+                                </button>
                             </div>
 
                             {isAdmin && (
