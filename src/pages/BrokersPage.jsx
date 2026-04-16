@@ -104,25 +104,27 @@ const BrokersPage = () => {
             setIsCacheData(false); // Sempre falso, pois os dados da Nova API são em Tempo Real
             setShowSyncBanner(true); // Show banner on new data load
 
-            // Populate available years dynamically based on the data, without losing existing ones
-            const yearsSet = new Set(availableYears);
+            // Populate available years dynamically using functional setState to avoid infinite loops
+            const newYearsFromData = new Set();
             brokersList.forEach(b => {
                 b.vendas_detalhadas?.forEach(v => {
                     if (v.data_venda && v.data_venda.length >= 4) {
-                        yearsSet.add(v.data_venda.substring(0, 4));
+                        newYearsFromData.add(v.data_venda.substring(0, 4));
                     }
                 });
             });
-            const sortedYears = Array.from(yearsSet).sort().reverse();
-            if(!sortedYears.includes(currentYear)) sortedYears.unshift(currentYear);
-            setAvailableYears(sortedYears);
+            setAvailableYears(prev => {
+                const merged = new Set([...prev, ...newYearsFromData]);
+                if (!merged.has(currentYear)) merged.add(currentYear);
+                return Array.from(merged).sort().reverse();
+            });
 
         } catch (error) {
             console.error("Error loading brokers page:", error);
         } finally {
             setLoading(false);
         }
-    }, [currentUser?.id, isAdmin, currentUser?.permissions, selectedObraId, obrasList.length, selectedYear, selectedMonth, availableYears, currentYear]);
+    }, [currentUser?.id, isAdmin, currentUser?.permissions, selectedObraId, obrasList.length, selectedYear, selectedMonth, currentYear]);
 
     useEffect(() => {
         const fetchObras = async () => {
@@ -145,7 +147,7 @@ const BrokersPage = () => {
         if (selectedObraId) {
             loadData();
         }
-    }, [loadData, selectedObraId, selectedYear, selectedMonth]);
+    }, [loadData, selectedObraId]);
 
     // Flatten all vendas across all brokers
     const processedData = useMemo(() => {
