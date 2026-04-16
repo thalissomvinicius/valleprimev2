@@ -83,7 +83,8 @@ const BrokersPage = () => {
             }
             const uauId = perms?.uau_corretor_id;
             const filters = {
-                mes: 'all',
+                ano: selectedYear,
+                mes: selectedMonth,
                 corretor_id: isAdmin ? null : (uauId || null), // null = retorna todos (só admin sem uau_id configurado)
                 empresa: empresa,
                 obra: obra
@@ -103,8 +104,8 @@ const BrokersPage = () => {
             setIsCacheData(false); // Sempre falso, pois os dados da Nova API são em Tempo Real
             setShowSyncBanner(true); // Show banner on new data load
 
-            // Populate available years dynamically based on the data
-            const yearsSet = new Set();
+            // Populate available years dynamically based on the data, without losing existing ones
+            const yearsSet = new Set(availableYears);
             brokersList.forEach(b => {
                 b.vendas_detalhadas?.forEach(v => {
                     if (v.data_venda && v.data_venda.length >= 4) {
@@ -121,7 +122,7 @@ const BrokersPage = () => {
         } finally {
             setLoading(false);
         }
-    }, [currentUser?.id, isAdmin, currentUser?.permissions, selectedObraId, obrasList.length]);
+    }, [currentUser?.id, isAdmin, currentUser?.permissions, selectedObraId, obrasList.length, selectedYear, selectedMonth, availableYears, currentYear]);
 
     useEffect(() => {
         const fetchObras = async () => {
@@ -144,7 +145,7 @@ const BrokersPage = () => {
         if (selectedObraId) {
             loadData();
         }
-    }, [loadData, selectedObraId]);
+    }, [loadData, selectedObraId, selectedYear, selectedMonth]);
 
     // Flatten all vendas across all brokers
     const processedData = useMemo(() => {
