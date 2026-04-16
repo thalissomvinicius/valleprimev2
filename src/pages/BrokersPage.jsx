@@ -281,22 +281,35 @@ const BrokersPage = () => {
         return { top5Vgv, top5Recebido };
     }, [processedData, isAdmin]);
 
+    // Componente comum de Header/Footer para os PDFs
+    const drawPdfHeaderFooter = (doc, data, title) => {
+        // Header
+        doc.setFillColor(15, 23, 42); // Cor Valle (Azul Marinho)
+        doc.rect(0, 0, doc.internal.pageSize.width, 22, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
+        doc.text("SISTEMA VALLE | PERFORMANCE DE VENDAS", data.settings.margin.left, 10);
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "normal");
+        doc.text(title, data.settings.margin.left, 16);
+        doc.text(`Emissão: ${new Date().toLocaleString('pt-BR')}`, doc.internal.pageSize.width - data.settings.margin.right, 16, { align: 'right' });
+
+        // Footer
+        doc.setFontSize(8);
+        doc.setTextColor(120, 120, 120);
+        doc.text("Desenvolvido por Vinicius Dev", data.settings.margin.left, doc.internal.pageSize.height - 10);
+        doc.text("Página " + doc.internal.getNumberOfPages(), doc.internal.pageSize.width - data.settings.margin.right, doc.internal.pageSize.height - 10, { align: 'right' });
+    };
+
     // Função de Geração de Relatório de Cobrança PDF
     const generateCollectionReport = () => {
         const doc = new jsPDF();
-        
-        const titleY = 15;
-        doc.setFontSize(16);
-        doc.text("Relatório de Cobrança - Clientes em Atraso", 14, titleY);
-        doc.setFontSize(10);
-        doc.text(`Data Base: ${new Date().toLocaleDateString('pt-BR')}`, 14, titleY + 6);
-        
         const tableData = [];
         
         processedData.forEach(v => {
             if (!v.raw_sinais_abertos?.lista) return;
             
-            // Applies global filter if user wants all delays OR if the report naturally implies ALL delays on the filtered data
             const delayedParcels = v.raw_sinais_abertos.lista.filter(p => p.is_atrasado === 1);
             if (delayedParcels.length > 0) {
                 const totalAtrasado = delayedParcels.reduce((acc, p) => acc + (p.valor_aberto || 0), 0);
@@ -305,7 +318,7 @@ const BrokersPage = () => {
                 tableData.push([
                     v.cliente?.nome || v.client?.nome || 'Sem Nome',
                     v.cliente?.telefone || 'Não Informado',
-                    `${v.venda_id} - ${v.quadra}/${v.lote}`,
+                    `${v.venda_id} - Q${v.quadra}/L${v.lote}`,
                     vencimentoMaisAntigo,
                     delayedParcels.length.toString(),
                     formatCurrency(totalAtrasado)
@@ -319,15 +332,50 @@ const BrokersPage = () => {
         }
 
         autoTable(doc, {
-            startY: titleY + 12,
+            startY: 28,
             head: [['Cliente', 'Telefone', 'Contrato Q/L', 'Venc. Antigo', 'Qtd Parc', 'Total Atrasado']],
             body: tableData,
             theme: 'grid',
-            headStyles: { fillColor: [41, 128, 185] },
-            styles: { fontSize: 8 }
+            headStyles: { fillColor: [220, 38, 38] }, // Red for billing
+            styles: { fontSize: 8 },
+            didDrawPage: (data) => drawPdfHeaderFooter(doc, data, "Relatório de Cobrança - Clientes em Atraso")
         });
 
-        doc.save(`Relatorio_Cobranca_${new Date().toISOString().slice(0,10)}.pdf`);
+        doc.save(`Valle_Cobranca_${new Date().toISOString().slice(0,10)}.pdf`);
+    };
+
+    // Função de Geração de Relatório de Vendas Gerais PDF
+    const generateSalesReport = () => {
+        const doc = new jsPDF();
+        const tableData = [];
+        
+        processedData.forEach(v => {
+            tableData.push([
+                v.cliente?.nome || v.client?.nome || 'Sem Nome',
+                v.corretorNome || 'Sem Corretor',
+                `Q${v.quadra}/L${v.lote}`,
+                formatDate(v.data_venda),
+                v.status_venda || 'Desconhecido',
+                formatCurrency(v.valor_venda)
+            ]);
+        });
+
+        if (tableData.length === 0) {
+            alert('Não há vendas no filtro atual.');
+            return;
+        }
+
+        autoTable(doc, {
+            startY: 28,
+            head: [['Cliente', 'Corretor', 'Q/Lote', 'Data Venda', 'Status', 'VGV Contrato']],
+            body: tableData,
+            theme: 'grid',
+            headStyles: { fillColor: [59, 130, 246] }, // Blue for General Sales
+            styles: { fontSize: 8 },
+            didDrawPage: (data) => drawPdfHeaderFooter(doc, data, "Relatório Geral de Vendas")
+        });
+
+        doc.save(`Valle_Relatorio_Vendas_${new Date().toISOString().slice(0,10)}.pdf`);
     };
 
     const formatCurrency = (val) => {
@@ -533,10 +581,15 @@ const BrokersPage = () => {
                     </div>
 
                     <div className="toolbar-actions">
-                        <span className="total-count">{processedData.length} contratos localizados</span>
-                        <button className="btn-cobranca" onClick={generateCollectionReport}>
-                            <AlertCircle size={16} /> Relatório de Cobrança (PDF)
-                        </button>
+                        <span className="total-count">{processedData.length} Contratos Visíveis</span>
+                        <div className="pdf-actions-group" style={{ display: 'flex', gap: '0.75rem', width: '100%', justifyContent: 'center' }}>
+                            <button className="btn-cobranca" onClick={generateSalesReport} style={{ background: '#3b82f6', boxShadow: '0 4px 15px rgba(59, 130, 246, 0.25)', animation: 'none', flex: 1 }}>
+                                <FileText size={16} /> Extrato Vendas (PDF)
+                            </button>
+                            <button className="btn-cobranca" onClick={generateCollectionReport} style={{ flex: 1 }}>
+                                <AlertCircle size={16} /> Emitir Cobrança
+                            </button>
+                        </div>
                     </div>
                 </div>
 
