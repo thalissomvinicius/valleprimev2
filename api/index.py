@@ -933,54 +933,7 @@ def push_cache_corretores():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
-@app.route('/api/integracao/cache/corretores', methods=['GET'])
-def get_cache_corretores():
-    """
-    Proxy: Consulta o Supabase Storage Bucket diretamente e serve ao frontend.
-    Resolve problemas de CORS nativo do navegador e contorna limpeza do /tmp.
-    """
-    try:
-        empresa = request.args.get('empresa', '28')
-        obra = request.args.get('obra', '70100')
-        mes = request.args.get('mes', 'all')
-        corretor_id = request.args.get('corretor_id', None)
-        cache_key = f"{empresa}-{obra}-{mes}"
-
-        # ── Baixa o JSON permanente do Supabase Storage ──
-        supabase_url = f"https://wcifxyvesmhqurqhnway.supabase.co/storage/v1/object/public/cache/{cache_key}.json"
-        
-        try:
-            r = requests.get(supabase_url, timeout=10)
-        except Exception as e:
-            return jsonify({"success": False, "error": f"Timeout no Supabase Storage: {e}"}), 504
-
-        if r.status_code != 200:
-            return jsonify({
-                "success": False,
-                "error": f"Nenhum cache para {cache_key} na nuvem. Ligue o sincronizador local."
-            }), 404
-
-        # ── Fast path: Admin sem filtro ──
-        if not corretor_id:
-            return Response(r.text, mimetype='application/json')
-
-        # ── Slow path: Filtra dados de um único corretor ──
-        try:
-            envelope = r.json()
-            cid = int(corretor_id)
-            filtrado = [d for d in envelope.get('dados', []) if d.get('codigo_corretor') == cid]
-            
-            envelope['dados'] = filtrado
-            envelope['total_corretores'] = len(filtrado)
-            return jsonify(envelope)
-            
-        except ValueError:
-            # Se r.json() falhar ou corretor_id for inválido, apenas retorna tudo
-            return Response(r.text, mimetype='application/json')
-
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+# API de Integração Removida a pedido do usuário (Redesign em andamento)
 
 
 @app.route('/api/integracao/config/obras', methods=['GET'])

@@ -22,7 +22,7 @@ import { fetchCorretoresData, fetchConfigObras } from '../services/api';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import './BrokersPage.css';
 
 const BrokersPage = () => {
@@ -187,6 +187,13 @@ const BrokersPage = () => {
                     return;
                 }
 
+                // Apply 'parcelFilter' (todos vs atraso)
+                if (parcelFilter === 'atraso') {
+                    if (v.sinal_negocio?.situacao !== 'Em Atraso') {
+                        return;
+                    }
+                }
+
                 // Apply Admin Broker filter
                 if (isAdmin && selectedAdminBroker !== 'all' && broker.corretor !== selectedAdminBroker) {
                     return;
@@ -221,7 +228,7 @@ const BrokersPage = () => {
         setStats({ totalVgv: globalVgv, totalSales: globalSales, totalPending: globalPending });
         return flatVendas;
 
-    }, [data, searchTerm, showCancelados, isAdmin, selectedAdminBroker]);
+    }, [data, searchTerm, showCancelados, parcelFilter, isAdmin, selectedAdminBroker]);
 
     // Extrai a lista única de corretores para o filtro do Admin
     const uniqueBrokers = useMemo(() => {
@@ -294,7 +301,7 @@ const BrokersPage = () => {
             return;
         }
 
-        doc.autoTable({
+        autoTable(doc, {
             startY: titleY + 12,
             head: [['Cliente', 'Telefone', 'Contrato Q/L', 'Venc. Antigo', 'Qtd Parc', 'Total Atrasado']],
             body: tableData,
