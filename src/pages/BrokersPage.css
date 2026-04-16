@@ -854,6 +854,47 @@
     border-radius: 6px;
 }
 
+.pdf-actions-group {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.btn-action-pdf {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.25rem;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.btn-action-pdf.secondary {
+    background: #3b82f6;
+    color: white;
+}
+
+.btn-action-pdf.danger {
+    background: #fef2f2;
+    color: #ef4444;
+    border: 1px solid #fee2e2;
+}
+
+.btn-action-pdf:hover {
+    filter: brightness(0.95);
+    transform: translateY(-1px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+}
+
+.btn-action-pdf:active {
+    transform: translateY(0);
+}
+
 @media(max-width: 900px) {
     .admin-rankings-section {
         grid-template-columns: 1fr;
@@ -1204,11 +1245,13 @@
         gap: 1rem;
     }
 
-    .btn-cobranca {
+    .pdf-actions-group {
         width: 100%;
-        justify-content: center;
-        padding: 1rem;
-        font-size: 1rem;
+    }
+
+    .btn-action-pdf {
+        flex: 1;
+        padding: 0.75rem 0.5rem;
     }
 
     /* Ajuste para Cards de Cliente Mobile se existirem no grid */

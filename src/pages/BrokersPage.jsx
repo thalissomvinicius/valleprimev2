@@ -583,12 +583,12 @@ const BrokersPage = () => {
 
                     <div className="toolbar-actions">
                         <span className="total-count">{processedData.length} Contratos Visíveis</span>
-                        <div className="pdf-actions-group" style={{ display: 'flex', gap: '0.75rem', width: '100%', justifyContent: 'center' }}>
-                            <button className="btn-cobranca" onClick={generateSalesReport} style={{ background: '#3b82f6', boxShadow: '0 4px 15px rgba(59, 130, 246, 0.25)', animation: 'none', flex: 1 }}>
-                                <FileText size={16} /> Extrato Vendas (PDF)
+                        <div className="pdf-actions-group">
+                            <button className="btn-action-pdf secondary" onClick={generateSalesReport}>
+                                <FileText size={16} /> Extrato Vendas
                             </button>
-                            <button className="btn-cobranca" onClick={generateCollectionReport} style={{ flex: 1 }}>
-                                <AlertCircle size={16} /> Emitir Cobrança
+                            <button className="btn-action-pdf danger" onClick={generateCollectionReport}>
+                                <AlertCircle size={16} /> Cobrança
                             </button>
                         </div>
                     </div>
