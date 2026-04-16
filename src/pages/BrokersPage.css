@@ -98,7 +98,12 @@
     cursor: pointer;
     outline: none;
     transition: color 0.2s;
-    max-width: 200px;
+    max-width: 280px;
+}
+
+.minimal-select {
+    padding-right: 1.2rem;
+    text-overflow: ellipsis;
 }
 
 .minimal-date {

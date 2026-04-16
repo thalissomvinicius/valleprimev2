@@ -480,7 +480,7 @@ const BrokersPage = () => {
                                 <Search size={16} />
                                 <input 
                                     type="text" 
-                                    placeholder="Buscar cliente ou corretor..."
+                                    placeholder={isAdmin ? "Buscar cliente ou corretor..." : "Buscar cliente..."}
                                     className="minimal-search"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}

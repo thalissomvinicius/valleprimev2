@@ -400,7 +400,15 @@ function MainApp() {
 
   return (
     <div className="app">
-      <Header title={currentObraInfo?.descricao} />
+      <Header title={(() => {
+        if (!currentObraInfo?.descricao) return 'Performance de Vendas';
+        const clean = currentObraInfo.descricao.replace('RESIDENCIAL ', '');
+        if (clean.includes(' - ')) {
+          const [lot, city] = clean.split(' - ');
+          return `${lot.trim()} (${city.trim()})`;
+        }
+        return clean;
+      })()} />
       {
         data.length > 0 && (
           <div className="stats-container animate-fade-in-up">

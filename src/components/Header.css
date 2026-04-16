@@ -1,13 +1,11 @@
 .app-header {
-    background: var(--glass-bg);
-    -webkit-backdrop-filter: var(--glass-blur);
-    backdrop-filter: var(--glass-blur);
-    border-bottom: 1px solid var(--glass-border);
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
     position: sticky;
     top: 0;
     z-index: 100;
     padding: 0.75rem 1.5rem;
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
 }
 
 .header-container {
@@ -44,7 +42,7 @@
 .header-divider {
     width: 1px;
     height: 32px;
-    background: rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.2);
 }
 
 .header-title-wrapper {
@@ -56,14 +54,14 @@
     font-size: 0.65rem;
     font-weight: 700;
     text-transform: uppercase;
-    color: var(--text-muted, #64748b);
+    color: rgba(255, 255, 255, 0.6);
     letter-spacing: 0.08em;
 }
 
 .header-title {
     font-size: 1.1rem;
     font-weight: 800;
-    color: var(--primary-color, #0f172a);
+    color: #ffffff;
     margin: 0;
     line-height: 1.2;
 }
@@ -86,7 +84,7 @@
     display: none;
     background: transparent;
     border: none;
-    color: var(--primary-color);
+    color: #ffffff;
     cursor: pointer;
     padding: 0.5rem;
     z-index: 200;
@@ -107,7 +105,7 @@
     gap: 0.4rem;
     padding: 0.5rem 0.65rem;
     border-radius: 8px;
-    color: var(--text-secondary, #475569);
+    color: rgba(255, 255, 255, 0.8);
     text-decoration: none;
     font-weight: 600;
     font-size: 0.85rem;
@@ -117,17 +115,17 @@
 }
 
 .btn-clients-header:hover {
-    background: rgba(59, 130, 246, 0.08);
-    color: var(--accent-color, #2563eb);
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
 }
 
 .btn-logout {
-    color: #ef4444;
+    color: #fca5a5;
 }
 
 .btn-logout:hover {
-    background: rgba(239, 68, 68, 0.08);
-    color: #dc2626;
+    background: rgba(239, 68, 68, 0.15);
+    color: #fca5a5;
 }
 
 .btn-pdf-header {
@@ -163,10 +161,10 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.5rem 0.75rem;
-    background: white;
-    border: 1px solid rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 8px;
-    color: var(--text-color, #1e293b);
+    color: #ffffff;
     font-weight: 600;
     font-size: 0.85rem;
     cursor: pointer;
@@ -174,13 +172,13 @@
 }
 
 .obra-selector-btn:hover {
-    border-color: var(--accent-color, #2563eb);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.4);
 }
 
 .obra-codigo {
-    background: rgba(37, 99, 235, 0.1);
-    color: var(--accent-color, #2563eb);
+    background: rgba(59, 130, 246, 0.3);
+    color: #93c5fd;
     padding: 0.15rem 0.4rem;
     border-radius: 4px;
     font-size: 0.75rem;
