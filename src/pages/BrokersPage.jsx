@@ -46,6 +46,8 @@ const BrokersPage = () => {
     const [dataFim, setDataFim] = useState(lastDayStr);
     const [inputInicio, setInputInicio] = useState(firstDayOfMonth);
     const [inputFim, setInputFim] = useState(lastDayStr);
+    const [searchTrigger, setSearchTrigger] = useState(0);
+
     const [searchTerm, setSearchTerm] = useState('');
     const [showCancelados, setShowCancelados] = useState(false);
     const [parcelFilter, setParcelFilter] = useState('todos'); // 'todos' | 'atraso'
@@ -163,7 +165,7 @@ const BrokersPage = () => {
         if (selectedObraId) {
             loadData();
         }
-    }, [loadData, selectedObraId]);
+    }, [loadData, selectedObraId, searchTrigger]);
 
     // Flatten all vendas across all brokers
     const processedData = useMemo(() => {
@@ -458,7 +460,14 @@ const BrokersPage = () => {
                                     value={inputFim}
                                     onChange={(e) => setInputFim(e.target.value)}
                                 />
-                                <button className="btn-search-date" onClick={() => { setDataInicio(inputInicio); setDataFim(inputFim); }}>
+                                <button 
+                                    className="btn-search-date" 
+                                    onClick={() => { 
+                                        setDataInicio(inputInicio); 
+                                        setDataFim(inputFim); 
+                                        setSearchTrigger(prev => prev + 1);
+                                    }}
+                                >
                                     Buscar
                                 </button>
                             </div>
