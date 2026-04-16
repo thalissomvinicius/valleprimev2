@@ -513,13 +513,11 @@ function MainApp() {
                 <span className="obra-codigo">{selectedObra}</span>
                 <span className="obra-nome">
                   {(() => {
-                    if (!currentObraInfo?.descricao) return '';
-                    const clean = currentObraInfo.descricao.replace('RESIDENCIAL ', '');
-                    if (clean.includes(' - ')) {
-                      const [name, city] = clean.split(' - ');
-                      return `${name.trim()} (${city.trim()})`;
-                    }
-                    return clean;
+                    if (!currentObraInfo) return '';
+                    const cleanDesc = currentObraInfo.descricao.replace('RESIDENCIAL ', '');
+                    const [loteamento, cidade] = cleanDesc.split(' - ');
+                    if (cidade) return `${cidade.trim()} - ${loteamento.trim()}`;
+                    return cleanDesc;
                   })()}
                 </span>
                 <ChevronDown size={16} className={obraDropdownOpen ? 'rotated' : ''} />
@@ -538,12 +536,10 @@ function MainApp() {
                       <span className="codigo">{obra.codigo}</span>
                       <span className="descricao">
                         {(() => {
-                          const clean = obra.descricao.replace('RESIDENCIAL ', '');
-                          if (clean.includes(' - ')) {
-                            const [name, city] = clean.split(' - ');
-                            return `${name.trim()} (${city.trim()})`;
-                          }
-                          return clean;
+                          const cleanDesc = obra.descricao.replace('RESIDENCIAL ', '');
+                          const [loteamento, cidade] = cleanDesc.split(' - ');
+                          if (cidade) return `${cidade.trim()} - ${loteamento.trim()}`;
+                          return cleanDesc;
                         })()}
                       </span>
                     </button>
