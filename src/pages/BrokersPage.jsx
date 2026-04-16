@@ -15,7 +15,8 @@ import {
     Info,
     Loader2,
     Briefcase,
-    X
+    X,
+    FileText
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { fetchCorretoresData, fetchConfigObras } from '../services/api';

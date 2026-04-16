@@ -610,6 +610,10 @@ function App() {
   }, [loading]);
 
   const renderRoutes = () => {
+    // Se estiver carregando o estado de autenticação, não renderiza nada ainda
+    // para evitar redirecionamentos errados (ex: ir para /login e depois /dashboard ao dar F5)
+    if (loading) return null;
+
     if (!isAuthenticated) {
       return (
         <Routes>
