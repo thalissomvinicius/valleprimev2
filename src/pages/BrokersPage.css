@@ -1021,12 +1021,19 @@
     }
 
     .date-range-group {
-        display: grid;
-        grid-template-columns: auto 1fr auto 1fr;
-        gap: 0.5rem;
+        display: flex;
+        flex-wrap: wrap;
+        flex-direction: row;
+        gap: 0.4rem;
         align-items: center;
         padding-top: 0.2rem;
         padding-bottom: 0.2rem;
+    }
+
+    .date-range-group .minimal-date {
+        flex: 1;
+        min-width: 100px;
+        padding: 0.5rem 0.2rem;
     }
 
     .minimal-select, .minimal-date, .minimal-search {

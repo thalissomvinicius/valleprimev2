@@ -417,15 +417,17 @@ const BrokersPage = () => {
                 </header>
 
                 <section className="brokers-stats-grid animate-fade-in-up">
-                    <div className="broker-stat-card">
-                        <div className="stat-icon vgv">
-                            <TrendingUp size={28} />
+                    {isAdmin && (
+                        <div className="broker-stat-card">
+                            <div className="stat-icon vgv">
+                                <TrendingUp size={28} />
+                            </div>
+                            <div className="stat-content">
+                                <span className="stat-secondary-label">VGV Total da Obra</span>
+                                <span className="stat-main-value">{formatCurrency(stats.totalVgv)}</span>
+                            </div>
                         </div>
-                        <div className="stat-content">
-                            <span className="stat-secondary-label">VGV Total da Obra</span>
-                            <span className="stat-main-value">{formatCurrency(stats.totalVgv)}</span>
-                        </div>
-                    </div>
+                    )}
 
                     <div className="broker-stat-card">
                         <div className="stat-icon sales">
