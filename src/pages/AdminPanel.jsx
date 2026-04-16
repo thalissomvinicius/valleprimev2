@@ -27,9 +27,17 @@ function AdminPanel() {
     const [pwConfirm, setPwConfirm] = useState('');
     const [pwSubmitting, setPwSubmitting] = useState(false);
     const [pwMessage, setPwMessage] = useState(null);
+    const [userSearchTerm, setUserSearchTerm] = useState('');
 
-    // Filtrar usuários (não mostrar admin na lista)
-    const regularUsers = users.filter(u => u.role !== 'admin');
+    // Filtrar usuários (não mostrar admin na lista, busca e ordem alfabética)
+    const regularUsers = users
+        .filter(u => u.role !== 'admin')
+        .filter(u => {
+            if (!userSearchTerm) return true;
+            const term = userSearchTerm.toLowerCase();
+            return (u.nome || '').toLowerCase().includes(term) || (u.username || '').toLowerCase().includes(term);
+        })
+        .sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
 
     const startEdit = (user) => {
         setEditingUser(user.id);
@@ -263,14 +271,30 @@ function AdminPanel() {
                             <Users size={22} />
                             Lista de Usuários
                         </h2>
-                        <button
-                            type="button"
-                            className="btn-add-user"
-                            onClick={() => { setShowAddForm(!showAddForm); setAddError(''); }}
-                        >
-                            <UserPlus size={20} />
-                            {showAddForm ? 'Cancelar' : 'Adicionar usuário'}
-                        </button>
+                        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                            <input 
+                                type="text" 
+                                placeholder="Buscar usuário..." 
+                                value={userSearchTerm}
+                                onChange={(e) => setUserSearchTerm(e.target.value)}
+                                style={{
+                                    padding: '0.5rem 1rem',
+                                    borderRadius: '8px',
+                                    border: '1px solid #cbd5e1',
+                                    background: '#ffffff',
+                                    minWidth: '220px',
+                                    fontSize: '0.85rem'
+                                }}
+                            />
+                            <button
+                                type="button"
+                                className="btn-add-user"
+                                onClick={() => { setShowAddForm(!showAddForm); setAddError(''); }}
+                            >
+                                <UserPlus size={20} />
+                                {showAddForm ? 'Cancelar' : 'Adicionar usuário'}
+                            </button>
+                        </div>
                     </div>
 
                     {showAddForm && (
