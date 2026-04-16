@@ -47,7 +47,7 @@ const BrokersPage = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [showCancelados, setShowCancelados] = useState(false);
     const [parcelFilter, setParcelFilter] = useState('todos'); // 'todos' | 'atraso'
-    const [showFiltrosMob, setShowFiltrosMob] = useState(false);
+    const [showFiltrosMob, setShowFiltrosMob] = useState(true);
     const [selectedAdminBroker, setSelectedAdminBroker] = useState('all');
     const [obrasList, setObrasList] = useState([]);
     const [selectedObraId, setSelectedObraId] = useState(''); // "empresa-obra"
@@ -427,11 +427,18 @@ const BrokersPage = () => {
                                     value={selectedObraId}
                                     onChange={(e) => setSelectedObraId(e.target.value)}
                                 >
-                                    {obrasList.map(item => (
-                                        <option key={`${item.empresa}-${item.obra}`} value={`${item.empresa}-${item.obra}`}>
-                                            {item.nome}
-                                        </option>
-                                    ))}
+                                    {obrasList.map(item => {
+                                        // Tenta deixar o nome do loteamento mais completo (Nome + Cidade)
+                                        let displayName = item.nome || `Obr: ${item.obra}`;
+                                        if (item.cidade && !displayName.toLowerCase().includes(item.cidade.toLowerCase())) {
+                                            displayName = `${displayName} - ${item.cidade}`;
+                                        }
+                                        return (
+                                            <option key={`${item.empresa}-${item.obra}`} value={`${item.empresa}-${item.obra}`}>
+                                                {displayName}
+                                            </option>
+                                        );
+                                    })}
                                 </select>
                             </div>
 
