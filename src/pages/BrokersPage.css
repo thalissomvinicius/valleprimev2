@@ -708,135 +708,7 @@
     }
 }
 
-@media (max-width: 768px) {
-    .brokers-hero {
-        padding: 1rem 0.75rem;
-        margin: 0.75rem 0 1.5rem 0;
-    }
 
-    .hero-content {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
-        border-bottom: none;
-        padding-bottom: 0.75rem;
-    }
-
-    .hero-title h1 {
-        font-size: 1.4rem;
-    }
-
-    .hero-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 10px;
-    }
-
-    /* Filtros como Chips Horizontais Deslizantes */
-    .broker-filters { 
-        flex-direction: row;
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        scroll-snap-type: x mandatory;
-        -webkit-overflow-scrolling: touch;
-        width: 100%;
-        gap: 0.6rem;
-        padding-bottom: 0.5rem;
-    }
-
-    .broker-filters::-webkit-scrollbar {
-        height: 3px;
-    }
-
-    .broker-filters::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 3px;
-    }
-    
-    .filter-group {
-        flex: 0 0 auto;
-        width: auto;
-        scroll-snap-align: start;
-        background: rgba(255, 255, 255, 0.85);
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
-        white-space: nowrap;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-        padding: 0.5rem 0.85rem;
-        border-radius: 20px;
-        border: 1px solid rgba(226, 232, 240, 0.6);
-        min-width: 0;
-    }
-
-    .filter-group.search-box {
-        min-width: 180px;
-    }
-
-    .minimal-select, 
-    .minimal-date-picker,
-    .minimal-search {
-        width: auto;
-        max-width: 150px;
-        font-size: 0.8rem;
-    }
-
-    .header-divider { display: none !important; }
-    
-    /* Stats */
-    .brokers-stats-grid {
-        gap: 0.75rem;
-    }
-
-    .broker-stat-card {
-        padding: 1rem;
-    }
-
-    .stat-main-value { font-size: 1.3rem; }
-
-    /* Client Cards */
-    .client-card {
-        margin-bottom: 0.75rem;
-        border-radius: 16px;
-    }
-
-    .client-card-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.75rem;
-        padding: 1rem;
-    }
-
-    .client-card-body {
-        padding: 1rem;
-    }
-
-    .client-card-right {
-        width: 100%;
-        justify-content: space-between;
-    }
-
-    .client-meta {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.2rem;
-    }
-
-    .client-meta .meta-divider {
-        display: none;
-    }
-
-    .three-blocks-grid {
-        grid-template-columns: 1fr;
-    }
-
-    /* Sync Banner */
-    .sync-banner {
-        left: 12px;
-        right: 12px;
-        max-width: none;
-        bottom: 80px;
-    }
-}
 
 /* =====================================================
    ADMIN RANKINGS & TOOLBARS
@@ -1116,9 +988,14 @@
     
     .broker-filters {
         width: 100%;
+        display: flex;
         flex-direction: column;
-        align-items: stretch;
-        gap: 1rem;
+        gap: 0;
+        background: rgba(255, 255, 255, 0.85);
+        border: 1px solid rgba(226, 232, 240, 0.6);
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        overflow: hidden;
     }
 
     .header-divider {
@@ -1126,17 +1003,30 @@
     }
 
     .filter-group, .date-range-group {
-        flex-direction: column;
-        align-items: flex-start;
+        flex-direction: row;
+        align-items: center;
         width: 100%;
         gap: 0.5rem;
+        padding: 0.5rem 0.75rem;
+        background: transparent !important;
+        box-shadow: none !important;
+        border: none !important;
+        border-bottom: 1px solid rgba(226, 232, 240, 0.4) !important;
+        border-radius: 0 !important;
+        box-sizing: border-box;
+    }
+
+    .filter-group:last-child {
+        border-bottom: none !important;
     }
 
     .date-range-group {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: auto 1fr auto 1fr;
         gap: 0.5rem;
         align-items: center;
+        padding-top: 0.2rem;
+        padding-bottom: 0.2rem;
     }
 
     .minimal-select, .minimal-date, .minimal-search {
