@@ -297,8 +297,13 @@ export const fetchConfigObras = async () => {
 const LOCAL_UAU_API = 'https://api.valleprimeapi.online';
 
 export const fetchCorretoresData = async (filters = {}) => {
-  const { empresa = 28, obra = '70100', ano = 'all', mes = 'all' } = filters;
-  const endpoint = `${LOCAL_UAU_API}/api/vendas/${empresa}/${obra}?ano=${ano}&mes=${mes}`;
+  const { empresa = 28, obra = '70100', data_inicio = '', data_fim = '' } = filters;
+  let endpoint = `${LOCAL_UAU_API}/api/vendas/${empresa}/${obra}`;
+  
+  const params = new URLSearchParams();
+  if (data_inicio) params.append('data_inicio', data_inicio);
+  if (data_fim) params.append('data_fim', data_fim);
+  if (params.toString()) endpoint += `?${params.toString()}`;
 
   try {
     const response = await axios.get(endpoint, {

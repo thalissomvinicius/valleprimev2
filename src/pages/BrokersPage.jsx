@@ -34,19 +34,19 @@ const BrokersPage = () => {
     const [isCacheData, setIsCacheData] = useState(false);
     const [showSyncBanner, setShowSyncBanner] = useState(true);
     
-    const currentYear = new Date().getFullYear().toString();
-    const currentMonthNum = String(new Date().getMonth() + 1).padStart(2, '0');
+    // Helper: primeiro e último dia do mês atual
+    const today = new Date();
+    const firstDayOfMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
+    const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    const lastDayStr = `${lastDayOfMonth.getFullYear()}-${String(lastDayOfMonth.getMonth() + 1).padStart(2, '0')}-${String(lastDayOfMonth.getDate()).padStart(2, '0')}`;
     
     // Filters
-    const [selectedYear, setSelectedYear] = useState(currentYear);
-    const [selectedMonth, setSelectedMonth] = useState(currentMonthNum);
+    const [dataInicio, setDataInicio] = useState(firstDayOfMonth);
+    const [dataFim, setDataFim] = useState(lastDayStr);
     const [searchTerm, setSearchTerm] = useState('');
     const [showCancelados, setShowCancelados] = useState(false);
     const [parcelFilter, setParcelFilter] = useState('todos'); // 'todos' | 'atraso'
     const [selectedAdminBroker, setSelectedAdminBroker] = useState('all');
-    
-    // Obra/Period select options
-    const [availableYears, setAvailableYears] = useState([currentYear]);
     const [obrasList, setObrasList] = useState([]);
     const [selectedObraId, setSelectedObraId] = useState(''); // "empresa-obra"
 
@@ -110,9 +110,9 @@ const BrokersPage = () => {
             }
             const uauId = perms?.uau_corretor_id;
             const filters = {
-                ano: selectedYear,
-                mes: selectedMonth,
-                corretor_id: isAdmin ? null : (uauId || null), // null = retorna todos (só admin sem uau_id configurado)
+                data_inicio: dataInicio,
+                data_fim: dataFim,
+                corretor_id: isAdmin ? null : (uauId || null),
                 empresa: empresa,
                 obra: obra
             };
@@ -120,7 +120,6 @@ const BrokersPage = () => {
             const result = await fetchCorretoresData(filters);
             let brokersList = result.data || result.dados || [];
 
-            // A nova API Ngrok retorna a árvore completa em tempo real.
             // Para garantir segurança, filtramos os dados pelo `corretor_id` se o usuário NÃO for admin.
             if (!isAdmin && filters.corretor_id) {
                 brokersList = brokersList.filter(b => String(b.codigo_corretor) === String(filters.corretor_id));
@@ -128,23 +127,8 @@ const BrokersPage = () => {
 
             setData(brokersList);
             setLastUpdate(result.atualizado_em || new Date().toISOString());
-            setIsCacheData(false); // Sempre falso, pois os dados da Nova API são em Tempo Real
-            setShowSyncBanner(true); // Show banner on new data load
-
-            // Populate available years dynamically using functional setState to avoid infinite loops
-            const newYearsFromData = new Set();
-            brokersList.forEach(b => {
-                b.vendas_detalhadas?.forEach(v => {
-                    if (v.data_venda && v.data_venda.length >= 4) {
-                        newYearsFromData.add(v.data_venda.substring(0, 4));
-                    }
-                });
-            });
-            setAvailableYears(prev => {
-                const merged = new Set([...prev, ...newYearsFromData]);
-                if (!merged.has(currentYear)) merged.add(currentYear);
-                return Array.from(merged).sort().reverse();
-            });
+            setIsCacheData(false);
+            setShowSyncBanner(true);
 
         } catch (error) {
             console.error("Error loading brokers page:", error);
@@ -152,7 +136,7 @@ const BrokersPage = () => {
             completeProgress();
             setLoading(false);
         }
-    }, [currentUser?.id, isAdmin, currentUser?.permissions, selectedObraId, obrasList.length, selectedYear, selectedMonth, currentYear]);
+    }, [currentUser?.id, isAdmin, currentUser?.permissions, selectedObraId, obrasList.length, dataInicio, dataFim]);
 
     useEffect(() => {
         const fetchObras = async () => {
@@ -196,14 +180,6 @@ const BrokersPage = () => {
             });
 
             vendas.forEach(v => {
-                // Apply year/month filter
-                if (selectedYear !== 'all') {
-                    if (!v.data_venda || !v.data_venda.startsWith(selectedYear)) return;
-                }
-                
-                if (selectedMonth !== 'all') {
-                    if (!v.data_venda || v.data_venda.substring(5, 7) !== selectedMonth) return;
-                }
                 
                 // Apply 'ativos' vs 'cancelados' filter
                 const isCancelado = v.status_venda === 'Cancelada' || v.status_codigo === 1;
@@ -245,7 +221,7 @@ const BrokersPage = () => {
         setStats({ totalVgv: globalVgv, totalSales: globalSales, totalPending: globalPending });
         return flatVendas;
 
-    }, [data, searchTerm, selectedMonth, selectedYear, showCancelados, isAdmin, selectedAdminBroker]);
+    }, [data, searchTerm, showCancelados, isAdmin, selectedAdminBroker]);
 
     // Extrai a lista única de corretores para o filtro do Admin
     const uniqueBrokers = useMemo(() => {
@@ -380,30 +356,22 @@ const BrokersPage = () => {
 
                             <div className="header-divider"></div>
 
-                            <div className="filter-group">
+                            <div className="filter-group date-range-group">
                                 <Calendar size={16} />
-                                <select 
-                                    className="minimal-select"
-                                    value={selectedYear}
-                                    onChange={(e) => setSelectedYear(e.target.value)}
-                                >
-                                    <option value="all">Todos os Anos</option>
-                                    {availableYears.map(y => (
-                                        <option key={y} value={y}>{y}</option>
-                                    ))}
-                                </select>
-                                
-                                <select 
-                                    className="minimal-select"
-                                    value={selectedMonth}
-                                    onChange={(e) => setSelectedMonth(e.target.value)}
-                                >
-                                    <option value="all">Todos os Meses</option>
-                                    {['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'].map((m, i) => {
-                                        const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-                                        return <option key={m} value={m}>{monthNames[i]}</option>
-                                    })}
-                                </select>
+                                <span className="date-label">De:</span>
+                                <input 
+                                    type="date" 
+                                    className="minimal-date"
+                                    value={dataInicio}
+                                    onChange={(e) => setDataInicio(e.target.value)}
+                                />
+                                <span className="date-label">Até:</span>
+                                <input 
+                                    type="date" 
+                                    className="minimal-date"
+                                    value={dataFim}
+                                    onChange={(e) => setDataFim(e.target.value)}
+                                />
                             </div>
 
                             {isAdmin && (
