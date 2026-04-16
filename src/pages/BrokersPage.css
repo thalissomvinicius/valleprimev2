@@ -966,6 +966,79 @@
 }
 
 /* =====================================================
+   DASHBOARD 2x2 & NEW LIST COMPONENTS
+   ===================================================== */
+.brokers-financial-dashboard {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.finance-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+    border: 1px solid #f1f5f9;
+}
+
+.finance-card .f-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+}
+
+.finance-card.neutral .f-icon { background: #f8fafc; color: #64748b; }
+.finance-card.primary .f-icon { background: #eff6ff; color: #3b82f6; }
+.finance-card.success .f-icon { background: #f0fdf4; color: #22c55e; }
+.finance-card.danger .f-icon { background: #fef2f2; color: #ef4444; }
+
+.finance-card .f-content { display: flex; flex-direction: column; }
+.finance-card .f-content label { font-size: 0.8rem; color: #64748b; font-weight: 500; margin-bottom: 0.2rem; }
+.finance-card .f-content span { font-size: 1.25rem; font-weight: 800; color: #0f172a; }
+.finance-card.danger .f-content span { color: #ef4444; }
+.finance-card.success .f-content span { color: #16a34a; }
+
+/* Parcels Vertical List (Desktop base) */
+.parcel-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+}
+.parcel-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background: #f8fafc;
+    border-radius: 8px;
+    border-left: 3px solid transparent;
+}
+.parcel-item.pago { border-left-color: #22c55e; background: #f0fdf4; }
+.parcel-item.atrasado { border-left-color: #ef4444; background: #fef2f2; }
+.parcel-info { display: flex; flex-direction: column; gap: 0.25rem; }
+.parcel-title { font-weight: 600; font-size: 0.85rem; color: #334155; }
+.parcel-date { font-size: 0.75rem; color: #64748b; }
+.parcel-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 0.25rem; }
+.parcel-value { font-weight: 700; font-size: 0.9rem; color: #475569; }
+.parcel-value.success { color: #16a34a; }
+.parcel-badge { font-size: 0.65rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 4px; text-transform: uppercase; }
+.parcel-badge.danger { background: #fee2e2; color: #ef4444; }
+.parcel-badge.warning { background: #fef3c7; color: #d97706; }
+
+.mobile-filters-toggle {
+    display: none;
+}
+
+/* =====================================================
    MOBILE RESPONSIVENESS (SMARTPHONES UP TO 768px)
    ===================================================== */
 @media screen and (max-width: 768px) {
@@ -986,16 +1059,39 @@
         font-size: 1.6rem;
     }
     
-    .broker-filters {
-        width: 100%;
+    .mobile-filters-toggle {
         display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        width: 100%;
+        padding: 0.9rem;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        color: #475569;
+        font-weight: 600;
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+
+    .broker-filters {
+        display: none;
+        width: 100%;
         flex-direction: column;
         gap: 0;
-        background: rgba(255, 255, 255, 0.85);
+        background: rgba(255, 255, 255, 0.95);
         border: 1px solid rgba(226, 232, 240, 0.6);
         border-radius: 12px;
         box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
         overflow: hidden;
+        margin-bottom: 1rem;
+    }
+
+    .broker-filters.open {
+        display: flex;
     }
 
     .header-divider {
@@ -1043,18 +1139,26 @@
         font-size: 1rem;
     }
 
-    .brokers-stats-grid {
-        grid-template-columns: 1fr;
-        gap: 1rem;
+    .brokers-financial-dashboard {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
     }
 
-    .broker-stat-card {
-        padding: 1.25rem;
-        gap: 1rem;
+    .finance-card {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 1rem;
+        gap: 0.75rem;
+    }
+    
+    .finance-card .f-icon {
+        width: 36px;
+        height: 36px;
     }
 
-    .stat-main-value {
-        font-size: 1.5rem;
+    .finance-card .f-content span {
+        font-size: 1.1rem;
     }
 
     .admin-rankings-section {

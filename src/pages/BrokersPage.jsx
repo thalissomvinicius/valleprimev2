@@ -46,6 +46,7 @@ const BrokersPage = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [showCancelados, setShowCancelados] = useState(false);
     const [parcelFilter, setParcelFilter] = useState('todos'); // 'todos' | 'atraso'
+    const [showFiltrosMob, setShowFiltrosMob] = useState(false);
     const [selectedAdminBroker, setSelectedAdminBroker] = useState('all');
     const [obrasList, setObrasList] = useState([]);
     const [selectedObraId, setSelectedObraId] = useState(''); // "empresa-obra"
@@ -166,6 +167,8 @@ const BrokersPage = () => {
         let globalVgv = 0;
         let globalSales = 0;
         let globalPending = 0;
+        let globalSinaisPagos = 0;
+        let globalSinaisAbertos = 0;
         
         let flatVendas = [];
 
@@ -215,6 +218,14 @@ const BrokersPage = () => {
                     globalSales += 1;
                 }
 
+                // Calculate new Comprehensive Financial metrics
+                if (!isCancelado) {
+                    const sumPagos = v.raw_sinais_pagos?.lista?.reduce((acc, p) => acc + (p.valor_pago || 0), 0) || 0;
+                    const sumAbertos = v.raw_sinais_abertos?.lista?.reduce((acc, p) => acc + (p.valor_aberto || 0), 0) || 0;
+                    globalSinaisPagos += sumPagos;
+                    globalSinaisAbertos += sumAbertos;
+                }
+
                 // Inject broker data into the sale for display purposes
                 flatVendas.push({
                     ...v,
@@ -225,7 +236,13 @@ const BrokersPage = () => {
         });
 
         // Set the stats for the UI
-        setStats({ totalVgv: globalVgv, totalSales: globalSales, totalPending: globalPending });
+        setStats({ 
+            totalVgv: globalVgv, 
+            totalSales: globalSales, 
+            totalPending: globalPending,
+            sinaisPagos: globalSinaisPagos,
+            sinaisAbertos: globalSinaisAbertos
+        });
         return flatVendas;
 
     }, [data, searchTerm, showCancelados, parcelFilter, isAdmin, selectedAdminBroker]);
@@ -345,7 +362,15 @@ const BrokersPage = () => {
                             </div>
                         </div>
 
-                        <div className="broker-filters">
+                        <button 
+                            className="mobile-filters-toggle" 
+                            onClick={() => setShowFiltrosMob(!showFiltrosMob)}
+                        >
+                            <Search size={16} /> 
+                            <span>{showFiltrosMob ? 'Ocultar Filtros' : 'Filtros da Busca'}</span>
+                        </button>
+
+                        <div className={`broker-filters ${showFiltrosMob ? 'open' : ''}`}>
                             <div className="filter-group">
                                 <Briefcase size={16} />
                                 <select 
@@ -416,38 +441,39 @@ const BrokersPage = () => {
                     </div>
                 </header>
 
-                <section className="brokers-stats-grid animate-fade-in-up">
-                    {isAdmin && (
-                        <div className="broker-stat-card">
-                            <div className="stat-icon vgv">
-                                <TrendingUp size={28} />
-                            </div>
-                            <div className="stat-content">
-                                <span className="stat-secondary-label">VGV Total da Obra</span>
-                                <span className="stat-main-value">{formatCurrency(stats.totalVgv)}</span>
-                            </div>
+                <section className="brokers-financial-dashboard animate-fade-in-up">
+                    <div className="finance-card neutral">
+                        <div className="f-icon"><DollarSign size={20} /></div>
+                        <div className="f-content">
+                            <label>Total de Vendas</label>
+                            {isAdmin ? 
+                                <span>{formatCurrency(stats.totalVgv)}</span> :
+                                <span>{stats.totalSales} Lotes</span>
+                            }
                         </div>
-                    )}
-
-                    <div className="broker-stat-card">
-                        <div className="stat-icon sales">
-                            <DollarSign size={28} />
-                        </div>
-                        <div className="stat-content">
-                            <span className="stat-secondary-label">Total de Vendas</span>
-                            <span className="stat-main-value">{stats.totalSales} Lotes</span>
+                    </div>
+                    
+                    <div className="finance-card primary">
+                        <div className="f-icon"><TrendingUp size={20} /></div>
+                        <div className="f-content">
+                            <label>Sinais Totais</label>
+                            <span>{formatCurrency((stats.sinaisPagos || 0) + (stats.sinaisAbertos || 0))}</span>
                         </div>
                     </div>
 
-                    <div className="broker-stat-card">
-                        <div className="stat-icon pending">
-                            <AlertCircle size={28} />
+                    <div className="finance-card success">
+                        <div className="f-icon"><Briefcase size={20} /></div>
+                        <div className="f-content">
+                            <label>Sinais Pagos</label>
+                            <span>{formatCurrency(stats.sinaisPagos || 0)}</span>
                         </div>
-                        <div className="stat-content">
-                            <span className="stat-secondary-label">Sinais em Atraso</span>
-                            <span className="stat-main-value" style={{ color: 'var(--danger-color)' }}>
-                                {formatCurrency(stats.totalPending)}
-                            </span>
+                    </div>
+
+                    <div className="finance-card danger">
+                        <div className="f-icon"><AlertCircle size={20} /></div>
+                        <div className="f-content">
+                            <label>Sinais Abertos</label>
+                            <span>{formatCurrency(stats.sinaisAbertos || 0)}</span>
                         </div>
                     </div>
                 </section>
@@ -658,32 +684,21 @@ const BrokersPage = () => {
                                                     </div>
                                                     <div className="block-content">
                                                         {filteredAbertos.length > 0 ? (
-                                                            <div className="parcelas-table-wrapper">
-                                                                <table className="parcelas-table">
-                                                                    <thead>
-                                                                        <tr>
-                                                                            <th>Parcela</th>
-                                                                            <th>Vencimento</th>
-                                                                            <th>Valor</th>
-                                                                            <th>Status</th>
-                                                                        </tr>
-                                                                    </thead>
-                                                                    <tbody>
-                                                                        {filteredAbertos.map((parc, idx) => (
-                                                                            <tr key={idx} className={parc.is_atrasado === 1 ? 'row-atrasado' : ''}>
-                                                                                <td className="parcela-id" data-label="Parcela">{parc.tipo} ({parc.parcela})</td>
-                                                                                <td data-label="Vencimento">{formatDate(parc.data_vencimento)}</td>
-                                                                                <td className="parcela-valor" data-label="Valor">{formatCurrency(parc.valor_aberto)}</td>
-                                                                                <td data-label="Status">
-                                                                                    {parc.is_atrasado === 1 
-                                                                                        ? <span className="badge-atrasado">Atrasado</span> 
-                                                                                        : <span className="badge-avencer">A Vencer</span>
-                                                                                    }
-                                                                                </td>
-                                                                            </tr>
-                                                                        ))}
-                                                                    </tbody>
-                                                                </table>
+                                                            <div className="parcel-list">
+                                                                {filteredAbertos.map((parc, idx) => (
+                                                                    <div key={idx} className={`parcel-item ${parc.is_atrasado === 1 ? 'atrasado' : ''}`}>
+                                                                        <div className="parcel-info">
+                                                                            <span className="parcel-title">{parc.tipo} ({parc.parcela})</span>
+                                                                            <span className="parcel-date">Venc: {formatDate(parc.data_vencimento)}</span>
+                                                                        </div>
+                                                                        <div className="parcel-meta">
+                                                                            <span className="parcel-value">{formatCurrency(parc.valor_aberto)}</span>
+                                                                            <span className={`parcel-badge ${parc.is_atrasado === 1 ? 'danger' : 'warning'}`}>
+                                                                                {parc.is_atrasado === 1 ? 'Atrasado' : 'A Vencer'}
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
                                                             </div>
                                                         ) : (
                                                             <div className="no-data-msg">
@@ -707,27 +722,18 @@ const BrokersPage = () => {
                                                     </div>
                                                     <div className="block-content">
                                                         {venda.raw_sinais_pagos?.lista && venda.raw_sinais_pagos.lista.length > 0 ? (
-                                                            <div className="parcelas-table-wrapper">
-                                                                <table className="parcelas-table pago">
-                                                                    <thead>
-                                                                        <tr>
-                                                                            <th>Parcela</th>
-                                                                            <th>Vencimento</th>
-                                                                            <th>Pagamento</th>
-                                                                            <th>Valor</th>
-                                                                        </tr>
-                                                                    </thead>
-                                                                    <tbody>
-                                                                        {venda.raw_sinais_pagos.lista.map((parc, idx) => (
-                                                                            <tr key={idx}>
-                                                                                <td className="parcela-id" data-label="Parcela">{parc.tipo} ({parc.parcela})</td>
-                                                                                <td data-label="Vencimento">{formatDate(parc.data_vencimento)}</td>
-                                                                                <td className="data-pagamento" data-label="Pagamento">{formatDate(parc.data_pagamento)}</td>
-                                                                                <td className="parcela-valor pago" data-label="Valor">{formatCurrency(parc.valor_pago)}</td>
-                                                                            </tr>
-                                                                        ))}
-                                                                    </tbody>
-                                                                </table>
+                                                            <div className="parcel-list">
+                                                                {venda.raw_sinais_pagos.lista.map((parc, idx) => (
+                                                                    <div key={idx} className="parcel-item pago">
+                                                                        <div className="parcel-info">
+                                                                            <span className="parcel-title">{parc.tipo} ({parc.parcela})</span>
+                                                                            <span className="parcel-date">Pago em: {formatDate(parc.data_pagamento)}</span>
+                                                                        </div>
+                                                                        <div className="parcel-meta">
+                                                                            <span className="parcel-value success">{formatCurrency(parc.valor_pago)}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
                                                             </div>
                                                         ) : (
                                                             <div className="no-data-msg">
