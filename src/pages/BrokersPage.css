@@ -1255,6 +1255,7 @@
 @media screen and (max-width: 768px) {
     .brokers-container {
         padding: 0 1rem;
+        padding-bottom: 2rem !important;
     }
 
     .hero-content {
@@ -1325,21 +1326,30 @@
     }
 
     .action-toolbar {
+        position: relative !important;
+        bottom: auto !important;
+        backdrop-filter: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        border: none !important;
         display: flex;
         flex-direction: column;
         width: 100%;
         gap: 1.5rem;
         margin-top: 1rem;
         margin-bottom: 2rem;
+        padding: 0 !important;
     }
 
     .cancelados-toggle-bar {
-        flex-direction: column;
-        align-items: flex-start;
-        padding: 1rem;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        padding: 0.5rem 0;
         gap: 1rem;
         width: 100%;
         box-sizing: border-box;
+        border: none !important;
     }
     
     .toolbar-actions {
