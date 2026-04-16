@@ -400,15 +400,7 @@ function MainApp() {
 
   return (
     <div className="app">
-      <Header title={(() => {
-        if (!currentObraInfo?.descricao) return 'Performance de Vendas';
-        const clean = currentObraInfo.descricao.replace('RESIDENCIAL ', '');
-        if (clean.includes(' - ')) {
-          const [lot, city] = clean.split(' - ');
-          return `${lot.trim()} (${city.trim()})`;
-        }
-        return clean;
-      })()} />
+      <Header title={currentObraInfo?.descricao} />
       {
         data.length > 0 && (
           <div className="stats-container animate-fade-in-up">
@@ -598,7 +590,15 @@ function MainApp() {
           <BudgetModal
             lot={selectedLot}
             onClose={() => setSelectedLot(null)}
-            obraName={currentObraInfo?.descricao}
+            obraName={(() => {
+              if (!currentObraInfo?.descricao) return 'Valle';
+              const clean = currentObraInfo.descricao.replace('RESIDENCIAL ', '');
+              if (clean.includes(' - ')) {
+                const [lot, city] = clean.split(' - ');
+                return `${lot.trim()} (${city.trim()})`;
+              }
+              return clean;
+            })()}
           />
         )
       }
