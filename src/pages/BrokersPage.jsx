@@ -276,7 +276,10 @@ const BrokersPage = () => {
         });
 
         const brokersPerf = Object.values(perfMap);
-        const top5Vgv = [...brokersPerf].sort((a, b) => b.vgv - a.vgv).slice(0, 5);
+        const top5Vgv = [...brokersPerf].sort((a, b) => {
+            if (b.qtd_vendas !== a.qtd_vendas) return b.qtd_vendas - a.qtd_vendas; // Quantidade de vendas primeiro
+            return b.vgv - a.vgv; // VGV em caso de empate
+        }).slice(0, 5);
         const top5Recebido = [...brokersPerf].sort((a, b) => b.recebido - a.recebido).slice(0, 5);
 
         return { top5Vgv, top5Recebido };
