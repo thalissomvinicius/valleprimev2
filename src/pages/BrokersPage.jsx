@@ -706,7 +706,15 @@ const BrokersPage = () => {
                                                         </div>
                                                         <div className="data-row">
                                                             <span className="data-label">Condição</span>
-                                                            <span className="data-value">{venda.condicao_pagamento}</span>
+                                                            <span className="data-value">
+                                                                {(() => {
+                                                                    const totalAbertas = venda.raw_sinais_abertos?.lista?.length || 0;
+                                                                    const totalPagas = venda.raw_sinais_pagos?.lista?.length || 0;
+                                                                    const totalParcelas = totalAbertas + totalPagas;
+                                                                    if (totalParcelas <= 1) return 'Sinal à Vista';
+                                                                    return `Sinal Parcelado em ${totalParcelas}x`;
+                                                                })()}
+                                                            </span>
                                                         </div>
                                                         <div className="data-row">
                                                             <span className="data-label">Corretor</span>

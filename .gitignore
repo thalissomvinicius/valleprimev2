@@ -22,6 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
 # Python
 __pycache__/
 *.py[cod]
@@ -42,6 +43,7 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+.venv/
 
 # Vercel
 .vercel/
@@ -50,10 +52,22 @@ wheels/
 server_log.txt
 *.db
 temp_proposal.pdf
+api/proposta_output.pdf
 
 # Backend (kept separate)
 backend/
-*.bat
-*.ps1
+
+# Binários e executáveis (nunca devem ser tracked)
+*.exe
+*.dll
+*.bin
+
+# Outputs e arquivos gerados
+out.json
 
 consulta-proxy/
+
+# Scripts locais de automação
+*.bat
+*.ps1
+test_api.py
