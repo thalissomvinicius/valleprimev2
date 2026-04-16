@@ -267,26 +267,73 @@ export const printProposal = async (id) => {
 // API Render (proxy rápido, resolve CORS e acessa o Supabase)
 const RENDER_CLOUD_API = 'https://valleprimev2.onrender.com';
 
+// Mapeamento oficial: empresa-obra → nome completo "Loteamento (Cidade)"
+// Garante exibição correta independente do que a API retornar
+const OBRAS_DISPLAY_MAP = {
+  '13-70100': 'Jardim do Valle (Dom Eliseu)',
+  '12-70100': 'Jardim América (Capanema)',
+  '12-70101': 'Jardim América II (Capanema)',
+  '9-70100':  'Salles Jardim I (Castanhal)',
+  '9-70101':  'Salles Jardim II (Castanhal)',
+  '9-70102':  'Salles Jardim III (Castanhal)',
+  '9-70103':  'Salles Jardim IV (Castanhal)',
+  '6-70100':  'Jardim Castanhal I (Castanhal)',
+  '6-70101':  'Jardim Castanhal II (Castanhal)',
+  '24-70100': 'Jardim Castanhal III (Castanhal)',
+  '6-70400':  'Valle do Ipitinga (Tomé-Açu)',
+  '28-70100': 'Valle do Ipitinga II (Tomé-Açu)',
+  '6-70300':  'Jardim do Valle I (Tailândia)',
+  '22-70100': 'Jardim do Valle II (Tailândia)',
+  '15-70100': 'Jardim do Valle (Barcarena)',
+  '983-70100':'Valle do Uraim (Paragominas)',
+  '6-70500':  'Parque do Valle (Rondon do Pará)',
+  '29-70100': 'Valle dos Ipês (Tomé-Açu)',
+};
+
 // Lista estática de obras como fallback
 const OBRAS_FALLBACK = [
-  { empresa: 13, obra: '70100', nome: 'RESIDENCIAL JARDIM DO VALLE - DOM ELISEU' },
-  { empresa: 12, obra: '70100', nome: 'RESIDENCIAL JARDIM AMERICA - CAPANEMA' },
-  { empresa: 9, obra: '70100', nome: 'RESIDENCIAL SALLES JARDIM - CASTANHAL' },
-  { empresa: 6, obra: '70100', nome: 'RESIDENCIAL JARDIM CASTANHAL - CASTANHAL' },
-  { empresa: 28, obra: '70100', nome: 'RESIDENCIAL VALLE DO IPITINGA II - TOMÉ-AÇU' },
-  { empresa: 9, obra: '70101', nome: 'RESIDENCIAL SALLES JARDIM II - CASTANHAL' },
-  { empresa: 9, obra: '70102', nome: 'RESIDENCIAL SALLES JARDIM III - CASTANHAL' },
-  { empresa: 9, obra: '70103', nome: 'RESIDENCIAL SALLES JARDIM IV - CASTANHAL' },
-  { empresa: 24, obra: '70100', nome: 'RESIDENCIAL JARDIM CASTANHAL III - CASTANHAL' },
-  { empresa: 12, obra: '70101', nome: 'RESIDENCIAL JARDIM AMERICA II - CAPANEMA' },
+  { empresa: 13, obra: '70100', nome: 'Jardim do Valle (Dom Eliseu)' },
+  { empresa: 12, obra: '70100', nome: 'Jardim América (Capanema)' },
+  { empresa: 12, obra: '70101', nome: 'Jardim América II (Capanema)' },
+  { empresa: 9, obra: '70100', nome: 'Salles Jardim I (Castanhal)' },
+  { empresa: 9, obra: '70101', nome: 'Salles Jardim II (Castanhal)' },
+  { empresa: 9, obra: '70102', nome: 'Salles Jardim III (Castanhal)' },
+  { empresa: 9, obra: '70103', nome: 'Salles Jardim IV (Castanhal)' },
+  { empresa: 6, obra: '70100', nome: 'Jardim Castanhal I (Castanhal)' },
+  { empresa: 6, obra: '70101', nome: 'Jardim Castanhal II (Castanhal)' },
+  { empresa: 24, obra: '70100', nome: 'Jardim Castanhal III (Castanhal)' },
+  { empresa: 6, obra: '70400', nome: 'Valle do Ipitinga (Tomé-Açu)' },
+  { empresa: 28, obra: '70100', nome: 'Valle do Ipitinga II (Tomé-Açu)' },
+  { empresa: 6, obra: '70300', nome: 'Jardim do Valle I (Tailândia)' },
+  { empresa: 22, obra: '70100', nome: 'Jardim do Valle II (Tailândia)' },
+  { empresa: 15, obra: '70100', nome: 'Jardim do Valle (Barcarena)' },
+  { empresa: 983, obra: '70100', nome: 'Valle do Uraim (Paragominas)' },
+  { empresa: 6, obra: '70500', nome: 'Parque do Valle (Rondon do Pará)' },
+  { empresa: 29, obra: '70100', nome: 'Valle dos Ipês (Tomé-Açu)' },
 ];
+
+// Enriquece a lista de obras com nomes corretos do mapa
+const enrichObrasWithDisplayNames = (obras) => {
+  return obras.map(item => {
+    const key = `${item.empresa}-${item.obra}`;
+    return {
+      ...item,
+      nome: OBRAS_DISPLAY_MAP[key] || item.nome // usa o mapa, fallback pro original
+    };
+  });
+};
 
 export const fetchConfigObras = async () => {
   try {
     const response = await axios.get(`${RENDER_CLOUD_API}/api/integracao/config/obras`, {
       timeout: 10000
     });
-    return response.data;
+    const data = response.data;
+    // Enriquece os nomes vindos da API com nosso mapa oficial
+    if (data.obras) {
+      data.obras = enrichObrasWithDisplayNames(data.obras);
+    }
+    return data;
   } catch {
     console.warn('[fetchConfigObras] Render offline, usando lista estática de obras.');
     return { total: OBRAS_FALLBACK.length, obras: OBRAS_FALLBACK, is_cache: true };

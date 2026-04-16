@@ -427,25 +427,11 @@ const BrokersPage = () => {
                                     value={selectedObraId}
                                     onChange={(e) => setSelectedObraId(e.target.value)}
                                 >
-                                    {obrasList.map(item => {
-                                        // Limpa o prefixo RESIDENCIAL e formata Nome (Cidade)
-                                        let name = (item.nome || `Obr: ${item.obra}`).replace('RESIDENCIAL ', '');
-                                        let finalName = name;
-
-                                        if (item.cidade && !name.toLowerCase().includes(item.cidade.toLowerCase())) {
-                                            finalName = `${name} (${item.cidade})`;
-                                        } else if (name.includes(' - ')) {
-                                            // Se já tem o hífen separando a cidade, converte para parênteses
-                                            const parts = name.split(' - ');
-                                            finalName = `${parts[0]} (${parts[1]})`;
-                                        }
-
-                                        return (
-                                            <option key={`${item.empresa}-${item.obra}`} value={`${item.empresa}-${item.obra}`}>
-                                                {finalName}
-                                            </option>
-                                        );
-                                    })}
+                                    {obrasList.map(item => (
+                                        <option key={`${item.empresa}-${item.obra}`} value={`${item.empresa}-${item.obra}`}>
+                                            {item.nome}
+                                        </option>
+                                    ))}
                                 </select>
                             </div>
 
