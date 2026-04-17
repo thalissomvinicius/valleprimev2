@@ -22,6 +22,7 @@ import { useAuth } from '../context/AuthContext';
 import { fetchCorretoresData, fetchConfigObras } from '../services/api';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import valleLogo from '../assets/Valle-logo-azul.png';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import './BrokersPage.css';
@@ -354,17 +355,32 @@ const BrokersPage = () => {
 
     // Função de Geração de Relatório de Vendas Gerais PDF
     const generateSalesReport = () => {
-        const doc = new jsPDF();
         const tableData = [];
+        let globalVgvTotal = 0;
+        let globalSinalTotal = 0;
+        let globalSinalPago = 0;
+        let globalSinalAberto = 0;
         
         processedData.forEach(v => {
+            const sumPago = v.raw_sinais_pagos?.lista?.reduce((acc, p) => acc + (p.valor_pago || 0), 0) || 0;
+            const sumAberto = v.raw_sinais_abertos?.lista?.reduce((acc, p) => acc + (p.valor_aberto || 0), 0) || 0;
+            const sumSinal = sumPago + sumAberto;
+
+            globalVgvTotal += v.valor_venda || 0;
+            globalSinalTotal += sumSinal;
+            globalSinalPago += sumPago;
+            globalSinalAberto += sumAberto;
+
             tableData.push([
                 v.cliente?.nome || v.client?.nome || 'Sem Nome',
                 v.corretorNome || 'Sem Corretor',
                 `Q${v.quadra}/L${v.lote}`,
                 formatDate(v.data_venda),
                 v.status_venda || 'Desconhecido',
-                formatCurrency(v.valor_venda)
+                formatCurrency(v.valor_venda || 0),
+                formatCurrency(sumSinal),
+                formatCurrency(sumPago),
+                formatCurrency(sumAberto)
             ]);
         });
 
@@ -373,17 +389,103 @@ const BrokersPage = () => {
             return;
         }
 
-        autoTable(doc, {
-            startY: 28,
-            head: [['Cliente', 'Corretor', 'Q/Lote', 'Data Venda', 'Status', 'VGV Contrato']],
-            body: tableData,
-            theme: 'grid',
-            headStyles: { fillColor: [59, 130, 246] }, // Blue for General Sales
-            styles: { fontSize: 8 },
-            didDrawPage: (data) => drawPdfHeaderFooter(doc, data, "Relatório Geral de Vendas")
-        });
+        // Adiciona linha de totais na base da tabela
+        tableData.push([
+            'TOTAIS',
+            '-',
+            '-',
+            '-',
+            '-',
+            formatCurrency(globalVgvTotal),
+            formatCurrency(globalSinalTotal),
+            formatCurrency(globalSinalPago),
+            formatCurrency(globalSinalAberto)
+        ]);
 
-        doc.save(`Valle_Relatorio_Vendas_${new Date().toISOString().slice(0,10)}.pdf`);
+        const primaryBlue = [15, 23, 42];  
+        const softGreen = [34, 197, 94]; 
+
+        const drawPdfHeaderFooterEnhanced = (doc, data, title) => {
+            doc.setFillColor(...primaryBlue);
+            doc.rect(0, 0, doc.internal.pageSize.width, 30, 'F');
+            doc.setFillColor(...softGreen);
+            doc.rect(0, 30, doc.internal.pageSize.width, 2, 'F');
+            
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(16);
+            doc.setFont("helvetica", "bold");
+            doc.text("SISTEMA VALLE | EXTRATO DETALHADO", data.settings.margin.left, 14);
+            
+            doc.setFontSize(9);
+            doc.setFont("helvetica", "normal");
+            doc.text(title, data.settings.margin.left, 22);
+            doc.text(`Emissão: ${new Date().toLocaleString('pt-BR')}`, doc.internal.pageSize.width - data.settings.margin.right, 14, { align: 'right' });
+            doc.text(`${processedData.length} contratos processados na referência selecionada`, doc.internal.pageSize.width - data.settings.margin.right, 22, { align: 'right' });
+
+            doc.setFontSize(8);
+            doc.setTextColor(120, 120, 120);
+            doc.text("SISTEMA VALLE PRIME - Todos os Direitos Reservados", data.settings.margin.left, doc.internal.pageSize.height - 10);
+            doc.text("Página " + doc.internal.getNumberOfPages(), doc.internal.pageSize.width - data.settings.margin.right, doc.internal.pageSize.height - 10, { align: 'right' });
+        };
+
+        const createPdf = (base64Logo) => {
+            const doc = new jsPDF('landscape'); // Paisagem
+
+            autoTable(doc, {
+                startY: 40,
+                head: [['Cliente', 'Corretor', 'Q/Lote', 'Data', 'Status', 'Valor Lote', 'Sinal Total', 'Sinal Pago', 'Sinal Aberto']],
+                body: tableData,
+                theme: 'grid',
+                headStyles: { fillColor: primaryBlue, textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
+                columnStyles: {
+                    0: { cellWidth: 50 }, 
+                    1: { cellWidth: 45 }, 
+                    5: { halign: 'right' }, 
+                    6: { halign: 'right' },
+                    7: { halign: 'right', textColor: [21, 128, 61], fontStyle: 'bold' }, // Verde bold
+                    8: { halign: 'right', textColor: [185, 28, 28], fontStyle: 'bold' }, // Vermelho bold
+                },
+                willDrawCell: function(data) {
+                    // Tratar linha de totais
+                    if (data.row.index === tableData.length - 1) {
+                        doc.setFillColor(241, 245, 249); // Cinza leve no total
+                        doc.setFont("helvetica", "bold");
+                        data.cell.styles.fontStyle = 'bold';
+                        
+                        // Ignorar cores customizadas de pago/aberto se for linha total de strings
+                        if (data.column.index >= 5) {
+                           doc.setTextColor(0,0,0);
+                        }
+                    }
+                },
+                styles: { fontSize: 8, cellPadding: 3, valign: 'middle' },
+                alternateRowStyles: { fillColor: [248, 250, 252] },
+                didDrawPage: (data) => {
+                    drawPdfHeaderFooterEnhanced(doc, data, "Recebíveis de Entradas (Sinais) por Contrato")
+                    if (base64Logo) {
+                        try {
+                           // Adicionar logo no canto direito do header se possível
+                           doc.addImage(base64Logo, 'PNG', doc.internal.pageSize.width / 2.5, 4, 30, 20);
+                        } catch(e) {}
+                    }
+                }
+            });
+
+            doc.save(`Valle_Extrato_${new Date().toISOString().slice(0,10)}.pdf`);
+        };
+
+        // Carrega o logo assincronamente e so depois gera o PDF
+        const img = new Image();
+        img.src = valleLogo;
+        img.onload = () => {
+            const canvas = document.createElement("canvas");
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0);
+            createPdf(canvas.toDataURL("image/png"));
+        };
+        img.onerror = () => createPdf(null); // Caso falhe, renderiza sem logo
     };
 
     const formatCurrency = (val) => {
