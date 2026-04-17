@@ -35,6 +35,7 @@ const HelpBot = () => {
     const [chatHistory, setChatHistory] = useState([
         { role: 'bot', text: 'Olá! Sou o assistente do Valle Prime. Como posso te ajudar hoje?' }
     ]);
+    const [showMenu, setShowMenu] = useState(true);
     const bodyRef = useRef(null);
 
     // Auto-scroll para a última mensagem
@@ -55,6 +56,7 @@ const HelpBot = () => {
 
         // Adiciona a pergunta do usuario
         setChatHistory(prev => [...prev, { role: 'user', text: opt.label }]);
+        setShowMenu(false);
 
         // Simula digitando...
         setTimeout(() => {
@@ -66,6 +68,7 @@ const HelpBot = () => {
         setChatHistory([
             { role: 'bot', text: 'Estou aqui! O que mais quer saber?' }
         ]);
+        setShowMenu(true);
     };
 
     return (
@@ -94,7 +97,7 @@ const HelpBot = () => {
                         </div>
                     ))}
                     
-                    {chatHistory[chatHistory.length - 1].role === 'bot' && (
+                    {chatHistory[chatHistory.length - 1].role === 'bot' && showMenu && (
                         <div className="helpbot-options" style={{ animation: 'fadeInMsg 0.5s ease' }}>
                             {FAQ_OPTIONS.map(opt => (
                                 <button 
@@ -110,7 +113,7 @@ const HelpBot = () => {
                     )}
                 </div>
 
-                {chatHistory.length > 2 && (
+                {!showMenu && (
                     <div className="helpbot-footer">
                         <button onClick={resetChat}>Mostrar Menu Inicial</button>
                     </div>
@@ -119,7 +122,7 @@ const HelpBot = () => {
 
             {/* The Trigger Button */}
             <div className={`helpbot-toggle ${isOpen ? 'active' : ''}`} onClick={() => setIsOpen(!isOpen)}>
-                {isOpen ? <X size={28} /> : <MessageCircle size={28} />}
+                {isOpen ? <X size={28} /> : <Bot size={28} />}
             </div>
         </div>
     );
