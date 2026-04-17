@@ -311,10 +311,65 @@ const BrokersPage = () => {
         doc.text("Página " + doc.internal.getNumberOfPages(), doc.internal.pageSize.width - data.settings.margin.right, doc.internal.pageSize.height - 10, { align: 'right' });
     };
 
-    // Função de Geração de Relatório de Cobrança PDF
+    // -------- Utilitários PDF Compartilhados --------
+    const primaryBlue = [15, 23, 42];  
+    const softGreen = [34, 197, 94]; 
+
+    const drawPdfHeaderFooterEnhanced = (doc, data, docTitle, subtitle) => {
+        doc.setFillColor(255, 255, 255);
+        doc.rect(0, 0, doc.internal.pageSize.width, 30, 'F');
+        doc.setFillColor(...softGreen);
+        doc.rect(0, 30, doc.internal.pageSize.width, 2, 'F');
+        
+        doc.setTextColor(...primaryBlue);
+        doc.setFontSize(16);
+        doc.setFont("helvetica", "bold");
+        doc.text("SISTEMA VALLE | " + docTitle, data.settings.margin.left, 14);
+        
+        doc.setTextColor(80, 80, 80);
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "normal");
+        doc.text(subtitle, data.settings.margin.left, 22);
+        
+        doc.text(`Emissão: ${new Date().toLocaleString('pt-BR')}`, doc.internal.pageSize.width - data.settings.margin.right, 28, { align: 'right' });
+
+        doc.setFontSize(8);
+        doc.setTextColor(120, 120, 120);
+        doc.text("SISTEMA VALLE PRIME - Desenvolvido por Vinicius Dev", data.settings.margin.left, doc.internal.pageSize.height - 10);
+        doc.text("Página " + doc.internal.getNumberOfPages(), doc.internal.pageSize.width - data.settings.margin.right, doc.internal.pageSize.height - 10, { align: 'right' });
+    };
+
+    const runPdfWithLogo = (callback) => {
+        const img = new Image();
+        img.src = valleLogo;
+        img.onload = () => {
+            const canvas = document.createElement("canvas");
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0);
+            callback(canvas.toDataURL("image/png"));
+        };
+        img.onerror = () => callback(null);
+    };
+
+    const drawLogoEnhancement = (doc, data, base64Logo) => {
+         if (base64Logo) {
+             try {
+                const logoWidth = 35;
+                const logoHeight = 15;
+                const marginRight = data.settings.margin.right || 14;
+                doc.addImage(base64Logo, 'PNG', doc.internal.pageSize.width - marginRight - logoWidth, 6, logoWidth, logoHeight);
+             } catch(e) {}
+         }
+    };
+    // --------------------------------------------------
+
+    // Função de Geração de Relatório de Cobrança PDF (Inadimplência)
     const generateCollectionReport = () => {
-        const doc = new jsPDF();
         const tableData = [];
+        let globalTotalAtrasado = 0;
+        let globalTotalContratos = 0;
         
         processedData.forEach(v => {
             if (!v.raw_sinais_abertos?.lista) return;
@@ -324,6 +379,9 @@ const BrokersPage = () => {
                 const totalAtrasado = delayedParcels.reduce((acc, p) => acc + (p.valor_aberto || 0), 0);
                 const vencimentoMaisAntigo = delayedParcels[0]?.data_vencimento ? formatDate(delayedParcels[0].data_vencimento) : '-';
                 
+                globalTotalAtrasado += totalAtrasado;
+                globalTotalContratos++;
+
                 tableData.push([
                     v.cliente?.nome || v.client?.nome || 'Sem Nome',
                     v.cliente?.telefone || 'Não Informado',
@@ -340,20 +398,56 @@ const BrokersPage = () => {
             return;
         }
 
-        autoTable(doc, {
-            startY: 28,
-            head: [['Cliente', 'Telefone', 'Contrato Q/L', 'Venc. Antigo', 'Qtd Parc', 'Total Atrasado']],
-            body: tableData,
-            theme: 'grid',
-            headStyles: { fillColor: [220, 38, 38] }, // Red for billing
-            styles: { fontSize: 8 },
-            didDrawPage: (data) => drawPdfHeaderFooter(doc, data, "Relatório de Cobrança - Clientes em Atraso")
-        });
+        tableData.push([
+            'TOTAIS',
+            '-',
+            '-',
+            '-',
+            '-',
+            formatCurrency(globalTotalAtrasado)
+        ]);
 
-        doc.save(`Valle_Cobranca_${new Date().toISOString().slice(0,10)}.pdf`);
+        runPdfWithLogo((base64Logo) => {
+            const doc = new jsPDF('landscape'); // Mesmo layout em paisagem para manter padronização
+
+            autoTable(doc, {
+                startY: 40,
+                head: [['Cliente', 'Telefone', 'Contrato Q/L', 'Venc. Mais Antigo', 'Qtd. Parc. Atrasadas', 'Total Atrasado']],
+                body: tableData,
+                theme: 'grid',
+                headStyles: { fillColor: [220, 38, 38], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' }, // Vermelho para alerta
+                columnStyles: {
+                    0: { cellWidth: 70 },
+                    1: { cellWidth: 40 },
+                    2: { cellWidth: 40 },
+                    4: { halign: 'center' },
+                    5: { halign: 'right', textColor: [185, 28, 28], fontStyle: 'bold' } // Vermelho bold
+                },
+                willDrawCell: function(data) {
+                    if (data.row.index === tableData.length - 1) {
+                        doc.setFillColor(241, 245, 249); 
+                        doc.setFont("helvetica", "bold");
+                        data.cell.styles.fontStyle = 'bold';
+                        if (data.column.index === 5) {
+                           doc.setTextColor(185, 28, 28);
+                        } else {
+                           doc.setTextColor(0,0,0);
+                        }
+                    }
+                },
+                styles: { fontSize: 9, cellPadding: 4, valign: 'middle' },
+                alternateRowStyles: { fillColor: [254, 242, 242] }, // Vermelho ultra claro
+                didDrawPage: (data) => {
+                    drawPdfHeaderFooterEnhanced(doc, data, "RELATÓRIO DE INADIMPLÊNCIA", `Total de ${globalTotalContratos} contratos com atraso nos filtros atuais`);
+                    drawLogoEnhancement(doc, data, base64Logo);
+                }
+            });
+
+            doc.save(`Valle_Inadimplentes_${new Date().toISOString().slice(0,10)}.pdf`);
+        });
     };
 
-    // Função de Geração de Relatório de Vendas Gerais PDF
+    // Função de Geração de Relatório de Vendas PDF (Extrato / Recebíveis)
     const generateSalesReport = () => {
         const tableData = [];
         let globalVgvTotal = 0;
@@ -365,7 +459,7 @@ const BrokersPage = () => {
             const sumPago = v.raw_sinais_pagos?.lista?.reduce((acc, p) => acc + (p.valor_pago || 0), 0) || 0;
             const sumAberto = v.raw_sinais_abertos?.lista?.reduce((acc, p) => acc + (p.valor_aberto || 0), 0) || 0;
             const sumSinal = sumPago + sumAberto;
-            
+
             const qtdPago = v.raw_sinais_pagos?.lista?.length || 0;
             const qtdAberto = v.raw_sinais_abertos?.lista?.length || 0;
             const qtdSinal = qtdPago + qtdAberto;
@@ -383,6 +477,7 @@ const BrokersPage = () => {
                 v.status_venda || 'Desconhecido',
                 formatCurrency(v.valor_venda || 0),
                 qtdSinal.toString(),
+                qtdPago.toString(), // Nova coluna Qtd Pagos
                 formatCurrency(sumSinal),
                 formatCurrency(sumPago),
                 formatCurrency(sumAberto)
@@ -403,104 +498,53 @@ const BrokersPage = () => {
             '-',
             formatCurrency(globalVgvTotal),
             '-',
+            '-',
             formatCurrency(globalSinalTotal),
             formatCurrency(globalSinalPago),
             formatCurrency(globalSinalAberto)
         ]);
 
-        const primaryBlue = [15, 23, 42];  
-        const softGreen = [34, 197, 94]; 
-
-        const drawPdfHeaderFooterEnhanced = (doc, data, title) => {
-            // Header Fundo Branco
-            doc.setFillColor(255, 255, 255);
-            doc.rect(0, 0, doc.internal.pageSize.width, 30, 'F');
-            doc.setFillColor(...softGreen);
-            doc.rect(0, 30, doc.internal.pageSize.width, 2, 'F');
-            
-            // Texto Primário (Azul Marinho)
-            doc.setTextColor(...primaryBlue);
-            doc.setFontSize(16);
-            doc.setFont("helvetica", "bold");
-            doc.text("SISTEMA VALLE | EXTRATO DETALHADO", data.settings.margin.left, 14);
-            
-            // Subtitulo secundário (Cinza Escuro)
-            doc.setTextColor(80, 80, 80);
-            doc.setFontSize(9);
-            doc.setFont("helvetica", "normal");
-            doc.text(title, data.settings.margin.left, 22);
-            
-            doc.text(`Emissão: ${new Date().toLocaleString('pt-BR')}`, doc.internal.pageSize.width - data.settings.margin.right, 28, { align: 'right' });
-            doc.text(`${processedData.length} contratos processados na referência selecionada`, data.settings.margin.left, 28);
-
-            doc.setFontSize(8);
-            doc.setTextColor(120, 120, 120);
-            doc.text("SISTEMA VALLE PRIME - Todos os Direitos Reservados", data.settings.margin.left, doc.internal.pageSize.height - 10);
-            doc.text("Página " + doc.internal.getNumberOfPages(), doc.internal.pageSize.width - data.settings.margin.right, doc.internal.pageSize.height - 10, { align: 'right' });
-        };
-
-        const createPdf = (base64Logo) => {
+        runPdfWithLogo((base64Logo) => {
             const doc = new jsPDF('landscape'); // Paisagem
 
             autoTable(doc, {
                 startY: 40,
-                head: [['Cliente', 'Corretor', 'Q/Lote', 'Data', 'Status', 'Valor Lote', 'Qtd. Parc.', 'Sinal Total', 'Sinal Pago', 'Sinal Aberto']],
+                head: [['Cliente', 'Corretor', 'Q/Lote', 'Data', 'Status', 'Valor Lote', 'Qtd Parc.', 'Qtd Pagos', 'Sinal Total', 'Sinal Pago', 'Sinal Aberto']],
                 body: tableData,
                 theme: 'grid',
                 headStyles: { fillColor: primaryBlue, textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
                 columnStyles: {
-                    0: { cellWidth: 46 }, 
-                    1: { cellWidth: 40 }, 
+                    0: { cellWidth: 42 }, 
+                    1: { cellWidth: 38 }, 
                     5: { halign: 'right' }, 
                     6: { halign: 'center' },
-                    7: { halign: 'right' },
-                    8: { halign: 'right', textColor: [21, 128, 61], fontStyle: 'bold' }, // Verde bold
-                    9: { halign: 'right', textColor: [185, 28, 28], fontStyle: 'bold' }, // Vermelho bold
+                    7: { halign: 'center', textColor: [21, 128, 61], fontStyle: 'bold' }, // verde
+                    8: { halign: 'right' },
+                    9: { halign: 'right', textColor: [21, 128, 61], fontStyle: 'bold' }, // Verde bold
+                    10: { halign: 'right', textColor: [185, 28, 28], fontStyle: 'bold' }, // Vermelho bold
                 },
                 willDrawCell: function(data) {
-                    // Tratar linha de totais
                     if (data.row.index === tableData.length - 1) {
                         doc.setFillColor(241, 245, 249); // Cinza leve no total
                         doc.setFont("helvetica", "bold");
                         data.cell.styles.fontStyle = 'bold';
                         
-                        // Ignorar cores customizadas de pago/aberto se for linha total de strings
+                        // Manter preto nas infos que não importam pra cor no footer
                         if (data.column.index >= 5) {
                            doc.setTextColor(0,0,0);
                         }
                     }
                 },
-                styles: { fontSize: 8, cellPadding: 3, valign: 'middle' },
+                styles: { fontSize: 7, cellPadding: 3, valign: 'middle' },
                 alternateRowStyles: { fillColor: [248, 250, 252] },
                 didDrawPage: (data) => {
-                    drawPdfHeaderFooterEnhanced(doc, data, "Recebíveis de Entradas (Sinais) por Contrato")
-                    if (base64Logo) {
-                        try {
-                           // Adicionar logo no canto direito do header onde há espaço em branco!
-                           const logoWidth = 35;
-                           const logoHeight = 15;
-                           const marginRight = data.settings.margin.right || 14;
-                           doc.addImage(base64Logo, 'PNG', doc.internal.pageSize.width - marginRight - logoWidth, 6, logoWidth, logoHeight);
-                        } catch(e) {}
-                    }
+                    drawPdfHeaderFooterEnhanced(doc, data, "EXTRATO DETALHADO", `Recebíveis de Entradas (Sinais) por Contrato | ${processedData.length} contratos referenciados.`);
+                    drawLogoEnhancement(doc, data, base64Logo);
                 }
             });
 
             doc.save(`Valle_Extrato_${new Date().toISOString().slice(0,10)}.pdf`);
-        };
-
-        // Carrega o logo assincronamente e so depois gera o PDF
-        const img = new Image();
-        img.src = valleLogo;
-        img.onload = () => {
-            const canvas = document.createElement("canvas");
-            canvas.width = img.width;
-            canvas.height = img.height;
-            const ctx = canvas.getContext("2d");
-            ctx.drawImage(img, 0, 0);
-            createPdf(canvas.toDataURL("image/png"));
-        };
-        img.onerror = () => createPdf(null); // Caso falhe, renderiza sem logo
+        });
     };
 
     const formatCurrency = (val) => {

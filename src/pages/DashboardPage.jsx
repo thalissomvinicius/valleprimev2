@@ -202,15 +202,20 @@ const DashboardPage = () => {
                     {allowedObras.length === 0 ? (
                         <div className="obras-empty">Nenhuma obra configurada para este usuário.</div>
                     ) : (
-                        <div className="obras-grid">
+                        <div className="obras-grid mini">
                             {allowedObras.map(obra => (
-                                <div key={obra.codigo} className="obra-card">
+                                <Link 
+                                    to="/disponibilidade" 
+                                    key={obra.codigo} 
+                                    className="obra-card mini"
+                                    onClick={() => localStorage.setItem('selectedObra', obra.codigo)}
+                                >
                                     <span className="obra-code">{obra.codigo}</span>
                                     <div className="obra-info">
                                         <span className="obra-name">{obra.descricao}</span>
                                         <span className="obra-location">{obra.cidade} - {obra.uf}</span>
                                     </div>
-                                </div>
+                                </Link>
                             ))}
                         </div>
                     )}
