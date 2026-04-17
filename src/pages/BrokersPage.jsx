@@ -148,7 +148,7 @@ const BrokersPage = () => {
             completeProgress();
             setLoading(false);
         }
-    }, [currentUser?.id, isAdmin, currentUser?.permissions, selectedObraId, obrasList.length, dataInicio, dataFim, completeProgress, startProgress]);
+    }, [isAdmin, currentUser?.permissions, selectedObraId, obrasList.length, dataInicio, dataFim, completeProgress, startProgress]);
 
     useEffect(() => {
         const fetchObras = async () => {
