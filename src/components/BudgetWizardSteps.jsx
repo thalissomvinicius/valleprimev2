@@ -39,17 +39,23 @@ export const Step1LotInfo = ({ lotValue, lot, formData, updateFormData, formatCu
             </div>
 
             {formData.discountActive && (
-                <div className="discount-options">
-                    {[10, 20, 30].map(pct => (
-                        <button
-                            key={pct}
-                            className={`discount-option-btn ${formData.discountPercent === pct ? 'active' : ''}`}
-                            onClick={() => updateFormData({ discountPercent: pct })}
-                        >
-                            {pct}% OFF
-                        </button>
-                    ))}
-                </div>
+                <>
+                    <div className="discount-warning-alert" style={{ background: 'rgba(237, 137, 54, 0.1)', border: '1px solid #ed8936', borderRadius: '8px', padding: '10px', fontSize: '0.8rem', color: '#c05621', marginBottom: '1rem', display: 'flex', alignItems: 'flex-start', gap: '8px', lineHeight: '1.4' }}>
+                        <Info size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
+                        <span><strong>Atenção:</strong> O Desconto Especial só é válido para os loteamentos com a devida permissão da Diretoria. Certifique-se da liberação antes de aplicar à proposta.</span>
+                    </div>
+                    <div className="discount-options">
+                        {[10, 20, 30].map(pct => (
+                            <button
+                                key={pct}
+                                className={`discount-option-btn ${formData.discountPercent === pct ? 'active' : ''}`}
+                                onClick={() => updateFormData({ discountPercent: pct })}
+                            >
+                                {pct}% OFF
+                            </button>
+                        ))}
+                    </div>
+                </>
             )}
 
             <div className="lot-details-card">
