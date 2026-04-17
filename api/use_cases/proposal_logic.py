@@ -58,29 +58,42 @@ class ProposalUseCase:
                     data.setdefault('estado_empreendimento', lot_uf)
             
             obra_name = data.get('obraName', '')
-            # Busca pela descricao completa ou pelo primeiro segmento (antes do ' - ')
-            obra_info = next((o for o in ProposalUseCase.OBRAS if o['descricao'].upper() == obra_name.upper()), None)
-            if not obra_info:
-                # Tenta sem sufixo de cidade: "JARDIM DO VALLE" dentro de "JARDIM DO VALLE - BARCARENA"
-                obra_name_base = obra_name.rsplit(' - ', 1)[0].strip().upper() if ' - ' in obra_name else ''
-                if obra_name_base:
-                    obra_info = next((o for o in ProposalUseCase.OBRAS if o['descricao'].upper().startswith(obra_name_base)), None)
+            clean_obra_name = obra_name.upper()
+
+            # Busca pela descricao exata ou por uma obra onde a sua respectiva cidade apareça no nome enviado (ex: (BARCARENA))
+            obra_info = next((o for o in ProposalUseCase.OBRAS if o['descricao'].upper() == clean_obra_name or (o['cidade'].upper() in clean_obra_name and len(clean_obra_name) > 4)), None)
             
+            import re
             if obra_info:
-                nome_base = obra_info['descricao'].split(' - ')[0] if ' - ' in obra_info['descricao'] else obra_info['descricao']
-                data['empreendimento'] = nome_base
-                data['cidade_empreendimento'] = obra_info['cidade']
-                data['estado_empreendimento'] = obra_info['uf']
-                data['cidade_proposta_final'] = f"{obra_info['cidade']}/{obra_info['uf']}"
+                # Se achou na lista oficial, padroniza tudo
+                # Remove o nome da cidade que possa vir no titulo base recebido do banco (ex: JARDIM DO VALLE (BARCARENA) -> JARDIM DO VALLE)
+                nome_base_clean = re.sub(r'\(.*?\)', '', obra_name).replace(' - ' + obra_info['cidade'].upper(), '').replace(' - ' + obra_info['cidade'], '').strip()
+                if not nome_base_clean:
+                    nome_base_clean = obra_info['descricao'].split(' - ')[0].strip()
+
+                data['empreendimento'] = nome_base_clean
+                data['cidade_empreendimento'] = obra_info['cidade'].upper()
+                data['estado_empreendimento'] = obra_info['uf'].upper()
+                data['cidade_proposta_final'] = f"{obra_info['cidade'].upper()} - {obra_info['uf'].upper()}"
             else:
-                data.setdefault('empreendimento', obra_name)
-                if ' - ' in obra_name:
-                    partes = obra_name.rsplit(' - ', 1)
-                    data['empreendimento'] = partes[0].strip()
-                    if not data.get('cidade_empreendimento'):
-                        data['cidade_empreendimento'] = partes[1].strip()
-                    if not data.get('cidade_proposta_final'):
-                        data['cidade_proposta_final'] = partes[1].strip()
+                # Fallbacks manuais caso nao encontre na lista
+                match_parenteses = re.search(r'\((.*?)\)', obra_name)
+                if match_parenteses:
+                    city_part = match_parenteses.group(1).strip().upper()
+                    data['empreendimento'] = re.sub(r'\(.*?\)', '', obra_name).strip()
+                    data['cidade_empreendimento'] = city_part
+                    data['estado_empreendimento'] = 'PA'
+                    data['cidade_proposta_final'] = f"{city_part} - PA"
+                else:
+                    data.setdefault('empreendimento', obra_name)
+                    if ' - ' in obra_name:
+                        partes = obra_name.rsplit(' - ', 1)
+                        data['empreendimento'] = partes[0].strip()
+                        city_uf = partes[1].strip()
+                        data['cidade_empreendimento'] = city_uf
+                        estado_padrao = city_uf.split('-').pop().strip() if '-' in city_uf else 'PA'
+                        data['estado_empreendimento'] = estado_padrao
+                        data['cidade_proposta_final'] = city_uf
             
             if 'lotValue' in data: data.setdefault('valor_inicial', ProposalUseCase.format_currency(data['lotValue']))
             if 'downPaymentTotal' in data: data.setdefault('valor_sinal', ProposalUseCase.format_currency(data['downPaymentTotal']))
