@@ -45,7 +45,14 @@ export function AuthProvider({ children }) {
 
     const processUser = (userData) => {
         // Flatten permissions for easy access in frontend
-        const permissions = userData.permissions || {};
+        let permissions = userData.permissions || {};
+        if (typeof permissions === 'string') {
+            try {
+                permissions = JSON.parse(permissions);
+            } catch (e) {
+                permissions = {};
+            }
+        }
         const allObras = OBRAS.map(obra => obra.codigo);
         const user = {
             ...userData,
@@ -62,14 +69,7 @@ export function AuthProvider({ children }) {
         try {
             const result = await getUsers();
             if (result.users) {
-                const mapped = result.users.map(u => ({
-                    ...u,
-                    obrasPermitidas: (u.permissions || {}).obrasPermitidas || [],
-                    statusPermitidos: (u.permissions || {}).statusPermitidos || [],
-                    canViewAllClients: (u.permissions || {}).canViewAllClients || (u.role === 'admin'),
-                    canViewSales: (u.permissions || {}).canViewSales || (u.role === 'admin'),
-                    aprovado: u.active
-                }));
+                const mapped = result.users.map(u => processUser(u));
                 setUsers(mapped);
             }
         } catch (e) {
