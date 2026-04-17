@@ -159,13 +159,29 @@ const BrokersPage = () => {
 
                     if (!isAdmin) {
                         const permitidas = currentUser?.obrasPermitidas || [];
-                        const allowedPrefixes = OBRAS
+                        const normalizeForSearch = (str) => {
+                            if (!str) return '';
+                            return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+                        };
+
+                        const allowedRules = OBRAS
                             .filter(o => permitidas.includes(o.codigo))
-                            .map(o => o.descricao.replace('RESIDENCIAL ', '').trim().toUpperCase());
+                            .map(o => {
+                                let base = o.descricao.replace('RESIDENCIAL ', '').trim();
+                                if (base.includes(' - ')) {
+                                    base = base.split(' - ')[0].trim();
+                                }
+                                return {
+                                    base: normalizeForSearch(base),
+                                    cidade: normalizeForSearch(o.cidade)
+                                };
+                            });
 
                         allowedObrasFromUAU = res.obras.filter(uauObra => {
-                            const uauName = uauObra.nome.toUpperCase();
-                            return allowedPrefixes.some(pref => uauName.includes(pref) || pref.includes(uauName));
+                            const uauName = normalizeForSearch(uauObra.nome);
+                            return allowedRules.some(rule => 
+                                uauName.includes(rule.base) && uauName.includes(rule.cidade)
+                            );
                         });
                     }
 
