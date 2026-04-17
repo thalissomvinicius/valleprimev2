@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { OBRAS, STATUS_LOTES } from '../context/authConstants';
 import {
     Users, Settings, LogOut, Check, Edit2, Trash2, Shield,
-    Building2, Eye, ChevronDown, ChevronUp, Save, XCircle, UserPlus, Home
+    Building2, Eye, ChevronDown, ChevronUp, Save, XCircle, UserPlus, Home, TrendingUp
 } from 'lucide-react';
 import './AdminPanel.css';
 
