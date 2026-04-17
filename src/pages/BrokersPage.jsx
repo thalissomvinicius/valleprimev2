@@ -371,6 +371,23 @@ const BrokersPage = () => {
     };
     // --------------------------------------------------
 
+    const buildPdfFileName = (prefix) => {
+        const obraSelecionada = obrasList.find(o => `${o.empresa}-${o.obra}` === selectedObraId);
+        let nomeObra = 'GERAL';
+        if (obraSelecionada?.nome) {
+            nomeObra = obraSelecionada.nome.replace(/RESIDENCIAL /gi, '').trim().replace(/\s+/g, '_').toUpperCase();
+        }
+        
+        let periodo = 'TODO_PERIODO';
+        if (dataInicio && dataFim) {
+             const de = dataInicio.split('-').reverse().join('');
+             const ate = dataFim.split('-').reverse().join('');
+             periodo = `${de}_A_${ate}`;
+        }
+        
+        return `${prefix}_${nomeObra}_${periodo}.pdf`;
+    };
+
     // Função de Geração de Relatório de Cobrança PDF (Inadimplência)
     const generateCollectionReport = () => {
         const tableData = [];
@@ -452,7 +469,7 @@ const BrokersPage = () => {
                 }
             });
 
-            doc.save(`Valle_Inadimplentes_${new Date().toISOString().slice(0,10)}.pdf`);
+            doc.save(buildPdfFileName('Inadimplencia'));
         });
     };
 
@@ -552,7 +569,7 @@ const BrokersPage = () => {
                 }
             });
 
-            doc.save(`Valle_Extrato_${new Date().toISOString().slice(0,10)}.pdf`);
+            doc.save(buildPdfFileName('Extrato_Vendas'));
         });
     };
 
