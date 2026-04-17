@@ -177,11 +177,18 @@ const BrokersPage = () => {
                         // Nenhuma obra permitida encontrada no UAU
                         setObrasList([]);
                         setSelectedObraId('');
+                        setLoading(false);
+                        completeProgress();
                     }
+                } else {
+                    setLoading(false);
+                    completeProgress();
                 }
             } catch (err) {
                 console.error("Erro ao carregar obras:", err);
                 setError(err.message || "Erro ao conectar com UAU.");
+                setLoading(false);
+                completeProgress();
             }
         };
         fetchObras();
