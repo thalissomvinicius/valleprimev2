@@ -485,6 +485,10 @@ ${sinalSection}
 
                                 {discountActive ? (
                                     <div className="price-container">
+                                        <div className="discount-warning-alert" style={{ background: 'rgba(237, 137, 54, 0.1)', border: '1px solid #ed8936', borderRadius: '8px', padding: '10px', fontSize: '0.8rem', color: '#dd6b20', marginBottom: '1rem', display: 'flex', alignItems: 'flex-start', gap: '8px', lineHeight: '1.4', textAlign: 'left' }}>
+                                            <AlertCircle size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
+                                            <span><strong>Atenção:</strong> O Desconto Especial só é válido para os loteamentos com a devida permissão da Diretoria. Certifique-se da liberação antes de aplicar à proposta.</span>
+                                        </div>
                                         <div className="old-price">{formatCurrency(lotValue)}</div>
                                         <div className="new-price">{formatCurrency(totalWithDiscount)}</div>
                                         <div className="discount-savings">- {formatCurrency(lotValue - totalWithDiscount)}</div>
