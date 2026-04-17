@@ -7,6 +7,7 @@ import { useToast } from '../context/ToastContext';
 import { maskCPF, maskCNPJ, maskCEP, maskDDD, maskPhoneNumber, unmask } from '../utils/masks';
 import { validateCNPJ, validateEmail } from '../utils/validators';
 import { generateResidenceDeclaration } from '../utils/generateResidenceDeclaration';
+import { OBRAS } from '../context/authConstants';
 import './ClientFormModal.css';
 
 const COMMON_DOMAINS = [
@@ -809,21 +810,19 @@ const ClientFormModal = ({ onClose, onConfirm, onDelete, initialData = null, cli
                 cidade: formData.cidade_segundo || formData.cidade_proponente,
                 uf: formData.uf_endereco_segundo || formData.uf_endereco_proponente,
             } : null,
-            lote: lot?.LT || '-',
-            quadra: lot?.QD || '-'
+            lote: String(lot?.LT || '-').padStart(3, '0').replace(/^0+$/, '-'),
+            quadra: String(lot?.QD || '-').padStart(3, '0').replace(/^0+$/, '-')
         };
 
-        // Extract city/UF from obraName (e.g., "RESIDENCIAL JARDIM DO VALLE - DOM ELISEU" -> "DOM ELISEU - PA")
-        // Note: The obraName usually has the city after the dash. 
-        // We'll try to find the city and append the state of the lot if possible, 
-        // or just use what's after the dash.
+        // Busca cidade/UF pela lista oficial de obras para ter dado correto
         let cityUF = "";
-        if (obraName && obraName.includes('-')) {
-            cityUF = obraName.split('-').pop().trim();
-            // All current OBRAS are in PA, ensure the state is included
-            if (!cityUF.includes(' - ') && !cityUF.includes('-')) {
-                cityUF = `${cityUF} - PA`;
-            }
+        const obraInfo = OBRAS.find(o => o.descricao.toUpperCase() === (obraName || '').toUpperCase());
+        if (obraInfo) {
+            cityUF = `${obraInfo.cidade.toUpperCase()} - ${obraInfo.uf}`;
+        } else if (obraName && obraName.includes('-')) {
+            // Fallback: pega o último segmento após o último traço
+            const cityPart = obraName.split(' - ').pop().trim();
+            cityUF = cityPart.includes('-') ? cityPart : `${cityPart} - PA`;
         }
 
         if (declarationMode === 'individual' && formData.has_segundo && formData.tipo_segundo !== 'conjuge') { const p1Data = { p1: mappedData.p1, p2: null, lote: mappedData.lote, quadra: mappedData.quadra }; generateResidenceDeclaration(p1Data, cityUF, residenceDeclarationDate, obraName, residenceReason, residenceReasonOther); setTimeout(() => { const p2Data = { p1: mappedData.p2, p2: null, lote: mappedData.lote, quadra: mappedData.quadra }; generateResidenceDeclaration(p2Data, cityUF, residenceDeclarationDate, obraName, residenceReason, residenceReasonOther); }, 500); } else { generateResidenceDeclaration(mappedData, cityUF, residenceDeclarationDate, obraName, residenceReason, residenceReasonOther); }

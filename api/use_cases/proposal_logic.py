@@ -43,14 +43,28 @@ class ProposalUseCase:
         try:
             if 'lot' in data and isinstance(data['lot'], dict):
                 lot = data['lot']
-                data.setdefault('lote', lot.get('LT'))
-                data.setdefault('quadra', lot.get('QD'))
+                # Lote e Quadra formatados com zeros à esquerda (3 dígitos: 010, 001)
+                raw_lote = str(lot.get('LT') or '').strip()
+                raw_quadra = str(lot.get('QD') or '').strip()
+                data.setdefault('lote', raw_lote.zfill(3) if raw_lote.isdigit() else raw_lote)
+                data.setdefault('quadra', raw_quadra.zfill(3) if raw_quadra.isdigit() else raw_quadra)
                 data.setdefault('area', lot.get('M2'))
-                data.setdefault('cidade_empreendimento', lot.get('Cidade', ''))
-                data.setdefault('estado_empreendimento', lot.get('UF', ''))
+                # Não pré-definir cidade/estado com string vazia para não bloquear o lookup por obra
+                lot_cidade = lot.get('Cidade') or ''
+                lot_uf = lot.get('UF') or ''
+                if lot_cidade:
+                    data.setdefault('cidade_empreendimento', lot_cidade)
+                if lot_uf:
+                    data.setdefault('estado_empreendimento', lot_uf)
             
             obra_name = data.get('obraName', '')
+            # Busca pela descricao completa ou pelo primeiro segmento (antes do ' - ')
             obra_info = next((o for o in ProposalUseCase.OBRAS if o['descricao'].upper() == obra_name.upper()), None)
+            if not obra_info:
+                # Tenta sem sufixo de cidade: "JARDIM DO VALLE" dentro de "JARDIM DO VALLE - BARCARENA"
+                obra_name_base = obra_name.rsplit(' - ', 1)[0].strip().upper() if ' - ' in obra_name else ''
+                if obra_name_base:
+                    obra_info = next((o for o in ProposalUseCase.OBRAS if o['descricao'].upper().startswith(obra_name_base)), None)
             
             if obra_info:
                 nome_base = obra_info['descricao'].split(' - ')[0] if ' - ' in obra_info['descricao'] else obra_info['descricao']
@@ -63,8 +77,10 @@ class ProposalUseCase:
                 if ' - ' in obra_name:
                     partes = obra_name.rsplit(' - ', 1)
                     data['empreendimento'] = partes[0].strip()
-                    data.setdefault('cidade_empreendimento', partes[1].strip() if not data.get('cidade_empreendimento') else data['cidade_empreendimento'])
-                    data.setdefault('cidade_proposta_final', partes[1].strip() if not data.get('cidade_proposta_final') else data['cidade_proposta_final'])
+                    if not data.get('cidade_empreendimento'):
+                        data['cidade_empreendimento'] = partes[1].strip()
+                    if not data.get('cidade_proposta_final'):
+                        data['cidade_proposta_final'] = partes[1].strip()
             
             if 'lotValue' in data: data.setdefault('valor_inicial', ProposalUseCase.format_currency(data['lotValue']))
             if 'downPaymentTotal' in data: data.setdefault('valor_sinal', ProposalUseCase.format_currency(data['downPaymentTotal']))
