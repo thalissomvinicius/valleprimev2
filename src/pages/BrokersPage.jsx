@@ -22,6 +22,7 @@ import { useAuth } from '../context/AuthContext';
 import { fetchCorretoresData, fetchConfigObras } from '../services/api';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import OfflineWarning from '../components/OfflineWarning';
 import valleLogo from '../assets/Valle-logo-azul.png';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -30,6 +31,7 @@ import './BrokersPage.css';
 const BrokersPage = () => {
     const { currentUser, isAdmin } = useAuth();
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [data, setData] = useState([]);
     const [stats, setStats] = useState({ totalVgv: 0, totalSales: 0, totalPending: 0 });
     const [lastUpdate, setLastUpdate] = useState(null);
@@ -98,6 +100,7 @@ const BrokersPage = () => {
         if (obrasList.length > 0 && !selectedObraId) return; // Wait for initial selection
 
         setLoading(true);
+        setError(null);
         startProgress();
         try {
             let empresa = 28;
@@ -139,6 +142,7 @@ const BrokersPage = () => {
 
         } catch (error) {
             console.error("Error loading brokers page:", error);
+            setError(error.message || "Erro desconhecido ao comunicar com a Ponte.");
         } finally {
             completeProgress();
             setLoading(false);
@@ -157,6 +161,7 @@ const BrokersPage = () => {
                 }
             } catch (err) {
                 console.error("Erro ao carregar obras:", err);
+                setError(err.message || "Erro ao conectar com UAU.");
             }
         };
         fetchObras();
@@ -774,7 +779,9 @@ const BrokersPage = () => {
 
                 {/* Client Cards */}
                 <section className="client-cards-section animate-fade-in-up">
-                    {loading ? (
+                    {error ? (
+                        <OfflineWarning message={error} />
+                    ) : loading ? (
                         <div className="loading-container">
                             <div className="progress-bar-wrapper">
                                 <div className="progress-bar-track">

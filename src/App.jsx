@@ -20,6 +20,7 @@ import ProposalHistoryPage from './pages/ProposalHistoryPage';
 import DashboardPage from './pages/DashboardPage';
 import BrokersPage from './pages/BrokersPage';
 import StatusWarningModal from './components/StatusWarningModal';
+import OfflineWarning from './components/OfflineWarning';
 
 function MainApp() {
   const { currentUser, logout } = useAuth();
@@ -567,9 +568,7 @@ function MainApp() {
 
         {
           error ? (
-            <div className="error-message" style={{ textAlign: 'center', color: 'var(--danger-color)', padding: '2rem' }}>
-              {error}
-            </div>
+            <OfflineWarning message={error} />
           ) : (
             <AvailabilityTable
               data={filteredData}
