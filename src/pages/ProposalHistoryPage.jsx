@@ -5,12 +5,13 @@ import Header from '../components/Header';
 import ClientFormModal from '../components/ClientFormModal';
 import Footer from '../components/Footer';
 import { getProposals, printProposal, updateProposal, deleteProposal } from '../services/api';
-// import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { getShortObraName, getShortClientName } from '../utils/finance';
 import './ProposalHistoryPage.css';
 
 const ProposalHistoryPage = () => {
+    const { currentUser } = useAuth();
     const { showToast } = useToast();
     const [proposals, setProposals] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -24,7 +25,12 @@ const ProposalHistoryPage = () => {
         setError(null);
         try {
             const result = await getProposals({ page: 1, limit: 200 });
-            setProposals(result.proposals || []);
+            const allProps = result.proposals || [];
+            
+            // Segurança: Mostra apenas propostas criadas pelo usuário logado
+            // Independente se for admin ou não, o histórico é individual
+            const myProps = allProps.filter(p => p.user_id === currentUser?.id);
+            setProposals(myProps);
         } catch (err) {
             const rawMsg = err?.message || '';
             const normalized = String(rawMsg).toLowerCase();
@@ -41,8 +47,10 @@ const ProposalHistoryPage = () => {
     };
 
     useEffect(() => {
-        loadProposals();
-    }, []);
+        if (currentUser?.id) {
+            loadProposals();
+        }
+    }, [currentUser?.id]);
 
     const handlePrint = async (proposal) => {
         try {
