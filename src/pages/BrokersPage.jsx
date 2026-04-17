@@ -18,7 +18,8 @@ import {
     X,
     FileText
 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { Navigate } from 'react-router-dom';
+import { useAuth, OBRAS } from '../context/AuthContext';
 import { fetchCorretoresData, fetchConfigObras } from '../services/api';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -37,6 +38,10 @@ const BrokersPage = () => {
     const [lastUpdate, setLastUpdate] = useState(null);
     const [isCacheData, setIsCacheData] = useState(false);
     const [showSyncBanner, setShowSyncBanner] = useState(true);
+
+    if (!isAdmin && !currentUser?.canViewSales) {
+        return <Navigate to="/dashboard" replace />;
+    }
     
     // Helper: primeiro e último dia do mês atual
     const today = new Date();
@@ -154,10 +159,29 @@ const BrokersPage = () => {
             try {
                 const res = await fetchConfigObras();
                 if (res.obras && res.obras.length > 0) {
-                    setObrasList(res.obras);
-                    // Default to 70100 if available, else first one
-                    const defaultObra = res.obras.find(o => o.obra === '70100') || res.obras[0];
-                    setSelectedObraId(`${defaultObra.empresa}-${defaultObra.obra}`);
+                    let allowedObrasFromUAU = res.obras;
+
+                    if (!isAdmin) {
+                        const permitidas = currentUser?.obrasPermitidas || [];
+                        const allowedPrefixes = OBRAS
+                            .filter(o => permitidas.includes(o.codigo))
+                            .map(o => o.descricao.replace('RESIDENCIAL ', '').trim().toUpperCase());
+
+                        allowedObrasFromUAU = res.obras.filter(uauObra => {
+                            const uauName = uauObra.nome.toUpperCase();
+                            return allowedPrefixes.some(pref => uauName.includes(pref) || pref.includes(uauName));
+                        });
+                    }
+
+                    if (allowedObrasFromUAU.length > 0) {
+                        setObrasList(allowedObrasFromUAU);
+                        const defaultObra = allowedObrasFromUAU.find(o => o.obra === '70100') || allowedObrasFromUAU[0];
+                        setSelectedObraId(`${defaultObra.empresa}-${defaultObra.obra}`);
+                    } else {
+                        // Nenhuma obra permitida encontrada no UAU
+                        setObrasList([]);
+                        setSelectedObraId('');
+                    }
                 }
             } catch (err) {
                 console.error("Erro ao carregar obras:", err);

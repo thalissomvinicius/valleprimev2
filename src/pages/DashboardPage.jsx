@@ -137,15 +137,17 @@ const DashboardPage = () => {
                             <p>Gerencie cadastros</p>
                         </div>
                     </Link>
-                    <Link to="/corretores" className="dashboard-card">
-                        <div className="card-icon primary">
-                            <TrendingUp size={22} />
-                        </div>
-                        <div>
-                            <h3>Vendas</h3>
-                            <p>Desempenho & Sinais</p>
-                        </div>
-                    </Link>
+                    {currentUser?.canViewSales && (
+                        <Link to="/corretores" className="dashboard-card">
+                            <div className="card-icon primary">
+                                <TrendingUp size={22} />
+                            </div>
+                            <div>
+                                <h3>Vendas</h3>
+                                <p>Desempenho & Sinais</p>
+                            </div>
+                        </Link>
+                    )}
                     {isAdmin && (
                         <Link to="/admin" className="dashboard-card">
                             <div className="card-icon warning">

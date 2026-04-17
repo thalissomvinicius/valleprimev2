@@ -48,6 +48,7 @@ function AdminPanel() {
             obrasPermitidas: [...user.obrasPermitidas],
             statusPermitidos: [...user.statusPermitidos],
             canViewAllClients: !!user.canViewAllClients,
+            canViewSales: !!user.canViewSales,
             uau_corretor_id: perms?.uau_corretor_id || '',
         });
         setExpandedUser(user.id);
@@ -505,6 +506,35 @@ function AdminPanel() {
                                                                 disabled={editingUser !== user.id}
                                                             />
                                                             <span>Visualizar TODOS os clientes (ignora restrição de dono)</span>
+                                                        </label>
+                                                    </div>
+                                                </div>
+
+                                                <div className="permission-group">
+                                                    <h4>
+                                                        <TrendingUp size={18} />
+                                                        Acesso ao Módulo de Vendas
+                                                    </h4>
+                                                    <div className="permission-list">
+                                                        <label
+                                                            className={`permission-item ${(editingUser === user.id ? editData.canViewSales : user.canViewSales) ? 'active' : ''
+                                                                } ${editingUser !== user.id ? 'readonly' : ''}`}
+                                                            style={{ width: '100%' }}
+                                                        >
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={editingUser === user.id ? !!editData.canViewSales : !!user.canViewSales}
+                                                                onChange={() => {
+                                                                    if (editingUser === user.id) {
+                                                                        setEditData(prev => ({
+                                                                            ...prev,
+                                                                            canViewSales: !prev.canViewSales
+                                                                        }));
+                                                                    }
+                                                                }}
+                                                                disabled={editingUser !== user.id}
+                                                            />
+                                                            <span>Permitir acesso à tela de Performance e Extratos de Vendas</span>
                                                         </label>
                                                     </div>
                                                 </div>

@@ -52,6 +52,7 @@ export function AuthProvider({ children }) {
             obrasPermitidas: permissions.obrasPermitidas || (userData.role === 'admin' ? allObras : []),
             statusPermitidos: permissions.statusPermitidos || [],
             canViewAllClients: permissions.canViewAllClients || (userData.role === 'admin'),
+            canViewSales: permissions.canViewSales || (userData.role === 'admin'),
             aprovado: Boolean(userData.active !== false)
         };
         return user;
@@ -66,6 +67,7 @@ export function AuthProvider({ children }) {
                     obrasPermitidas: (u.permissions || {}).obrasPermitidas || [],
                     statusPermitidos: (u.permissions || {}).statusPermitidos || [],
                     canViewAllClients: (u.permissions || {}).canViewAllClients || (u.role === 'admin'),
+                    canViewSales: (u.permissions || {}).canViewSales || (u.role === 'admin'),
                     aprovado: u.active
                 }));
                 setUsers(mapped);
