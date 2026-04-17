@@ -365,6 +365,10 @@ const BrokersPage = () => {
             const sumPago = v.raw_sinais_pagos?.lista?.reduce((acc, p) => acc + (p.valor_pago || 0), 0) || 0;
             const sumAberto = v.raw_sinais_abertos?.lista?.reduce((acc, p) => acc + (p.valor_aberto || 0), 0) || 0;
             const sumSinal = sumPago + sumAberto;
+            
+            const qtdPago = v.raw_sinais_pagos?.lista?.length || 0;
+            const qtdAberto = v.raw_sinais_abertos?.lista?.length || 0;
+            const qtdSinal = qtdPago + qtdAberto;
 
             globalVgvTotal += v.valor_venda || 0;
             globalSinalTotal += sumSinal;
@@ -378,6 +382,7 @@ const BrokersPage = () => {
                 formatDate(v.data_venda),
                 v.status_venda || 'Desconhecido',
                 formatCurrency(v.valor_venda || 0),
+                qtdSinal.toString(),
                 formatCurrency(sumSinal),
                 formatCurrency(sumPago),
                 formatCurrency(sumAberto)
@@ -397,6 +402,7 @@ const BrokersPage = () => {
             '-',
             '-',
             formatCurrency(globalVgvTotal),
+            '-',
             formatCurrency(globalSinalTotal),
             formatCurrency(globalSinalPago),
             formatCurrency(globalSinalAberto)
@@ -406,21 +412,26 @@ const BrokersPage = () => {
         const softGreen = [34, 197, 94]; 
 
         const drawPdfHeaderFooterEnhanced = (doc, data, title) => {
-            doc.setFillColor(...primaryBlue);
+            // Header Fundo Branco
+            doc.setFillColor(255, 255, 255);
             doc.rect(0, 0, doc.internal.pageSize.width, 30, 'F');
             doc.setFillColor(...softGreen);
             doc.rect(0, 30, doc.internal.pageSize.width, 2, 'F');
             
-            doc.setTextColor(255, 255, 255);
+            // Texto Primário (Azul Marinho)
+            doc.setTextColor(...primaryBlue);
             doc.setFontSize(16);
             doc.setFont("helvetica", "bold");
             doc.text("SISTEMA VALLE | EXTRATO DETALHADO", data.settings.margin.left, 14);
             
+            // Subtitulo secundário (Cinza Escuro)
+            doc.setTextColor(80, 80, 80);
             doc.setFontSize(9);
             doc.setFont("helvetica", "normal");
             doc.text(title, data.settings.margin.left, 22);
-            doc.text(`Emissão: ${new Date().toLocaleString('pt-BR')}`, doc.internal.pageSize.width - data.settings.margin.right, 14, { align: 'right' });
-            doc.text(`${processedData.length} contratos processados na referência selecionada`, doc.internal.pageSize.width - data.settings.margin.right, 22, { align: 'right' });
+            
+            doc.text(`Emissão: ${new Date().toLocaleString('pt-BR')}`, doc.internal.pageSize.width - data.settings.margin.right, 28, { align: 'right' });
+            doc.text(`${processedData.length} contratos processados na referência selecionada`, data.settings.margin.left, 28);
 
             doc.setFontSize(8);
             doc.setTextColor(120, 120, 120);
@@ -433,17 +444,18 @@ const BrokersPage = () => {
 
             autoTable(doc, {
                 startY: 40,
-                head: [['Cliente', 'Corretor', 'Q/Lote', 'Data', 'Status', 'Valor Lote', 'Sinal Total', 'Sinal Pago', 'Sinal Aberto']],
+                head: [['Cliente', 'Corretor', 'Q/Lote', 'Data', 'Status', 'Valor Lote', 'Qtd. Parc.', 'Sinal Total', 'Sinal Pago', 'Sinal Aberto']],
                 body: tableData,
                 theme: 'grid',
                 headStyles: { fillColor: primaryBlue, textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
                 columnStyles: {
-                    0: { cellWidth: 50 }, 
-                    1: { cellWidth: 45 }, 
+                    0: { cellWidth: 46 }, 
+                    1: { cellWidth: 40 }, 
                     5: { halign: 'right' }, 
-                    6: { halign: 'right' },
-                    7: { halign: 'right', textColor: [21, 128, 61], fontStyle: 'bold' }, // Verde bold
-                    8: { halign: 'right', textColor: [185, 28, 28], fontStyle: 'bold' }, // Vermelho bold
+                    6: { halign: 'center' },
+                    7: { halign: 'right' },
+                    8: { halign: 'right', textColor: [21, 128, 61], fontStyle: 'bold' }, // Verde bold
+                    9: { halign: 'right', textColor: [185, 28, 28], fontStyle: 'bold' }, // Vermelho bold
                 },
                 willDrawCell: function(data) {
                     // Tratar linha de totais
@@ -464,8 +476,11 @@ const BrokersPage = () => {
                     drawPdfHeaderFooterEnhanced(doc, data, "Recebíveis de Entradas (Sinais) por Contrato")
                     if (base64Logo) {
                         try {
-                           // Adicionar logo no canto direito do header se possível
-                           doc.addImage(base64Logo, 'PNG', doc.internal.pageSize.width / 2.5, 4, 30, 20);
+                           // Adicionar logo no canto direito do header onde há espaço em branco!
+                           const logoWidth = 35;
+                           const logoHeight = 15;
+                           const marginRight = data.settings.margin.right || 14;
+                           doc.addImage(base64Logo, 'PNG', doc.internal.pageSize.width - marginRight - logoWidth, 6, logoWidth, logoHeight);
                         } catch(e) {}
                     }
                 }
