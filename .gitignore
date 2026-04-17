@@ -71,3 +71,5 @@ consulta-proxy/
 *.bat
 *.ps1
 test_api.py
+
+corretores_cadastrados.txt
