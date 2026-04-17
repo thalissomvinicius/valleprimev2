@@ -139,6 +139,7 @@ export function AuthProvider({ children }) {
                 obrasPermitidas: Array.isArray(data?.obrasPermitidas) ? data.obrasPermitidas : [],
                 statusPermitidos: Array.isArray(data?.statusPermitidos) ? data.statusPermitidos : [],
                 canViewAllClients: !!data?.canViewAllClients,
+                canViewSales: !!data?.canViewSales,
             };
             // Inclui uau_corretor_id apenas se estiver preenchido
             if (data?.uau_corretor_id !== '' && data?.uau_corretor_id !== null && data?.uau_corretor_id !== undefined) {
