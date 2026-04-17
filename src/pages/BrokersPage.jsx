@@ -389,6 +389,7 @@ const BrokersPage = () => {
                 globalTotalContratos++;
 
                 tableData.push([
+                    v.corretorNome || 'Sem Corretor',
                     v.cliente?.nome || v.client?.nome || 'Sem Nome',
                     v.cliente?.telefone || 'Não Informado',
                     `${v.venda_id} - Q${v.quadra}/L${v.lote}`,
@@ -410,6 +411,7 @@ const BrokersPage = () => {
             '-',
             '-',
             '-',
+            '-',
             formatCurrency(globalTotalAtrasado)
         ]);
 
@@ -418,23 +420,24 @@ const BrokersPage = () => {
 
             autoTable(doc, {
                 startY: 40,
-                head: [['Cliente', 'Telefone', 'Contrato Q/L', 'Venc. Mais Antigo', 'Qtd. Parc. Atrasadas', 'Total Atrasado']],
+                head: [['Corretor', 'Cliente', 'Telefone', 'Contrato Q/L', 'Venc. Mais Antigo', 'Qtd. Parc.', 'Total Atraso']],
                 body: tableData,
                 theme: 'grid',
                 headStyles: { fillColor: [220, 38, 38], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' }, // Vermelho para alerta
                 columnStyles: {
-                    0: { cellWidth: 70 },
-                    1: { cellWidth: 40 },
-                    2: { cellWidth: 40 },
-                    4: { halign: 'center' },
-                    5: { halign: 'right', textColor: [185, 28, 28], fontStyle: 'bold' } // Vermelho bold
+                    0: { cellWidth: 50 },
+                    1: { cellWidth: 60 },
+                    2: { cellWidth: 35 },
+                    3: { cellWidth: 32 },
+                    5: { halign: 'center' },
+                    6: { halign: 'right', textColor: [185, 28, 28], fontStyle: 'bold' } // Vermelho bold
                 },
                 willDrawCell: function(data) {
                     if (data.row.index === tableData.length - 1) {
                         doc.setFillColor(241, 245, 249); 
                         doc.setFont("helvetica", "bold");
                         data.cell.styles.fontStyle = 'bold';
-                        if (data.column.index === 5) {
+                        if (data.column.index === 6) {
                            doc.setTextColor(185, 28, 28);
                         } else {
                            doc.setTextColor(0,0,0);
