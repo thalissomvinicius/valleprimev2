@@ -816,13 +816,29 @@ const ClientFormModal = ({ onClose, onConfirm, onDelete, initialData = null, cli
 
         // Busca cidade/UF pela lista oficial de obras para ter dado correto
         let cityUF = "";
-        const obraInfo = OBRAS.find(o => o.descricao.toUpperCase() === (obraName || '').toUpperCase());
+        const cleanObraName = (obraName || '').toUpperCase();
+        
+        // 1. Tenta achar pela cidade no nome, ou substring
+        const obraInfo = OBRAS.find(o => 
+            o.descricao.toUpperCase() === cleanObraName || 
+            cleanObraName.includes(o.cidade.toUpperCase())
+        );
+
         if (obraInfo) {
             cityUF = `${obraInfo.cidade.toUpperCase()} - ${obraInfo.uf}`;
-        } else if (obraName && obraName.includes('-')) {
-            // Fallback: pega o último segmento após o último traço
-            const cityPart = obraName.split(' - ').pop().trim();
-            cityUF = cityPart.includes('-') ? cityPart : `${cityPart} - PA`;
+        } else if (cleanObraName) {
+            // 2. Extrai de parênteses, ex: "JARDIM DO VALLE (BARCARENA)"
+            const regexParenteses = /\(([^)]+)\)/;
+            const match = cleanObraName.match(regexParenteses);
+            
+            if (match) {
+                cityUF = `${match[1].trim()} - PA`;
+            } 
+            // 3. Tenta extrair do último traço
+            else if (cleanObraName.includes('-')) {
+                const cityPart = cleanObraName.split('-').pop().trim();
+                cityUF = cityPart.includes('-') ? cityPart : `${cityPart} - PA`;
+            }
         }
 
         if (declarationMode === 'individual' && formData.has_segundo && formData.tipo_segundo !== 'conjuge') { const p1Data = { p1: mappedData.p1, p2: null, lote: mappedData.lote, quadra: mappedData.quadra }; generateResidenceDeclaration(p1Data, cityUF, residenceDeclarationDate, obraName, residenceReason, residenceReasonOther); setTimeout(() => { const p2Data = { p1: mappedData.p2, p2: null, lote: mappedData.lote, quadra: mappedData.quadra }; generateResidenceDeclaration(p2Data, cityUF, residenceDeclarationDate, obraName, residenceReason, residenceReasonOther); }, 500); } else { generateResidenceDeclaration(mappedData, cityUF, residenceDeclarationDate, obraName, residenceReason, residenceReasonOther); }
