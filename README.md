@@ -68,7 +68,7 @@ npm run dev
 ```
 
 Acesse **http://localhost:5173**. O frontend usa o proxy do Vite e envia as chamadas `/api` para o Flask em `localhost:5000`.  
-Login padrão (após migração do banco): **admin** / **admin123**.
+Login inicial: Entre em contato com a diretoria para obter o usuário Administrador padrão.
 
 ---
 

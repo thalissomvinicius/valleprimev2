@@ -38,10 +38,6 @@ const BrokersPage = () => {
     const [lastUpdate, setLastUpdate] = useState(null);
     const [isCacheData, setIsCacheData] = useState(false);
     const [showSyncBanner, setShowSyncBanner] = useState(true);
-
-    if (!isAdmin && !currentUser?.canViewSales) {
-        return <Navigate to="/dashboard" replace />;
-    }
     
     // Helper: primeiro e último dia do mês atual
     const today = new Date();
@@ -590,6 +586,11 @@ const BrokersPage = () => {
     const toggleExpand = (id) => {
         setExpandedVendaId(expandedVendaId === id ? null : id);
     };
+
+    // Segurança: Trava a renderização após os Hooks se o usuário não tiver permissão
+    if (!isAdmin && !currentUser?.canViewSales) {
+        return <Navigate to="/dashboard" replace />;
+    }
 
     return (
         <div className="brokers-page">
