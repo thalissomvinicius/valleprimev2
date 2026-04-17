@@ -21,6 +21,7 @@ import DashboardPage from './pages/DashboardPage';
 import BrokersPage from './pages/BrokersPage';
 import StatusWarningModal from './components/StatusWarningModal';
 import OfflineWarning from './components/OfflineWarning';
+import HelpBot from './components/HelpBot';
 
 function MainApp() {
   const { currentUser, logout } = useAuth();
@@ -662,6 +663,7 @@ function App() {
   return (
     <>
       {renderRoutes()}
+      {isAuthenticated && <HelpBot />}
       {showLoading && (
         <div className={`global-loading-screen ${!loading ? 'animate-fade-out' : 'animate-fade-in'}`}>
           <div className="global-loading-content">
