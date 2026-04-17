@@ -148,7 +148,7 @@ const BrokersPage = () => {
             completeProgress();
             setLoading(false);
         }
-    }, [currentUser?.id, isAdmin, currentUser?.permissions, selectedObraId, obrasList.length, dataInicio, dataFim]);
+    }, [currentUser?.id, isAdmin, currentUser?.permissions, selectedObraId, obrasList.length, dataInicio, dataFim, completeProgress, startProgress]);
 
     useEffect(() => {
         const fetchObras = async () => {
@@ -185,7 +185,7 @@ const BrokersPage = () => {
             }
         };
         fetchObras();
-    }, []);
+    }, [currentUser?.obrasPermitidas, isAdmin]);
 
     useEffect(() => {
         if (selectedObraId) {
@@ -315,27 +315,6 @@ const BrokersPage = () => {
         return { top5Vgv, top5Recebido };
     }, [processedData, isAdmin]);
 
-    // Componente comum de Header/Footer para os PDFs
-    const drawPdfHeaderFooter = (doc, data, title) => {
-        // Header
-        doc.setFillColor(15, 23, 42); // Cor Valle (Azul Marinho)
-        doc.rect(0, 0, doc.internal.pageSize.width, 22, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(14);
-        doc.setFont("helvetica", "bold");
-        doc.text("SISTEMA VALLE | PERFORMANCE DE VENDAS", data.settings.margin.left, 10);
-        doc.setFontSize(9);
-        doc.setFont("helvetica", "normal");
-        doc.text(title, data.settings.margin.left, 16);
-        doc.text(`Emissão: ${new Date().toLocaleString('pt-BR')}`, doc.internal.pageSize.width - data.settings.margin.right, 16, { align: 'right' });
-
-        // Footer
-        doc.setFontSize(8);
-        doc.setTextColor(120, 120, 120);
-        doc.text("Desenvolvido por Vinicius Dev", data.settings.margin.left, doc.internal.pageSize.height - 10);
-        doc.text("Página " + doc.internal.getNumberOfPages(), doc.internal.pageSize.width - data.settings.margin.right, doc.internal.pageSize.height - 10, { align: 'right' });
-    };
-
     // -------- Utilitários PDF Compartilhados --------
     const primaryBlue = [15, 23, 42];  
     const softGreen = [34, 197, 94]; 
@@ -385,7 +364,9 @@ const BrokersPage = () => {
                 const logoHeight = 15;
                 const marginRight = data.settings.margin.right || 14;
                 doc.addImage(base64Logo, 'PNG', doc.internal.pageSize.width - marginRight - logoWidth, 6, logoWidth, logoHeight);
-             } catch(e) {}
+             } catch (err) {
+                console.error("Erro ao desenhar logo:", err);
+             }
          }
     };
     // --------------------------------------------------
