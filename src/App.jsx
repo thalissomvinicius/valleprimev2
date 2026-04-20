@@ -8,7 +8,7 @@ import SearchBar from './components/SearchBar';
 import AvailabilityTable from './components/AvailabilityTable';
 import AdminPanel from './pages/AdminPanel';
 import { fetchAvailability } from './services/api';
-import { Building2, LogOut, ChevronDown, FileDown, CheckCircle, Shield, Lock, MessageCircle, LayoutDashboard, FileText } from 'lucide-react';
+import { Building2, LogOut, ChevronDown, FileDown, CheckCircle, Shield, Lock, MessageCircle, LayoutDashboard, FileText, AlertTriangle } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import logo from './assets/Valle-logo-azul.png';
@@ -619,6 +619,31 @@ function MainApp() {
   );
 }
 
+function DiscontinuedOverlay() {
+  return (
+    <div className="discontinued-overlay">
+      <div className="discontinued-box">
+        <div className="discontinued-icon">
+          <AlertTriangle size={40} />
+        </div>
+        <h2 className="discontinued-title">Sistema Descontinuado</h2>
+        <p className="discontinued-message">
+          Esta plataforma encerrou suas atividades e não receberá mais atualizações. Em caso de dúvidas ou necessidade de suporte técnico, fale diretamente com o desenvolvedor.
+        </p>
+        <a 
+          href="https://wa.me/5591991697664" 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="discontinued-btn"
+        >
+          <MessageCircle size={20} />
+          Falar com o Desenvolvedor
+        </a>
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const { isAuthenticated, isAdmin, loading } = useAuth();
   const location = useLocation();
@@ -662,6 +687,7 @@ function App() {
 
   return (
     <>
+      <DiscontinuedOverlay />
       {renderRoutes()}
       {isAuthenticated && <HelpBot />}
       {showLoading && (
