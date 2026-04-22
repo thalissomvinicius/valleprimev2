@@ -155,18 +155,9 @@ export const fetchAvailability = async (obraCode = '624', empresaId = 28) => {
 
     const list = Array.isArray(res.data) ? res.data : [];
     
-    // Mapear campos da nova API para o formato esperado pelo Frontend antigo
-    const normalized = list.map(item => ({
-      ...item,
-      QD: item.quadra,
-      LT: item.lote,
-      M2: item.metragem.toLocaleString('pt-BR', { minimumFractionDigits: 2 }),
-      Valor_Terreno: item.valor_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 }),
-      Status_Terreno: item.status, 
-      Logradouro: item.logradouro,
-      Data_Atualizacao: res.atualizado_em ? new Date(res.atualizado_em).toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''
-    }));
-
+    // O backend da Ponte UAU (main.py) agora já envia os campos exatos e formatados (QD, LT, M2, Chanfro, M_Frente, etc)
+    const normalized = [...list];
+    
     if (res.atualizado_em) {
       normalized.lastUpdate = new Date(res.atualizado_em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
     }

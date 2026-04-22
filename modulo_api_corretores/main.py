@@ -272,18 +272,19 @@ def extrair_disponibilidades_uau(conn, empresa: int, produto: int):
         u.c7_unid,
         u.c9_unid,
         u.c11_unid,
+        u.c12_unid,
         CASE       
-            WHEN u.Vendido_unid = 0  THEN 'Disponível'       
-            WHEN u.Vendido_unid = 1  THEN CASE WHEN d.TipoContrato_udt IN(1,2,5) THEN 'Locada' ELSE 'Vendida' END       
-            WHEN u.Vendido_unid = 2  THEN 'Reservado'       
-            WHEN u.Vendido_unid = 3  THEN 'Proposta'       
-            WHEN u.Vendido_unid = 4  THEN 'Quitado'       
-            WHEN u.Vendido_unid = 5  THEN 'Escriturado'       
-            WHEN u.Vendido_unid = 6  THEN 'Em venda'       
-            WHEN u.Vendido_unid = 7  THEN 'Suspenso'       
-            WHEN u.Vendido_unid = 8  THEN 'Fora de venda'       
-            WHEN u.Vendido_unid = 9  THEN 'Em acerto'       
-            WHEN u.Vendido_unid = 10 THEN 'Dação'   
+            WHEN u.Vendido_unid = 0  THEN '0 - Disponível'       
+            WHEN u.Vendido_unid = 1  THEN CASE WHEN d.TipoContrato_udt IN(1,2,5) THEN '1 - Locada' ELSE '1 - Vendido' END       
+            WHEN u.Vendido_unid = 2  THEN '2 - Reservado'       
+            WHEN u.Vendido_unid = 3  THEN '3 - Proposta'       
+            WHEN u.Vendido_unid = 4  THEN '4 - Quitado'       
+            WHEN u.Vendido_unid = 5  THEN '5 - Escriturado'       
+            WHEN u.Vendido_unid = 6  THEN '6 - Em venda'       
+            WHEN u.Vendido_unid = 7  THEN '7 - Suspenso'       
+            WHEN u.Vendido_unid = 8  THEN '8 - Fora de venda'       
+            WHEN u.Vendido_unid = 9  THEN '9 - Em acerto'       
+            WHEN u.Vendido_unid = 10 THEN '10 - Dação'   
         END AS Descr_status
     FROM UnidadePer u WITH(NOLOCK)
     LEFT JOIN UnidadeDetalhe d WITH(NOLOCK) 
@@ -303,21 +304,29 @@ def extrair_disponibilidades_uau(conn, empresa: int, produto: int):
         return []
 
     unidades = []
+    now_str = datetime.now().strftime('%d/%m/%Y %H:%M')
+    
     for _, row in df.iterrows():
         metragem = float(row['Qtde_unid']) if row['Qtde_unid'] != "" else 0.0
         valor = float(row['ValPreco_unid']) if row['ValPreco_unid'] != "" else 0.0
         
+        # Formata os valores monetarios e decimais no padrao BR (virgula) para enviar pronto
+        m2_str = f"{metragem:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+        valor_str = f"{valor:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+        
         unidades.append({
-            "quadra": str(row['c1_unid']).strip(),
-            "lote": str(row['c2_unid']).strip(),
-            "metragem": metragem,
-            "valor_total": valor,
-            "status": str(row['Descr_status']).strip(),
-            "logradouro": str(row['c4_unid']).strip(),
-            "frente": str(row['c5_unid']).strip(),
-            "fundo": str(row['c11_unid']).strip(),
-            "lado_esquerdo": str(row['c7_unid']).strip(),
-            "lado_direito": str(row['c9_unid']).strip(),
+            "QD": str(row['c1_unid']).strip(),
+            "LT": str(row['c2_unid']).strip(),
+            "M2": m2_str,
+            "Logradouro": str(row['c4_unid']).strip(),
+            "M_Frente": str(row['c5_unid']).strip(),
+            "M_Fundo": str(row['c11_unid']).strip(),
+            "M_Lado_Direito": str(row['c9_unid']).strip(),
+            "M_Lado_Esquerdo": str(row['c7_unid']).strip(),
+            "Chanfro": str(row['c12_unid']).strip(),
+            "Valor_Terreno": valor_str,
+            "Status_Terreno": str(row['Descr_status']).strip(),
+            "Data_Atualizacao": now_str
         })
 
     return unidades
