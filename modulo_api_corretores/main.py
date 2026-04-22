@@ -169,6 +169,7 @@ def extrair_dados_corretores_uau(conn, empresa, obra, data_inicio=None, data_fim
     current_month = datetime.now().strftime('%Y-%m')
     vendas_df.replace({pd.NA: None, float('nan'): 0}, inplace=True)
 
+    for _, row in vendas_df.iterrows():
         # Converte ID do corretor de forma segura
         try:
             cod_corretor = row.get('corretorId', 0)
