@@ -125,39 +125,61 @@ export const deleteUser = async (id) => {
   return response.data;
 };
 
-export const fetchAvailability = async (obraCode = '624') => {
+export const fetchAvailability = async (obraCode = '624', empresaId = 28) => {
   try {
+    // A nova API usa /api/disponibilidades/{empresa}/{produto}
+    // onde {produto} é o código numérico (ex: 624, 625)
+    const endpoint = `${LOCAL_UAU_API}/api/disponibilidades/${empresaId}/${obraCode}`;
+    
+    console.log(`[API] Buscando disponibilidades em tempo real: ${endpoint}`);
+
     const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Tempo de resposta excedido. Tente novamente.')), 25000);
+      setTimeout(() => reject(new Error('Tempo de resposta excedido do Banco UAU. Verifique se o computador local está ligado.')), 45000);
     });
+
     const response = await Promise.race([
-      requestWithRetry(() => api.get(`https://valleprime.vercel.app/api/consulta/${obraCode}/`, {
-        params: { t: Date.now() },
-        timeout: 20000
-      }), { retries: 2, baseDelay: 800 }),
+      axios.get(endpoint, {
+        params: { 
+          t: Date.now(),
+          user: localStorage.getItem('valle_user_name') || 'Desconhecido'
+        },
+        timeout: 40000
+      }),
       timeoutPromise
     ]);
-    const raw = response?.data;
-    const res = typeof raw === 'string' ? parseJsonResponse(raw) : raw;
-    if (!res) throw new Error('Resposta vazia');
-    const list = Array.isArray(res.data) ? res.data : (res.success ? res.data : []);
-    const normalized = Array.isArray(list) ? list : [];
-    if (res?.success === false && normalized.length === 0) {
-      throw new Error(res?.error || 'Consulta indisponível no servidor.');
+
+    const res = response?.data;
+    if (!res || !res.sucesso) {
+      throw new Error(res?.error || 'Consulta indisponível no Banco UAU.');
     }
-    const lastUpdate = res.Data_Atualizacao || (normalized[0] && normalized[0].Data_Atualizacao);
-    if (lastUpdate) {
-      normalized.lastUpdate = lastUpdate; // attach metadata to array object
+
+    const list = Array.isArray(res.data) ? res.data : [];
+    
+    // Mapear campos da nova API para o formato esperado pelo Frontend antigo
+    const normalized = list.map(item => ({
+      ...item,
+      QD: item.quadra,
+      LT: item.lote,
+      M2: item.metragem.toLocaleString('pt-BR', { minimumFractionDigits: 2 }),
+      Valor_Terreno: item.valor_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 }),
+      Status_Terreno: item.status, 
+      Logradouro: item.logradouro,
+      Data_Atualizacao: res.atualizado_em ? new Date(res.atualizado_em).toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''
+    }));
+
+    if (res.atualizado_em) {
+      normalized.lastUpdate = new Date(res.atualizado_em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
     }
+
     return normalized;
   } catch (error) {
-    console.error('Network Error:', error);
+    console.error('[fetchAvailability] Network Error:', error);
     const status = error?.response?.status;
-    if (status === 503) {
-      throw new Error('Consulta indisponível no servidor. Tente novamente em instantes.');
+    if (status === 503 || status === 500) {
+      throw new Error('Banco UAU indisponível. Verifique o servidor local.');
     }
     if (error?.code === 'ECONNABORTED' || error?.message?.toLowerCase?.().includes('timeout')) {
-      throw new Error('Tempo de resposta excedido. Tente novamente.');
+      throw new Error('Tempo de resposta excedido do Banco UAU.');
     }
     throw error;
   }
@@ -350,6 +372,8 @@ export const fetchCorretoresData = async (filters = {}) => {
   const params = new URLSearchParams();
   if (data_inicio) params.append('data_inicio', data_inicio);
   if (data_fim) params.append('data_fim', data_fim);
+  params.append('user', localStorage.getItem('valle_user_name') || 'Desconhecido');
+  
   if (params.toString()) endpoint += `?${params.toString()}`;
 
   try {

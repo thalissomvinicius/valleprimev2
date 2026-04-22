@@ -3,20 +3,20 @@ import { authLogin, authMe, getUsers, createUser, updateUser, deleteUser as apiD
 
 // Lista de obras disponíveis
 export const OBRAS = [
-    { codigo: '600', descricao: 'RESIDENCIAL JARDIM DO VALLE - DOM ELISEU', cidade: 'Dom Eliseu', uf: 'PA' },
-    { codigo: '601', descricao: 'RESIDENCIAL JARDIM AMERICA - CAPANEMA', cidade: 'Capanema', uf: 'PA' },
-    { codigo: '602', descricao: 'RESIDENCIAL SALLES JARDIM - CASTANHAL', cidade: 'Castanhal', uf: 'PA' },
-    { codigo: '603', descricao: 'RESIDENCIAL JARDIM CASTANHAL - CASTANHAL', cidade: 'Castanhal', uf: 'PA' },
-    { codigo: '604', descricao: 'RESIDENCIAL IPITINGA - TOMÉ-AÇU', cidade: 'Tomé-Açu', uf: 'PA' },
-    { codigo: '605', descricao: 'RESIDENCIAL VALLE DO IPITINGA - TOMÉ-AÇU', cidade: 'Tomé-Açu', uf: 'PA' },
-    { codigo: '610', descricao: 'RESIDENCIAL JARDIM DO VALLE - TAILANDIA', cidade: 'Tailândia', uf: 'PA' },
-    { codigo: '616', descricao: 'RESIDENCIAL JARDIM DO VALLE - BARCARENA', cidade: 'Barcarena', uf: 'PA' },
-    { codigo: '618', descricao: 'RESIDENCIAL JARDIM DO VALLE II - TAILANDIA', cidade: 'Tailândia', uf: 'PA' },
-    { codigo: '620', descricao: 'RESIDENCIAL JARDIM VALLE DO URAIM - PARAGOMINAS', cidade: 'Paragominas', uf: 'PA' },
-    { codigo: '621', descricao: 'RESIDENCIAL PARQUE DO VALLE - RONDON', cidade: 'Rondon do Pará', uf: 'PA' },
-    { codigo: '623', descricao: 'RESIDENCIAL JARDIM CASTANHAL III - CASTANHAL', cidade: 'Castanhal', uf: 'PA' },
-    { codigo: '624', descricao: 'RESIDENCIAL VALLE DO IPITINGA II - TOMÉ-AÇU', cidade: 'Tomé-Açu', uf: 'PA' },
-    { codigo: '625', descricao: 'RESIDENCIAL VALLE DO IPÊS - TOMÉ AÇU', cidade: 'Tomé-Açu', uf: 'PA' },
+    { codigo: '600', empresa: 13, obra_uau: '70100', descricao: 'RESIDENCIAL JARDIM DO VALLE - DOM ELISEU', cidade: 'Dom Eliseu', uf: 'PA' },
+    { codigo: '601', empresa: 12, obra_uau: '70100', descricao: 'RESIDENCIAL JARDIM AMERICA - CAPANEMA', cidade: 'Capanema', uf: 'PA' },
+    { codigo: '602', empresa: 9,  obra_uau: '70100', descricao: 'RESIDENCIAL SALLES JARDIM - CASTANHAL', cidade: 'Castanhal', uf: 'PA' },
+    { codigo: '603', empresa: 6,  obra_uau: '70100', descricao: 'RESIDENCIAL JARDIM CASTANHAL - CASTANHAL', cidade: 'Castanhal', uf: 'PA' },
+    { codigo: '604', empresa: 6,  obra_uau: '70400', descricao: 'RESIDENCIAL IPITINGA - TOMÉ-AÇU', cidade: 'Tomé-Açu', uf: 'PA' },
+    { codigo: '605', empresa: 6,  obra_uau: '70400', descricao: 'RESIDENCIAL VALLE DO IPITINGA - TOMÉ-AÇU', cidade: 'Tomé-Açu', uf: 'PA' },
+    { codigo: '610', empresa: 6,  obra_uau: '70300', descricao: 'RESIDENCIAL JARDIM DO VALLE - TAILANDIA', cidade: 'Tailândia', uf: 'PA' },
+    { codigo: '616', empresa: 15, obra_uau: '70100', descricao: 'RESIDENCIAL JARDIM DO VALLE - BARCARENA', cidade: 'Barcarena', uf: 'PA' },
+    { codigo: '618', empresa: 22, obra_uau: '70100', descricao: 'RESIDENCIAL JARDIM DO VALLE II - TAILANDIA', cidade: 'Tailândia', uf: 'PA' },
+    { codigo: '620', empresa: 983, obra_uau: '70100', descricao: 'RESIDENCIAL JARDIM VALLE DO URAIM - PARAGOMINAS', cidade: 'Paragominas', uf: 'PA' },
+    { codigo: '621', empresa: 6,  obra_uau: '70500', descricao: 'RESIDENCIAL PARQUE DO VALLE - RONDON', cidade: 'Rondon do Pará', uf: 'PA' },
+    { codigo: '623', empresa: 24, obra_uau: '70100', descricao: 'RESIDENCIAL JARDIM CASTANHAL III - CASTANHAL', cidade: 'Castanhal', uf: 'PA' },
+    { codigo: '624', empresa: 28, obra_uau: '70100', descricao: 'RESIDENCIAL VALLE DO IPITINGA II - TOMÉ-AÇU', cidade: 'Tomé-Açu', uf: 'PA' },
+    { codigo: '625', empresa: 29, obra_uau: '70100', descricao: 'RESIDENCIAL VALLE DO IPÊS - TOMÉ AÇU', cidade: 'Tomé-Açu', uf: 'PA' },
 ];
 
 // Status de lotes disponíveis
@@ -49,7 +49,7 @@ export function AuthProvider({ children }) {
         if (typeof permissions === 'string') {
             try {
                 permissions = JSON.parse(permissions);
-            } catch (e) {
+            } catch {
                 permissions = {};
             }
         }
@@ -65,7 +65,7 @@ export function AuthProvider({ children }) {
         return user;
     }
 
-    const loadUsers = async () => {
+    const loadUsers = useCallback(async () => {
         try {
             const result = await getUsers();
             if (result.users) {
@@ -75,7 +75,7 @@ export function AuthProvider({ children }) {
         } catch (e) {
             console.error("Failed to load users", e);
         }
-    };
+    }, []);
 
     const login = useCallback(async (username, password) => {
         const trimmed = (username || '').trim();
@@ -89,6 +89,7 @@ export function AuthProvider({ children }) {
                 console.log('[DEBUG] Token received, saving...');
                 localStorage.setItem(STORAGE_KEYS.TOKEN, result.token);
                 const user = processUser(result.user);
+                localStorage.setItem('valle_user_name', user.nome || user.username);
                 console.log('[DEBUG] User processed:', user);
                 setCurrentUser(user);
                 // Load users if admin
@@ -113,7 +114,7 @@ export function AuthProvider({ children }) {
             }
             return { success: false, error: msg };
         }
-    }, []);
+    }, [loadUsers]);
 
     const logout = useCallback(() => {
         setCurrentUser(null);
@@ -131,7 +132,7 @@ export function AuthProvider({ children }) {
             const msg = 'Erro ao criar usuário.';
             return { success: false, error: msg };
         }
-    }, []);
+    }, [loadUsers]);
 
     const updateUserPermissions = useCallback(async (userId, data) => {
         try {
@@ -152,7 +153,7 @@ export function AuthProvider({ children }) {
         } catch {
             return { success: false, error: 'Erro ao atualizar.' };
         }
-    }, []);
+    }, [loadUsers]);
 
     const deleteUser = useCallback(async (userId) => {
         try {
@@ -162,7 +163,7 @@ export function AuthProvider({ children }) {
         } catch {
             return { success: false, error: 'Erro ao excluir.' };
         }
-    }, []);
+    }, [loadUsers]);
 
     const approveUser = useCallback(async (userId) => {
         try {
@@ -172,7 +173,7 @@ export function AuthProvider({ children }) {
         } catch {
             return { success: false, error: 'Erro ao aprovar.' };
         }
-    }, []);
+    }, [loadUsers]);
 
     // Initial load
     useEffect(() => {
@@ -202,7 +203,7 @@ export function AuthProvider({ children }) {
         }
         init();
         return () => { cancelled = true; };
-    }, [logout]);
+    }, [logout, loadUsers]);
 
     return (
         <AuthContext.Provider value={{

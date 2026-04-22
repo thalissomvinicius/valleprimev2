@@ -66,13 +66,14 @@ function MainApp() {
     localStorage.setItem('selectedObra', selectedObra);
 
     setLoading(true);
-    fetchAvailability(selectedObra)
+    const obraInfo = OBRAS.find(o => o.codigo === selectedObra);
+    fetchAvailability(selectedObra, obraInfo?.empresa || 28)
       .then((result) => {
         setData(result);
         setError(null);
         dataCacheRef.current[selectedObra] = result;
       })
-      .catch((err) => setError(err?.message || 'Erro ao carregar dados. Por favor, tente novamente mais tarde.'))
+      .catch((err) => setError(err?.message || 'Erro ao carregar dados do Banco UAU.'))
       .finally(() => setLoading(false));
   }, [selectedObra]);
 
@@ -161,30 +162,7 @@ function MainApp() {
 
   // Helper para obter a data mais recente
   const computeLastUpdate = () => {
-    const direct = data?.lastUpdate || (data[0] && data[0].Data_Atualizacao);
-    if (!Array.isArray(data)) return direct || null;
-    const parseDate = (str) => {
-      if (!str) return null;
-      const parts = str.split('/');
-      if (parts.length === 3) {
-        const [dd, mm, yyyy] = parts.map(p => parseInt(p, 10));
-        if (!isNaN(dd) && !isNaN(mm) && !isNaN(yyyy)) {
-          return new Date(yyyy, mm - 1, dd);
-        }
-      }
-      const dt = new Date(str);
-      return isNaN(dt) ? null : dt;
-    };
-    let latest = direct ? parseDate(direct) : null;
-    data.forEach(item => {
-      const dt = parseDate(item?.Data_Atualizacao);
-      if (dt && (!latest || dt > latest)) latest = dt;
-    });
-    if (!latest) return null;
-    const dd = String(latest.getDate()).padStart(2, '0');
-    const mm = String(latest.getMonth() + 1).padStart(2, '0');
-    const yyyy = latest.getFullYear();
-    return `${dd}/${mm}/${yyyy}`;
+    return data?.lastUpdate || (data[0] && data[0].Data_Atualizacao) || null;
   };
 
   const handleLotClick = (lot) => {
@@ -619,30 +597,6 @@ function MainApp() {
   );
 }
 
-function DiscontinuedOverlay() {
-  return (
-    <div className="discontinued-overlay">
-      <div className="discontinued-box">
-        <div className="discontinued-icon">
-          <AlertTriangle size={40} />
-        </div>
-        <h2 className="discontinued-title">Sistema Descontinuado</h2>
-        <p className="discontinued-message">
-          Esta plataforma encerrou suas atividades e não receberá mais atualizações. Em caso de dúvidas ou necessidade de suporte técnico, fale diretamente com o desenvolvedor.
-        </p>
-        <a 
-          href="https://wa.me/5591991697664" 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          className="discontinued-btn"
-        >
-          <MessageCircle size={20} />
-          Falar com o Desenvolvedor
-        </a>
-      </div>
-    </div>
-  );
-}
 
 function App() {
   const { isAuthenticated, isAdmin, loading } = useAuth();
@@ -687,7 +641,6 @@ function App() {
 
   return (
     <>
-      <DiscontinuedOverlay />
       {renderRoutes()}
       {isAuthenticated && <HelpBot />}
       {showLoading && (

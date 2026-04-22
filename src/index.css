@@ -959,6 +959,7 @@ html {
   align-items: center;
   justify-content: center;
   padding: 1rem;
+  -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
 }
 
