@@ -270,7 +270,7 @@ def extrair_dados_corretores_uau(conn, empresa, obra, data_inicio=None, data_fim
 def extrair_disponibilidades_uau(conn, empresa: int, produto: int):
     """
     Função que bate no banco UAU e extrai a disponibilidade de unidades (lotes/aptos)
-    com base no produto e empresa. Retorna dados comerciais, status, metragens e preço mínimo.
+    """
     # Query otimizada para evitar Table Scans pesados e usar ROW_NUMBER() em vez de EXISTS com subqueries
     query = """
     SELECT 
