@@ -271,16 +271,31 @@ def extrair_disponibilidades_uau(conn, empresa: int, produto: int):
     """
     Função que bate no banco UAU e extrai a disponibilidade de unidades (lotes/aptos)
     com base no produto e empresa. Retorna dados comerciais, status, metragens e preço mínimo.
-    """
+    # Query otimizada para evitar Table Scans pesados e usar ROW_NUMBER() em vez de EXISTS com subqueries
     query = """
-    SELECT * FROM(
-        SELECT Anexos_unid,Prod_unid,Empresa_unid,NumPer_unid,Obra_unid,NumObe_unid,Cod_obe,FracaoIdeal_unid,FracaoIdealDecimal_unid,Identificador_unid,Qtde_unid,Codigo_unid,PorcentPr_Unid,Vendido_unid,TipoContrato_udt,NumCategStatus_unid,Desc_csup,CodTipProd_unid,Descricao_tipprod,ReterPrimAluguel_udt,PorcentComissao_unid,DataReconhecimentoReceitaMapa_unid,DataEntregaChaves_unid,DataCad_unid,UsrCad_unid,COALESCE(TipoUnidMultipropriedade_udt,0) AS TipoUnidMultipropriedade_udt,NumUnidFisica_udt,
-        c1_unid,c2_unid,c3_unid,c4_unid,c5_unid,c6_unid,c7_unid,c8_unid,c9_unid,c10_unid,c11_unid,c12_unid,c13_unid,c14_unid,c15_unid,c16_unid,c17_unid,c18_unid,c19_unid,c20_unid,c21_unid,c22_unid,c23_unid,c24_unid,c25_unid, 
-        CASE WHEN UnidadeDetalhe.TipoContrato_udt IN(1, 2, 4, 5) THEN UnidadePer.ValPreco_unid WHEN ((UnidadeDetalhe.TipoContrato_udt = 0 AND UnidadePer.Vendido_unid = 10) OR UnidadePer.UnidadeVendidaDacao_unid = 1) THEN UnidadePer.ValPreco_unid ELSE Round((UnidadePer.PorcentPr_Unid / 100 * TabValMin.Valor_cpp),2) END AS PrecoMin, 
-        CASE WHEN UnidadeDetalhe.TipoContrato_udt IN(1, 2, 4, 5) THEN (UnidadePer.Qtde_Unid * UnidadePer.ValPreco_unid) WHEN ((UnidadeDetalhe.TipoContrato_udt = 0 AND UnidadePer.Vendido_unid = 10) OR UnidadePer.UnidadeVendidaDacao_unid = 1) THEN (UnidadePer.Qtde_Unid * UnidadePer.ValPreco_unid) ELSE (UnidadePer.Qtde_Unid * (Round(UnidadePer.PorcentPr_Unid / 100 * TabValMin.Valor_cpp,2))) END AS ValorTotal ,  
+    SELECT 
+        UnidadePer.NumPer_unid, UnidadePer.Codigo_unid, UnidadePer.Identificador_unid, UnidadePer.Qtde_unid,
+        UnidadePer.c1_unid, UnidadePer.c2_unid, UnidadePer.c3_unid, UnidadePer.c4_unid, UnidadePer.c5_unid, 
+        UnidadePer.c6_unid, UnidadePer.c7_unid, UnidadePer.c8_unid, UnidadePer.c9_unid, UnidadePer.c10_unid, 
+        UnidadePer.c11_unid, UnidadePer.c12_unid, UnidadePer.c13_unid, UnidadePer.c14_unid, UnidadePer.c15_unid,
+        UnidadePer.c16_unid, UnidadePer.c17_unid, UnidadePer.c18_unid, UnidadePer.c19_unid, UnidadePer.c20_unid, 
+        UnidadePer.c21_unid, UnidadePer.c22_unid, UnidadePer.c23_unid, UnidadePer.c24_unid, UnidadePer.c25_unid,
+        
+        CASE 
+            WHEN UnidadeDetalhe.TipoContrato_udt IN(1, 2, 4, 5) THEN UnidadePer.ValPreco_unid 
+            WHEN ((UnidadeDetalhe.TipoContrato_udt = 0 AND UnidadePer.Vendido_unid = 10) OR UnidadePer.UnidadeVendidaDacao_unid = 1) THEN UnidadePer.ValPreco_unid 
+            ELSE Round((UnidadePer.PorcentPr_Unid / 100 * TabValMin.Valor_cpp),2) 
+        END AS PrecoMin, 
+
+        CASE 
+            WHEN UnidadeDetalhe.TipoContrato_udt IN(1, 2, 4, 5) THEN (UnidadePer.Qtde_Unid * UnidadePer.ValPreco_unid) 
+            WHEN ((UnidadeDetalhe.TipoContrato_udt = 0 AND UnidadePer.Vendido_unid = 10) OR UnidadePer.UnidadeVendidaDacao_unid = 1) THEN (UnidadePer.Qtde_Unid * UnidadePer.ValPreco_unid) 
+            ELSE (UnidadePer.Qtde_Unid * (Round(UnidadePer.PorcentPr_Unid / 100 * TabValMin.Valor_cpp,2))) 
+        END AS ValorTotal,  
+
         CASE       
-            WHEN UnidadePer.Vendido_unid = 0 THEN 'Disponível'       
-            WHEN UnidadePer.Vendido_unid = 1 THEN CASE WHEN UnidadeDetalhe.TipoContrato_udt IN(1, 2, 5) THEN 'Locada' ELSE 'Vendida' END       
+            WHEN UnidadePer.Vendido_unid = 0  THEN 'Disponível'       
+            WHEN UnidadePer.Vendido_unid = 1  THEN CASE WHEN UnidadeDetalhe.TipoContrato_udt IN(1, 2, 5) THEN 'Locada' ELSE 'Vendida' END       
             WHEN UnidadePer.Vendido_unid = 2  THEN 'Reservado'       
             WHEN UnidadePer.Vendido_unid = 3  THEN 'Proposta'       
             WHEN UnidadePer.Vendido_unid = 4  THEN 'Quitado'       
@@ -290,36 +305,35 @@ def extrair_disponibilidades_uau(conn, empresa: int, produto: int):
             WHEN UnidadePer.Vendido_unid = 8  THEN 'Fora de venda'       
             WHEN UnidadePer.Vendido_unid = 9  THEN 'Em acerto'       
             WHEN UnidadePer.Vendido_unid = 10 THEN 'Dação'   
-        END AS Descr_status ,  
-        CASE WHEN UnidadePer.UnidadeVendidaDacao_unid = 1 THEN 1 ELSE 0 END AS UnidadeVendidaDacao_unid , 
-        ObjEspelhoTop_unid, ObjEspelhoLeft_unid, Usr_uo  
-        FROM UnidadePer WITH(NOLOCK)  
-        LEFT JOIN ObrUsr WITH(NOLOCK) ON Empresa_unid = Emp_uo AND Obra_unid = Obr_uo 
-        LEFT JOIN(
-            SELECT Empresa_cpp, Codigo_cpp, Valor_cpp, Data_cpp 
-            FROM CategoriasPrecoProd WITH(NOLOCK) 
-            WHERE (NumProd_cpp = ?) 
-            AND EXISTS (
-                SELECT Codigo_cpp FROM CategoriasPrecoProd AS CatPre 
-                WHERE (CatPre.NumProd_cpp = ?) 
-                AND (CatPre.Data_cpp <= CAST(GETDATE() AS DATE)) 
-                AND CategoriasPrecoProd.Codigo_cpp = CatPre.Codigo_cpp AND CategoriasPrecoProd.Empresa_cpp = CatPre.Empresa_cpp 
-                GROUP BY Codigo_cpp HAVING Max(Data_cpp) = CategoriasPrecoProd.Data_cpp
-            )
-        ) AS TabValMin ON UnidadePer.codigo_unid = TabValMin.codigo_cpp AND UnidadePer.Empresa_unid = TabValMin.Empresa_cpp 
-        LEFT JOIN UnidadeDetalhe WITH(NOLOCK) ON UnidadePer.Empresa_unid = UnidadeDetalhe.Empresa_udt AND UnidadePer.Prod_unid = UnidadeDetalhe.Prod_udt AND UnidadePer.NumPer_unid = UnidadeDetalhe.NumPer_udt   
-        LEFT JOIN ObraBlocoEtapa WITH(NOLOCK) ON ObraBlocoEtapa.Empresa_obe = UnidadePer.Empresa_unid AND ObraBlocoEtapa.Obra_obe = UnidadePer.Obra_unid AND ObraBlocoEtapa.Num_obe = UnidadePer.NumObe_unid  
-        LEFT JOIN TipologiaProducao WITH(NOLOCK) ON TipologiaProducao.Codigo_tipprod = UnidadePer.CodTipProd_unid 
-        LEFT JOIN CategoriaStatusUnidadePer WITH(NOLOCK) ON UnidadePer.NumCategStatus_unid = CategoriaStatusUnidadePer.Num_csup  
-    ) AS TotalPerson 
-    WHERE (Prod_unid = ?) AND (Empresa_Unid = ?) 
-    ORDER BY NumPer_unid
+        END AS Descr_status 
+
+    FROM UnidadePer WITH(NOLOCK)  
+    
+    LEFT JOIN (
+        SELECT Empresa_cpp, Codigo_cpp, Valor_cpp
+        FROM (
+            SELECT Empresa_cpp, Codigo_cpp, Valor_cpp,
+                   ROW_NUMBER() OVER(PARTITION BY Empresa_cpp, Codigo_cpp ORDER BY Data_cpp DESC) as rn
+            FROM CategoriasPrecoProd WITH(NOLOCK)
+            WHERE NumProd_cpp = ? AND Data_cpp <= CAST(GETDATE() AS DATE)
+        ) t
+        WHERE rn = 1
+    ) AS TabValMin ON UnidadePer.codigo_unid = TabValMin.codigo_cpp AND UnidadePer.Empresa_unid = TabValMin.Empresa_cpp 
+    
+    LEFT JOIN UnidadeDetalhe WITH(NOLOCK) 
+        ON UnidadePer.Empresa_unid = UnidadeDetalhe.Empresa_udt 
+        AND UnidadePer.Prod_unid = UnidadeDetalhe.Prod_udt 
+        AND UnidadePer.NumPer_unid = UnidadeDetalhe.NumPer_udt   
+    
+    WHERE UnidadePer.Prod_unid = ? AND UnidadePer.Empresa_unid = ?
+    ORDER BY UnidadePer.NumPer_unid
     """
     
     import warnings
     warnings.filterwarnings('ignore', category=UserWarning)
     
-    params = [produto, produto, produto, empresa]
+    # NumProd_cpp, Prod_unid, Empresa_Unid
+    params = [produto, produto, empresa]
     df = pd.read_sql(query, conn, params=params).fillna("")
     if df.empty:
         return []
