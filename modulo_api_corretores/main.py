@@ -285,20 +285,36 @@ def extrair_disponibilidades_uau(conn, empresa: int, produto: int):
             WHEN u.Vendido_unid = 8  THEN '8 - Fora de venda'       
             WHEN u.Vendido_unid = 9  THEN '9 - Em acerto'       
             WHEN u.Vendido_unid = 10 THEN '10 - Dação'   
-        END AS Descr_status
+        END AS Descr_status,
+        CASE 
+            WHEN d.TipoContrato_udt IN(1, 2, 4, 5) THEN (u.Qtde_Unid * u.ValPreco_unid) 
+            WHEN ((d.TipoContrato_udt = 0 AND u.Vendido_unid = 10) OR u.UnidadeVendidaDacao_unid = 1) THEN (u.Qtde_Unid * u.ValPreco_unid) 
+            ELSE (u.Qtde_Unid * (Round(u.PorcentPr_Unid / 100 * TabValMin.Valor_cpp, 2))) 
+        END AS ValorTotal
     FROM UnidadePer u WITH(NOLOCK)
     LEFT JOIN UnidadeDetalhe d WITH(NOLOCK) 
         ON u.Empresa_unid = d.Empresa_udt 
         AND u.Prod_unid = d.Prod_udt 
         AND u.NumPer_unid = d.NumPer_udt
-    WHERE u.Prod_unid = ? AND u.Empresa_unid = ?
+    LEFT JOIN (
+        SELECT Empresa_cpp, Codigo_cpp, Valor_cpp
+        FROM (
+            SELECT Empresa_cpp, Codigo_cpp, Valor_cpp,
+                   ROW_NUMBER() OVER(PARTITION BY Empresa_cpp, Codigo_cpp ORDER BY Data_cpp DESC) as rn
+            FROM CategoriasPrecoProd WITH(NOLOCK)
+            WHERE NumProd_cpp = ? AND Data_cpp <= CAST(GETDATE() AS DATE)
+        ) t WHERE rn = 1
+    ) AS TabValMin 
+        ON u.codigo_unid = TabValMin.codigo_cpp 
+        AND u.Empresa_unid = TabValMin.Empresa_cpp 
+    WHERE u.Prod_unid = ? AND u.Empresa_unid = ? AND u.NumPer_unid >= 1
     ORDER BY u.NumPer_unid
     """
     
     import warnings
     warnings.filterwarnings('ignore', category=UserWarning)
     
-    params = [produto, empresa]
+    params = [produto, produto, empresa]
     df = pd.read_sql(query, conn, params=params).fillna("")
     if df.empty:
         return []
@@ -308,7 +324,12 @@ def extrair_disponibilidades_uau(conn, empresa: int, produto: int):
     
     for _, row in df.iterrows():
         metragem = float(row['Qtde_unid']) if row['Qtde_unid'] != "" else 0.0
-        valor = float(row['ValPreco_unid']) if row['ValPreco_unid'] != "" else 0.0
+        valor = float(row['ValorTotal']) if row['ValorTotal'] != "" else 0.0
+        
+        # Filtra lotes completamente zerados (dados corrompidos ou lixo)
+        if metragem == 0 and valor == 0:
+            continue
+
         
         # Formata os valores monetarios e decimais no padrao BR (virgula) para enviar pronto
         m2_str = f"{metragem:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
