@@ -362,8 +362,8 @@ export const fetchConfigObras = async () => {
   }
 };
 
-// URL da API local Ponte UAU via Cloudflare Tunnel
-const LOCAL_UAU_API = 'https://api.valleprimeapi.online';
+// URL da API local Ponte UAU (roda na mesma máquina via Uvicorn)
+const LOCAL_UAU_API = 'http://localhost:8000';
 
 export const fetchCorretoresData = async (filters = {}) => {
   const { empresa = 28, obra = '70100', data_inicio = '', data_fim = '' } = filters;

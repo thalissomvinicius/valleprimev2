@@ -170,16 +170,8 @@ def extrair_dados_corretores_uau(conn, empresa, obra, data_inicio=None, data_fim
     vendas_df.replace({pd.NA: None, float('nan'): 0}, inplace=True)
 
     for _, row in vendas_df.iterrows():
-        # Converte ID do corretor de forma segura
-        try:
-            cod_corretor = row.get('corretorId', 0)
-            if pd.isna(cod_corretor) or not cod_corretor:
-                cod_corretor = 0
-            else:
-                cod_corretor = int(float(cod_corretor))
-        except:
-            cod_corretor = 0
-
+        cod_corretor = row.get('corretorId', 0)
+        cod_corretor = int(float(cod_corretor)) if cod_corretor else 0
         if cod_corretor not in corretores_dict:
             corretores_dict[cod_corretor] = {
                 "codigo_corretor": cod_corretor,
@@ -199,14 +191,9 @@ def extrair_dados_corretores_uau(conn, empresa, obra, data_inicio=None, data_fim
             corretores_dict[cod_corretor]['resumo']['vgv_total'] += valor_venda
             if is_current_month: corretores_dict[cod_corretor]['resumo']['vendas_mes_atual'] += 1
             
-        # Converte ID da venda de forma segura
-        try:
-            venda_id = row.get('venda')
-            if pd.isna(venda_id) or not venda_id:
-                continue
-            venda_id = int(float(venda_id))
-        except:
-            continue
+        venda_id = row.get('venda')
+        if not venda_id: continue
+        venda_id = int(float(venda_id))
         
         ab = abertos_map.get(venda_id, {'qtdAberto': 0, 'valorAberto': 0, 'qtdAtraso': 0, 'valorAtraso': 0, 'proximoVencimento': None, 'diasAtraso': 0, 'lista': []})
         pg = pagos_map.get(venda_id, {'qtdPago': 0, 'valorPago': 0, 'ultimaDataPagamento': None, 'lista': []})
@@ -270,32 +257,17 @@ def extrair_dados_corretores_uau(conn, empresa, obra, data_inicio=None, data_fim
 def extrair_disponibilidades_uau(conn, empresa: int, produto: int):
     """
     Função que bate no banco UAU e extrai a disponibilidade de unidades (lotes/aptos)
+    com base no produto e empresa. Retorna dados comerciais, status, metragens e preço mínimo.
     """
-    # Query otimizada para evitar Table Scans pesados e usar ROW_NUMBER() em vez de EXISTS com subqueries
     query = """
-    SELECT 
-        UnidadePer.NumPer_unid, UnidadePer.Codigo_unid, UnidadePer.Identificador_unid, UnidadePer.Qtde_unid,
-        UnidadePer.c1_unid, UnidadePer.c2_unid, UnidadePer.c3_unid, UnidadePer.c4_unid, UnidadePer.c5_unid, 
-        UnidadePer.c6_unid, UnidadePer.c7_unid, UnidadePer.c8_unid, UnidadePer.c9_unid, UnidadePer.c10_unid, 
-        UnidadePer.c11_unid, UnidadePer.c12_unid, UnidadePer.c13_unid, UnidadePer.c14_unid, UnidadePer.c15_unid,
-        UnidadePer.c16_unid, UnidadePer.c17_unid, UnidadePer.c18_unid, UnidadePer.c19_unid, UnidadePer.c20_unid, 
-        UnidadePer.c21_unid, UnidadePer.c22_unid, UnidadePer.c23_unid, UnidadePer.c24_unid, UnidadePer.c25_unid,
-        
-        CASE 
-            WHEN UnidadeDetalhe.TipoContrato_udt IN(1, 2, 4, 5) THEN UnidadePer.ValPreco_unid 
-            WHEN ((UnidadeDetalhe.TipoContrato_udt = 0 AND UnidadePer.Vendido_unid = 10) OR UnidadePer.UnidadeVendidaDacao_unid = 1) THEN UnidadePer.ValPreco_unid 
-            ELSE Round((UnidadePer.PorcentPr_Unid / 100 * TabValMin.Valor_cpp),2) 
-        END AS PrecoMin, 
-
-        CASE 
-            WHEN UnidadeDetalhe.TipoContrato_udt IN(1, 2, 4, 5) THEN (UnidadePer.Qtde_Unid * UnidadePer.ValPreco_unid) 
-            WHEN ((UnidadeDetalhe.TipoContrato_udt = 0 AND UnidadePer.Vendido_unid = 10) OR UnidadePer.UnidadeVendidaDacao_unid = 1) THEN (UnidadePer.Qtde_Unid * UnidadePer.ValPreco_unid) 
-            ELSE (UnidadePer.Qtde_Unid * (Round(UnidadePer.PorcentPr_Unid / 100 * TabValMin.Valor_cpp,2))) 
-        END AS ValorTotal,  
-
+    SELECT * FROM(
+        SELECT Anexos_unid,Prod_unid,Empresa_unid,NumPer_unid,Obra_unid,NumObe_unid,Cod_obe,FracaoIdeal_unid,FracaoIdealDecimal_unid,Identificador_unid,Qtde_unid,Codigo_unid,PorcentPr_Unid,Vendido_unid,TipoContrato_udt,NumCategStatus_unid,Desc_csup,CodTipProd_unid,Descricao_tipprod,ReterPrimAluguel_udt,PorcentComissao_unid,DataReconhecimentoReceitaMapa_unid,DataEntregaChaves_unid,DataCad_unid,UsrCad_unid,COALESCE(TipoUnidMultipropriedade_udt,0) AS TipoUnidMultipropriedade_udt,NumUnidFisica_udt,
+        c1_unid,c2_unid,c3_unid,c4_unid,c5_unid,c6_unid,c7_unid,c8_unid,c9_unid,c10_unid,c11_unid,c12_unid,c13_unid,c14_unid,c15_unid,c16_unid,c17_unid,c18_unid,c19_unid,c20_unid,c21_unid,c22_unid,c23_unid,c24_unid,c25_unid, 
+        CASE WHEN UnidadeDetalhe.TipoContrato_udt IN(1, 2, 4, 5) THEN UnidadePer.ValPreco_unid WHEN ((UnidadeDetalhe.TipoContrato_udt = 0 AND UnidadePer.Vendido_unid = 10) OR UnidadePer.UnidadeVendidaDacao_unid = 1) THEN UnidadePer.ValPreco_unid ELSE Round((UnidadePer.PorcentPr_Unid / 100 * TabValMin.Valor_cpp),2) END AS PrecoMin, 
+        CASE WHEN UnidadeDetalhe.TipoContrato_udt IN(1, 2, 4, 5) THEN (UnidadePer.Qtde_Unid * UnidadePer.ValPreco_unid) WHEN ((UnidadeDetalhe.TipoContrato_udt = 0 AND UnidadePer.Vendido_unid = 10) OR UnidadePer.UnidadeVendidaDacao_unid = 1) THEN (UnidadePer.Qtde_Unid * UnidadePer.ValPreco_unid) ELSE (UnidadePer.Qtde_Unid * (Round(UnidadePer.PorcentPr_Unid / 100 * TabValMin.Valor_cpp,2))) END AS ValorTotal ,  
         CASE       
-            WHEN UnidadePer.Vendido_unid = 0  THEN 'Disponível'       
-            WHEN UnidadePer.Vendido_unid = 1  THEN CASE WHEN UnidadeDetalhe.TipoContrato_udt IN(1, 2, 5) THEN 'Locada' ELSE 'Vendida' END       
+            WHEN UnidadePer.Vendido_unid = 0 THEN 'Disponível'       
+            WHEN UnidadePer.Vendido_unid = 1 THEN CASE WHEN UnidadeDetalhe.TipoContrato_udt IN(1, 2, 5) THEN 'Locada' ELSE 'Vendida' END       
             WHEN UnidadePer.Vendido_unid = 2  THEN 'Reservado'       
             WHEN UnidadePer.Vendido_unid = 3  THEN 'Proposta'       
             WHEN UnidadePer.Vendido_unid = 4  THEN 'Quitado'       
@@ -305,35 +277,36 @@ def extrair_disponibilidades_uau(conn, empresa: int, produto: int):
             WHEN UnidadePer.Vendido_unid = 8  THEN 'Fora de venda'       
             WHEN UnidadePer.Vendido_unid = 9  THEN 'Em acerto'       
             WHEN UnidadePer.Vendido_unid = 10 THEN 'Dação'   
-        END AS Descr_status 
-
-    FROM UnidadePer WITH(NOLOCK)  
-    
-    LEFT JOIN (
-        SELECT Empresa_cpp, Codigo_cpp, Valor_cpp
-        FROM (
-            SELECT Empresa_cpp, Codigo_cpp, Valor_cpp,
-                   ROW_NUMBER() OVER(PARTITION BY Empresa_cpp, Codigo_cpp ORDER BY Data_cpp DESC) as rn
-            FROM CategoriasPrecoProd WITH(NOLOCK)
-            WHERE NumProd_cpp = ? AND Data_cpp <= CAST(GETDATE() AS DATE)
-        ) t
-        WHERE rn = 1
-    ) AS TabValMin ON UnidadePer.codigo_unid = TabValMin.codigo_cpp AND UnidadePer.Empresa_unid = TabValMin.Empresa_cpp 
-    
-    LEFT JOIN UnidadeDetalhe WITH(NOLOCK) 
-        ON UnidadePer.Empresa_unid = UnidadeDetalhe.Empresa_udt 
-        AND UnidadePer.Prod_unid = UnidadeDetalhe.Prod_udt 
-        AND UnidadePer.NumPer_unid = UnidadeDetalhe.NumPer_udt   
-    
-    WHERE UnidadePer.Prod_unid = ? AND UnidadePer.Empresa_unid = ?
-    ORDER BY UnidadePer.NumPer_unid
+        END AS Descr_status ,  
+        CASE WHEN UnidadePer.UnidadeVendidaDacao_unid = 1 THEN 1 ELSE 0 END AS UnidadeVendidaDacao_unid , 
+        ObjEspelhoTop_unid, ObjEspelhoLeft_unid, Usr_uo  
+        FROM UnidadePer WITH(NOLOCK)  
+        LEFT JOIN ObrUsr WITH(NOLOCK) ON Empresa_unid = Emp_uo AND Obra_unid = Obr_uo 
+        LEFT JOIN(
+            SELECT Empresa_cpp, Codigo_cpp, Valor_cpp, Data_cpp 
+            FROM CategoriasPrecoProd WITH(NOLOCK) 
+            WHERE (NumProd_cpp = ?) 
+            AND EXISTS (
+                SELECT Codigo_cpp FROM CategoriasPrecoProd AS CatPre 
+                WHERE (CatPre.NumProd_cpp = ?) 
+                AND (CatPre.Data_cpp <= CAST(GETDATE() AS DATE)) 
+                AND CategoriasPrecoProd.Codigo_cpp = CatPre.Codigo_cpp AND CategoriasPrecoProd.Empresa_cpp = CatPre.Empresa_cpp 
+                GROUP BY Codigo_cpp HAVING Max(Data_cpp) = CategoriasPrecoProd.Data_cpp
+            )
+        ) AS TabValMin ON UnidadePer.codigo_unid = TabValMin.codigo_cpp AND UnidadePer.Empresa_unid = TabValMin.Empresa_cpp 
+        LEFT JOIN UnidadeDetalhe WITH(NOLOCK) ON UnidadePer.Empresa_unid = UnidadeDetalhe.Empresa_udt AND UnidadePer.Prod_unid = UnidadeDetalhe.Prod_udt AND UnidadePer.NumPer_unid = UnidadeDetalhe.NumPer_udt   
+        LEFT JOIN ObraBlocoEtapa WITH(NOLOCK) ON ObraBlocoEtapa.Empresa_obe = UnidadePer.Empresa_unid AND ObraBlocoEtapa.Obra_obe = UnidadePer.Obra_unid AND ObraBlocoEtapa.Num_obe = UnidadePer.NumObe_unid  
+        LEFT JOIN TipologiaProducao WITH(NOLOCK) ON TipologiaProducao.Codigo_tipprod = UnidadePer.CodTipProd_unid 
+        LEFT JOIN CategoriaStatusUnidadePer WITH(NOLOCK) ON UnidadePer.NumCategStatus_unid = CategoriaStatusUnidadePer.Num_csup  
+    ) AS TotalPerson 
+    WHERE (Prod_unid = ?) AND (Empresa_Unid = ?) 
+    ORDER BY NumPer_unid
     """
     
     import warnings
     warnings.filterwarnings('ignore', category=UserWarning)
     
-    # NumProd_cpp, Prod_unid, Empresa_Unid
-    params = [produto, produto, empresa]
+    params = [produto, produto, produto, empresa]
     df = pd.read_sql(query, conn, params=params).fillna("")
     if df.empty:
         return []
@@ -376,20 +349,13 @@ def home():
     }
 
 @app.get("/api/vendas/{empresa}/{obra}")
-def consultar_vendas_obra(empresa: int, obra: str, user: Optional[str] = "Desconhecido", data_inicio: Optional[str] = None, data_fim: Optional[str] = None):
+def consultar_vendas_obra(empresa: int, obra: str, data_inicio: Optional[str] = None, data_fim: Optional[str] = None):
     """
     Link de Consulta em Tempo Real:
     O sistema online pode enviar requisições GET para cá e obter os dados atualizados 
     diretamente do banco UAU local da sua máquina.
     Aceita ?data_inicio=YYYY-MM-DD&data_fim=YYYY-MM-DD
     """
-    # Log de Auditoria
-    now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-    periodo = f"{data_inicio or 'Inicio'} ate {data_fim or 'Hoje'}"
-    print(f"\n[AUDITORIA] {now} | USUARIO: {user.upper()}")
-    print(f"            CONSULTA: Performance Vendas | EMPRESA: {empresa} | OBRA: {obra}")
-    print(f"            PERIODO:  {periodo}")
-    
     try:
         conn = conectar_uau()
         dados = extrair_dados_corretores_uau(conn, empresa, obra, data_inicio, data_fim)
@@ -409,16 +375,11 @@ def consultar_vendas_obra(empresa: int, obra: str, user: Optional[str] = "Descon
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/disponibilidades/{empresa}/{produto}")
-def consultar_disponibilidades(empresa: int, produto: int, user: Optional[str] = "Desconhecido"):
+def consultar_disponibilidades(empresa: int, produto: int):
     """
     Retorna o mapa de disponibilidades, status, preços e metragens 
     das unidades de uma obra/produto em tempo real.
     """
-    # Log de Auditoria
-    now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-    print(f"\n[AUDITORIA] {now} | USUARIO: {user.upper()}")
-    print(f"            CONSULTA: Mapa Disponibilidades | EMPRESA: {empresa} | PRODUTO: {produto}")
-    
     try:
         conn = conectar_uau()
         dados = extrair_disponibilidades_uau(conn, empresa, produto)
